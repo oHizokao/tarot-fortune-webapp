@@ -75,4 +75,6 @@ php scripts/create-admin.php "ชื่อแอดมิน" admin@example.com 
 
 Vercel deployment แบบ static ใช้หน้าเปิดไพ่ได้ แต่ไม่รันไฟล์ PHP และไม่ควรเก็บ OpenAI key ไว้ใน static frontend ดังนั้นถ้าต้องการ AI/Beta/Admin ให้ชี้โดเมนไปยัง Hostinger ที่ติดตั้ง `api/` แล้ว ส่วน Vercel ใช้เป็น preview ของหน้าเปิดไพ่ได้
 
+โปรเจกต์ Vercel preview เชื่อมกับ `oHizokao/tarot-fortune-webapp` แล้ว การ push เข้า branch `main` จะสร้าง deployment ใหม่อัตโนมัติสำหรับหน้า static
+
 ใช้เพื่อความบันเทิงและการทบทวนตัวเอง ผู้ใช้เป็นคนตัดสินใจชีวิตของตัวเองเสมอ
