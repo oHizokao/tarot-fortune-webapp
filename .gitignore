@@ -1,0 +1,6 @@
+api/config/config.php
+api/config/config.local.php
+.env
+.env.*
+.vercel-upload/
+*.log

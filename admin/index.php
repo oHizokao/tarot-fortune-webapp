@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tarot Daily — Admin</title>
+    <link rel="stylesheet" href="./admin.css" />
+  </head>
+  <body>
+    <main class="admin-shell">
+      <section class="admin-card login-card" id="admin-login-card">
+        <p class="eyebrow">TAROT DAILY / ADMIN</p>
+        <h1>เข้าสู่ระบบหลังบ้าน</h1>
+        <p class="muted">จัดการ Beta Access, AI API key และดูสถิติการใช้งาน</p>
+        <form id="admin-login-form" class="stack-form">
+          <label>อีเมลแอดมิน<input id="admin-email" type="email" autocomplete="username" required /></label>
+          <label>รหัสผ่าน<input id="admin-password" type="password" autocomplete="current-password" required /></label>
+          <button class="primary-button" type="submit">เข้าสู่ระบบ</button>
+        </form>
+        <p class="form-status" id="admin-login-status" role="status"></p>
+      </section>
+
+      <section class="admin-dashboard" id="admin-dashboard" hidden>
+        <header class="admin-header">
+          <div>
+            <p class="eyebrow">TAROT DAILY / CONTROL ROOM</p>
+            <h1>หลังบ้าน Beta AI</h1>
+            <p class="muted" id="admin-welcome"></p>
+          </div>
+          <button class="ghost-button" id="admin-logout-button" type="button">ออกจากระบบ</button>
+        </header>
+
+        <div class="stats-grid" id="usage-stats">
+          <article><span>Beta ที่ใช้งาน</span><strong id="stat-users">—</strong></article>
+          <article><span>คำขอ AI / 24 ชม.</span><strong id="stat-requests">—</strong></article>
+          <article><span>สำเร็จ</span><strong id="stat-success">—</strong></article>
+          <article><span>Tokens รวม</span><strong id="stat-tokens">—</strong></article>
+        </div>
+
+        <div class="admin-grid">
+          <section class="admin-card">
+            <div class="section-heading"><div><p class="eyebrow">OPENAI SETTINGS</p><h2>ตั้งค่า AI API</h2></div><span class="status-chip" id="api-status-chip">ยังไม่ตั้งค่า</span></div>
+            <p class="muted small">คีย์จะถูกเก็บฝั่งเซิร์ฟเวอร์ในไฟล์ config.local.php และจะไม่แสดงกลับมาที่ browser</p>
+            <form id="settings-form" class="stack-form">
+              <label>OpenAI API key<input id="openai-api-key" type="password" autocomplete="new-password" placeholder="ใส่คีย์ใหม่ หรือเว้นว่างเพื่อใช้คีย์เดิม" /></label>
+              <label>OpenAI model<input id="openai-model" type="text" placeholder="เช่น รุ่นที่บัญชีคุณเปิดใช้" required /></label>
+              <label class="checkbox-label"><input id="use-card-images" type="checkbox" /> ส่งภาพไพ่เข้า AI เพิ่มเติม (ใช้ token มากขึ้น)</label>
+              <button class="primary-button" type="submit">บันทึก API settings</button>
+            </form>
+            <p class="form-status" id="settings-status" role="status"></p>
+          </section>
+
+          <section class="admin-card">
+            <div class="section-heading"><div><p class="eyebrow">NEW BETA USER</p><h2>สร้าง Tester</h2></div></div>
+            <form id="create-user-form" class="stack-form">
+              <label>ชื่อผู้ใช้<input id="tester-name" type="text" maxlength="120" required /></label>
+              <label>อีเมล<input id="tester-email" type="email" maxlength="190" required /></label>
+              <label>ระยะเวลา<select id="tester-duration"><option value="3h">3 ชั่วโมง</option><option value="12h">12 ชั่วโมง</option><option value="24h" selected>24 ชั่วโมง</option><option value="3d">3 วัน</option><option value="7d">7 วัน</option></select></label>
+              <button class="primary-button" type="submit">สร้าง Beta Access</button>
+            </form>
+            <div class="code-output" id="new-code-output" hidden><span>Access Code (แสดงครั้งนี้ครั้งเดียว)</span><strong id="new-access-code"></strong><button class="ghost-button" id="copy-code-button" type="button">คัดลอกโค้ด</button></div>
+            <p class="form-status" id="create-user-status" role="status"></p>
+          </section>
+        </div>
+
+        <section class="admin-card users-card">
+          <div class="section-heading"><div><p class="eyebrow">BETA ACCESS</p><h2>รายชื่อผู้ทดสอบ</h2></div><button class="ghost-button" id="refresh-users-button" type="button">รีเฟรช</button></div>
+          <div class="table-wrap"><table><thead><tr><th>ผู้ใช้</th><th>สถานะ</th><th>หมดอายุ</th><th>จัดการ</th></tr></thead><tbody id="users-table-body"></tbody></table></div>
+          <p class="form-status" id="users-status" role="status"></p>
+        </section>
+      </section>
+    </main>
+    <script src="./admin.js" defer></script>
+  </body>
+</html>

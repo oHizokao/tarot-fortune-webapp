@@ -3,6 +3,7 @@ const DECK = Array.from(
   (_, index) => `tarot-cards/card-${String(index + 1).padStart(3, "0")}.webp`,
 );
 const STORAGE_KEY = "tarot-daily-deck-v1";
+const SESSION_KEY = "tarot-daily-session-v1";
 const MAX_HISTORY = 60;
 
 const state = {
@@ -12,6 +13,12 @@ const state = {
   notice: "",
   history: [],
   activeHistoryId: null,
+  aiConversation: [],
+  aiBackendAvailable: true,
+  aiUser: null,
+  aiBusy: false,
+  aiRequestVersion: 0,
+  copyBusy: false,
 };
 
 const choiceButtons = [...document.querySelectorAll(".choice-button")];
@@ -27,7 +34,7 @@ const remainingCount = document.querySelector("#remaining-count");
 const progressPercent = document.querySelector("#progress-percent");
 const progressBar = document.querySelector("#progress-bar");
 const drawButtonLabel = document.querySelector("#draw-button-label");
-const copyButton = document.querySelector("#copy-button");
+const copyButtons = [...document.querySelectorAll("[data-copy-result]")];
 const copyStatus = document.querySelector("#copy-status");
 const historySearch = document.querySelector("#history-search");
 const clearHistoryButton = document.querySelector("#clear-history-button");
@@ -35,6 +42,18 @@ const historyCount = document.querySelector("#history-count");
 const historyStatus = document.querySelector("#history-status");
 const historyList = document.querySelector("#history-list");
 const historyEmpty = document.querySelector("#history-empty");
+const aiGuestPanel = document.querySelector("#ai-guest-panel");
+const aiMemberPanel = document.querySelector("#ai-member-panel");
+const betaLoginForm = document.querySelector("#beta-login-form");
+const betaCodeInput = document.querySelector("#beta-code");
+const betaLoginButton = document.querySelector("#beta-login-button");
+const betaAuthStatus = document.querySelector("#beta-auth-status");
+const aiUserStatus = document.querySelector("#ai-user-status");
+const betaLogoutButton = document.querySelector("#beta-logout-button");
+const aiQuestion = document.querySelector("#ai-question");
+const askAiButton = document.querySelector("#ask-ai-button");
+const aiRequestStatus = document.querySelector("#ai-request-status");
+const aiAnswer = document.querySelector("#ai-answer");
 let drawTimer = null;
 
 function isValidDeckList(list) {
@@ -63,6 +82,22 @@ function isValidHistoryList(list) {
   );
 }
 
+function isFreshBrowserSession() {
+  try {
+    return window.sessionStorage.getItem(SESSION_KEY) !== "active";
+  } catch {
+    return true;
+  }
+}
+
+function markBrowserSessionActive() {
+  try {
+    window.sessionStorage.setItem(SESSION_KEY, "active");
+  } catch {
+    // sessionStorage may be unavailable when the page is opened directly as a file.
+  }
+}
+
 function loadSavedState() {
   try {
     const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY));
@@ -70,10 +105,12 @@ function loadSavedState() {
       return null;
     }
 
+    const restoreCurrentReading = !isFreshBrowserSession();
+
     return {
       remaining: saved.remaining,
-      drawn: isValidDeckList(saved.drawn) ? saved.drawn.slice(0, 3) : [],
-      notice: typeof saved.notice === "string" ? saved.notice : "",
+      drawn: restoreCurrentReading && isValidDeckList(saved.drawn) ? saved.drawn.slice(0, 3) : [],
+      notice: restoreCurrentReading && typeof saved.notice === "string" ? saved.notice : "",
       history: isValidHistoryList(saved.history)
         ? saved.history.map((entry) => ({
             id: entry.id,
@@ -160,13 +197,16 @@ function setCopyStatus(message, isError = false) {
 }
 
 function updateCopyButton() {
-  copyButton.disabled = state.drawn.length === 0;
+  copyButtons.forEach((button) => {
+    button.disabled = state.drawn.length === 0 || state.copyBusy;
+  });
 }
 
 function showHistoryEntry(entry) {
   state.activeHistoryId = entry.id;
   state.drawn = [...entry.cards];
   state.notice = "กำลังดูชุดไพ่ก่อนหน้า กดเปิดไพ่เพื่อสุ่มชุดใหม่";
+  resetAiReaderState();
   renderResult();
   renderHistory();
   document.querySelector("#result-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -362,12 +402,15 @@ function downloadBlob(blob) {
 }
 
 async function copyResultImage() {
-  if (state.drawn.length === 0 || copyButton.classList.contains("is-busy")) {
+  if (state.drawn.length === 0 || state.copyBusy || copyButtons.some((button) => button.classList.contains("is-busy"))) {
     return;
   }
 
-  copyButton.classList.add("is-busy");
-  copyButton.disabled = true;
+  state.copyBusy = true;
+  copyButtons.forEach((button) => {
+    button.classList.add("is-busy");
+    button.disabled = true;
+  });
   setCopyStatus("กำลังสร้างรูปภาพ...");
 
   try {
@@ -382,8 +425,274 @@ async function copyResultImage() {
   } catch {
     setCopyStatus("คัดลอกไม่ได้ ลองกดอีกครั้งนะครับ", true);
   } finally {
-    copyButton.classList.remove("is-busy");
-    copyButton.disabled = state.drawn.length === 0;
+    state.copyBusy = false;
+    copyButtons.forEach((button) => button.classList.remove("is-busy"));
+    updateCopyButton();
+  }
+}
+
+function createApiError(message, status = 0, code = "") {
+  const error = new Error(message);
+  error.status = status;
+  error.code = code;
+  return error;
+}
+
+async function fetchApiJson(url, options = {}) {
+  const response = await fetch(url, {
+    credentials: "same-origin",
+    ...options,
+    headers: {
+      Accept: "application/json",
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(options.headers || {}),
+    },
+  });
+  const raw = await response.text();
+  let data;
+
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    throw createApiError(
+      response.status === 404
+        ? "ยังไม่ได้ติดตั้ง AI backend บนโฮสต์นี้"
+        : "เซิร์ฟเวอร์ส่งคำตอบที่อ่านไม่ได้",
+      response.status,
+      "INVALID_JSON",
+    );
+  }
+
+  if (!response.ok || data.ok === false) {
+    throw createApiError(
+      data.message || data.error || "ทำรายการไม่สำเร็จ",
+      response.status,
+      data.code || "REQUEST_FAILED",
+    );
+  }
+
+  return data;
+}
+
+function formatAccessExpiry(value) {
+  if (!value) {
+    return "ไม่พบวันหมดอายุ";
+  }
+
+  try {
+    return new Intl.DateTimeFormat("th-TH", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value));
+  } catch {
+    return value;
+  }
+}
+
+function setAiStatus(element, message, isError = false) {
+  if (!element) {
+    return;
+  }
+
+  element.textContent = message;
+  element.classList.toggle("is-error", isError);
+}
+
+function clearAiAnswer() {
+  state.aiConversation = [];
+  aiAnswer?.replaceChildren();
+}
+
+function renderAiAnswer(answer) {
+  aiAnswer.replaceChildren();
+  const paragraphs = String(answer)
+    .split(/\n{2,}|\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  paragraphs.forEach((paragraph, index) => {
+    const line = document.createElement("p");
+    line.className = "ai-answer-line";
+    line.style.setProperty("--answer-delay", `${index * 120}ms`);
+    line.textContent = paragraph;
+    aiAnswer.append(line);
+  });
+}
+
+function syncAiControls() {
+  if (!state.aiUser) {
+    return;
+  }
+
+  const hasQuestion = aiQuestion.value.trim().length > 0;
+  const hasCards = state.drawn.length > 0;
+  askAiButton.disabled = state.aiBusy || !hasCards || !hasQuestion || !state.aiBackendAvailable;
+
+  if (!hasCards) {
+    setAiStatus(aiRequestStatus, "เปิดไพ่ก่อน แล้วพิมพ์คำถามได้เลย");
+  } else if (!state.aiBusy && !aiAnswer.childElementCount) {
+    setAiStatus(aiRequestStatus, hasQuestion ? "พร้อมเชื่อมคำบนไพ่กับคำถามของคุณ" : "พิมพ์คำถาม แล้วกดถาม AI Tarot Reader");
+  }
+}
+
+function setAiLoggedOut(message = "ใส่ Beta Access Code เพื่อใช้ AI Tarot Reader", isError = false) {
+  state.aiRequestVersion += 1;
+  state.aiBusy = false;
+  clearAiAnswer();
+  state.aiUser = null;
+  aiGuestPanel.hidden = false;
+  aiMemberPanel.hidden = true;
+  betaCodeInput.value = "";
+  aiQuestion.value = "";
+  setAiStatus(betaAuthStatus, message, isError);
+  askAiButton.disabled = true;
+}
+
+function setAiLoggedIn(user) {
+  state.aiUser = user;
+  aiGuestPanel.hidden = true;
+  aiMemberPanel.hidden = false;
+  betaCodeInput.value = "";
+  aiUserStatus.textContent = `${user.name || "Beta user"} · ใช้ได้ถึง ${formatAccessExpiry(user.access_expires_at)}`;
+  setAiStatus(aiRequestStatus, state.drawn.length ? "พร้อมเชื่อมคำบนไพ่กับคำถามของคุณ" : "เปิดไพ่ก่อน แล้วพิมพ์คำถามได้เลย");
+  syncAiControls();
+}
+
+function resetAiReaderState() {
+  state.aiRequestVersion += 1;
+  state.aiBusy = false;
+  clearAiAnswer();
+  if (aiQuestion) {
+    aiQuestion.value = "";
+  }
+  if (state.aiUser) {
+    setAiStatus(aiRequestStatus, state.drawn.length ? "ชุดไพ่ใหม่พร้อมให้ถามแล้ว" : "เปิดไพ่ก่อน แล้วพิมพ์คำถามได้เลย");
+  }
+  syncAiControls();
+}
+
+async function loadBetaSession() {
+  try {
+    const data = await fetchApiJson("./api/auth/me.php");
+    state.aiBackendAvailable = true;
+    if (data.authenticated && data.user) {
+      setAiLoggedIn(data.user);
+    } else {
+      setAiLoggedOut("ใส่ Beta Access Code เพื่อใช้ AI Tarot Reader");
+    }
+  } catch (error) {
+    state.aiBackendAvailable = error.code !== "INVALID_JSON" && error.status !== 404;
+    betaLoginButton.disabled = false;
+    setAiStatus(
+      betaAuthStatus,
+      error.code === "INVALID_JSON" || error.status === 404
+        ? "โหมดเปิดไพ่ใช้ฟรีพร้อมใช้งานแล้ว — AI Reader จะพร้อมหลังอัปโหลด PHP backend ไป Hostinger"
+        : "ยังเชื่อมต่อ AI backend ไม่ได้ ลองใหม่อีกครั้งภายหลัง",
+      !(error.code === "INVALID_JSON" || error.status === 404),
+    );
+    syncAiControls();
+  }
+}
+
+async function loginBeta() {
+  const accessCode = betaCodeInput.value.trim();
+  if (!accessCode) {
+    setAiStatus(betaAuthStatus, "กรุณากรอก Beta Access Code ก่อน", true);
+    return;
+  }
+
+  betaLoginButton.disabled = true;
+  setAiStatus(betaAuthStatus, "กำลังตรวจสอบรหัส...");
+
+  try {
+    const data = await fetchApiJson("./api/auth/beta-login.php", {
+      method: "POST",
+      body: JSON.stringify({ access_code: accessCode }),
+    });
+    state.aiBackendAvailable = true;
+    clearAiAnswer();
+    setAiLoggedIn(data.user);
+  } catch (error) {
+    setAiStatus(betaAuthStatus, error.message || "รหัสไม่ถูกต้องหรือหมดอายุแล้ว", true);
+  } finally {
+    betaLoginButton.disabled = false;
+  }
+}
+
+async function logoutBeta() {
+  betaLogoutButton.disabled = true;
+  try {
+    await fetchApiJson("./api/auth/logout.php", { method: "POST", body: "{}" });
+  } catch {
+    // Clear the local UI even if the host is temporarily unavailable.
+  } finally {
+    setAiLoggedOut("ออกจาก Beta แล้ว");
+    betaLogoutButton.disabled = false;
+  }
+}
+
+function getCardFileName(fileName) {
+  return fileName.match(/card-\d{3}\.webp$/i)?.[0] || fileName;
+}
+
+async function askAi() {
+  if (!state.aiUser) {
+    setAiStatus(betaAuthStatus, "กรุณาเข้าสู่ Beta ก่อนใช้ AI Tarot Reader", true);
+    return;
+  }
+
+  if (state.drawn.length === 0) {
+    setAiStatus(aiRequestStatus, "เปิดไพ่ก่อน แล้วจึงถาม AI ได้", true);
+    return;
+  }
+
+  const question = aiQuestion.value.trim();
+  if (!question) {
+    setAiStatus(aiRequestStatus, "พิมพ์คำถามของคุณก่อนนะครับ", true);
+    aiQuestion.focus();
+    return;
+  }
+
+  state.aiBusy = true;
+  const requestVersion = state.aiRequestVersion;
+  askAiButton.disabled = true;
+  setAiStatus(aiRequestStatus, "กำลังอ่านคำบนไพ่และเชื่อมโยงกับคำถาม...");
+
+  try {
+    const data = await fetchApiJson("./api/ai/tarot-chat.php", {
+      method: "POST",
+      body: JSON.stringify({
+        question,
+        cards: state.drawn.map(getCardFileName),
+        conversation: state.aiConversation.slice(-4),
+      }),
+    });
+    const answer = String(data.answer || data.output_text || "").trim();
+    if (!answer) {
+      throw createApiError("AI ไม่ได้ส่งคำตอบกลับมา ลองถามอีกครั้ง", 502, "EMPTY_AI_RESPONSE");
+    }
+    if (requestVersion !== state.aiRequestVersion) {
+      return;
+    }
+
+    state.aiConversation.push({ role: "user", content: question });
+    state.aiConversation.push({ role: "assistant", content: answer });
+    renderAiAnswer(answer);
+    setAiStatus(aiRequestStatus, "คำตอบนี้เป็นแนวทางสะท้อนความคิด ไม่ใช่คำตัดสินชีวิต");
+    aiAnswer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } catch (error) {
+    if (error.status === 401 || error.code === "BETA_AUTH_REQUIRED") {
+      setAiLoggedOut("เซสชันหมดอายุ กรุณาเข้าสู่ Beta ใหม่", true);
+    } else if (error.status === 403 || error.code === "BETA_ACCESS_EXPIRED") {
+      setAiLoggedOut("Beta Access หมดอายุแล้ว กรุณาติดต่อผู้ดูแล", true);
+    } else {
+      setAiStatus(aiRequestStatus, error.message || "ขออภัย ระบบยังตอบไม่ได้ ลองใหม่อีกครั้ง", true);
+    }
+  } finally {
+    if (requestVersion === state.aiRequestVersion) {
+      state.aiBusy = false;
+      syncAiControls();
+    }
   }
 }
 
@@ -412,6 +721,7 @@ function renderResult() {
     resultCount.textContent = "ยังไม่ได้เปิดไพ่";
     resultMessage.textContent = state.notice || "คำทำนายเป็นแนวทาง ใช้หัวใจของคุณตัดสินใจเสมอ";
     updateCopyButton();
+    syncAiControls();
     return;
   }
 
@@ -420,6 +730,7 @@ function renderResult() {
   resultCount.textContent = `${state.drawn.length} ใบที่เปิดได้`;
   resultMessage.textContent = state.notice || "ขอให้คำทำนายนี้นำพลังดี ๆ มาให้คุณ";
   updateCopyButton();
+  syncAiControls();
 }
 
 function drawCards() {
@@ -436,6 +747,7 @@ function drawCards() {
     const actualCount = Math.min(requestedCount, state.remaining.length);
     state.drawn = state.remaining.splice(0, actualCount);
     state.activeHistoryId = null;
+    resetAiReaderState();
 
     if (actualCount > 0) {
       state.history.unshift({
@@ -476,6 +788,7 @@ function resetCards() {
   state.drawn = [];
   state.activeHistoryId = null;
   state.notice = "เริ่มสำรับใหม่แล้ว ไพ่ทั้ง 78 ใบพร้อมให้เปิดอีกครั้ง";
+  resetAiReaderState();
   saveState();
   updateProgress();
   renderResult();
@@ -500,15 +813,29 @@ choiceButtons.forEach((button) => {
 
 drawButton.addEventListener("click", drawCards);
 resetButton.addEventListener("click", resetCards);
-copyButton.addEventListener("click", copyResultImage);
+copyButtons.forEach((button) => button.addEventListener("click", copyResultImage));
 historySearch.addEventListener("input", renderHistory);
 clearHistoryButton.addEventListener("click", clearHistory);
+betaLoginForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  loginBeta();
+});
+betaLogoutButton.addEventListener("click", logoutBeta);
+aiQuestion.addEventListener("input", syncAiControls);
+askAiButton.addEventListener("click", askAi);
 
 const savedState = loadSavedState();
 state.remaining = savedState?.remaining ?? shuffle(DECK);
 state.drawn = savedState?.drawn ?? [];
 state.notice = savedState?.notice ?? "";
 state.history = savedState?.history ?? [];
+if (isFreshBrowserSession() && state.remaining.length === 0) {
+  state.remaining = shuffle(DECK);
+  state.notice = "เริ่มรอบใหม่อัตโนมัติแล้ว ไพ่ทั้ง 78 ใบพร้อมให้เปิดอีกครั้ง";
+  saveState();
+}
+markBrowserSessionActive();
 updateProgress();
 renderResult();
 renderHistory();
+loadBetaSession();

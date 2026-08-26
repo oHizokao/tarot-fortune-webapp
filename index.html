@@ -122,7 +122,7 @@
             <span id="draw-button-label">เปิดไพ่</span>
             <span class="draw-button-arrow" aria-hidden="true">→</span>
           </button>
-          <button class="copy-button" id="copy-button" type="button" disabled>
+          <button class="copy-button" id="copy-button" data-copy-result type="button" disabled>
             <span class="copy-button-icon" aria-hidden="true">▣</span>
             <span>Copy รูปภาพชุดนี้</span>
           </button>
@@ -136,7 +136,13 @@
               <p class="panel-kicker">YOUR FORTUNE</p>
               <h2 id="result-title">คำทำนายของคุณ</h2>
             </div>
-            <span class="result-count" id="result-count">ยังไม่ได้เปิดไพ่</span>
+            <div class="result-heading-actions">
+              <span class="result-count" id="result-count">ยังไม่ได้เปิดไพ่</span>
+              <button class="result-copy-button" data-copy-result type="button" disabled>
+                <span aria-hidden="true">▣</span>
+                <span>Copy PNG</span>
+              </button>
+            </div>
           </div>
 
           <div class="cards-grid is-empty" id="cards-grid">
@@ -155,6 +161,49 @@
             <span id="result-message">คำทำนายเป็นแนวทาง ใช้หัวใจของคุณตัดสินใจเสมอ</span>
           </div>
         </section>
+      </section>
+
+      <section class="ai-panel panel" id="ai-reader" aria-labelledby="ai-reader-title">
+        <div class="ai-heading">
+          <div>
+            <p class="panel-kicker">BETA AI READER</p>
+            <h2 id="ai-reader-title">ถามคำถามกับชุดไพ่</h2>
+            <p class="ai-description">
+              เปิดไพ่ฟรีได้โดยไม่ต้องล็อกอิน ส่วนคำตอบจาก AI ใช้ Beta Access Code และจะอ่านจากคำบนไพ่ที่เปิดจริงเท่านั้น
+            </p>
+          </div>
+          <span class="ai-orbit-mark" aria-hidden="true">✦</span>
+        </div>
+
+        <div class="ai-guest-panel" id="ai-guest-panel">
+          <div class="ai-login-copy">
+            <span class="ai-lock" aria-hidden="true">◈</span>
+            <div>
+              <strong>AI Tarot Reader — Beta Access</strong>
+              <p>ใส่รหัสที่ได้รับเพื่อเปิดคำทำนายแบบเชื่อมโยงกับคำถามของคุณ</p>
+            </div>
+          </div>
+          <form class="ai-login-row" id="beta-login-form">
+            <label class="sr-only" for="beta-code">Beta Access Code</label>
+            <input id="beta-code" type="password" autocomplete="one-time-code" placeholder="กรอก Beta Access Code" />
+            <button class="ai-button" id="beta-login-button" type="submit">เข้าสู่ Beta</button>
+          </form>
+          <p class="ai-status" id="beta-auth-status" role="status" aria-live="polite"></p>
+        </div>
+
+        <div class="ai-member-panel" id="ai-member-panel" hidden>
+          <div class="ai-member-topline">
+            <p class="ai-user-status" id="ai-user-status"></p>
+            <button class="ai-logout-button" id="beta-logout-button" type="button">ออกจาก Beta</button>
+          </div>
+          <label class="ai-question-label" for="ai-question">คำถามของคุณ</label>
+          <textarea id="ai-question" rows="4" maxlength="2000" placeholder="เช่น งานที่กำลังลังเลอยู่ ควรเริ่มจากตรงไหนดี?"></textarea>
+          <div class="ai-question-actions">
+            <p class="ai-status" id="ai-request-status" role="status" aria-live="polite">เปิดไพ่ก่อน แล้วพิมพ์คำถามได้เลย</p>
+            <button class="ai-button" id="ask-ai-button" type="button" disabled>ถาม AI Tarot Reader</button>
+          </div>
+          <div class="ai-answer" id="ai-answer" aria-live="polite" aria-label="คำตอบจาก AI"></div>
+        </div>
       </section>
 
       <section class="history-panel panel" aria-labelledby="history-title">

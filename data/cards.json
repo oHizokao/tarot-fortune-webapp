@@ -1,0 +1,655 @@
+{
+  "version": 1,
+  "description": "Metadata transcribed from the visible English label on each card artwork. The app uses these words as reflective prompts, not fixed predictions.",
+  "cards": [
+    {
+      "file": "card-001.webp",
+      "name": "Relaxation",
+      "keywords": [
+        "relaxation"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-002.webp",
+      "name": "Acceptance",
+      "keywords": [
+        "acceptance"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-003.webp",
+      "name": "Achievement",
+      "keywords": [
+        "achievement"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-004.webp",
+      "name": "Adaptation",
+      "keywords": [
+        "adaptation"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-005.webp",
+      "name": "Ambition",
+      "keywords": [
+        "ambition"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-006.webp",
+      "name": "Calmness",
+      "keywords": [
+        "calmness"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-007.webp",
+      "name": "Career Advancement",
+      "keywords": [
+        "career",
+        "advancement"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-008.webp",
+      "name": "Caring",
+      "keywords": [
+        "caring"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-009.webp",
+      "name": "Celebration",
+      "keywords": [
+        "celebration"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-010.webp",
+      "name": "Change",
+      "keywords": [
+        "change"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-011.webp",
+      "name": "Choice",
+      "keywords": [
+        "choice"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-012.webp",
+      "name": "Conflict",
+      "keywords": [
+        "conflict"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-013.webp",
+      "name": "Confusion",
+      "keywords": [
+        "confusion"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-014.webp",
+      "name": "Consideration",
+      "keywords": [
+        "consideration"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-015.webp",
+      "name": "Contentment",
+      "keywords": [
+        "contentment"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-016.webp",
+      "name": "Conversation",
+      "keywords": [
+        "conversation"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-017.webp",
+      "name": "Creativity",
+      "keywords": [
+        "creativity"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-018.webp",
+      "name": "Decision",
+      "keywords": [
+        "decision"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-019.webp",
+      "name": "Dedication",
+      "keywords": [
+        "dedication"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-020.webp",
+      "name": "Determination",
+      "keywords": [
+        "determination"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-021.webp",
+      "name": "Determination",
+      "keywords": [
+        "determination"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-022.webp",
+      "name": "Development",
+      "keywords": [
+        "development"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-023.webp",
+      "name": "Domestic Happiness",
+      "keywords": [
+        "domestic",
+        "happiness"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-024.webp",
+      "name": "Doubt",
+      "keywords": [
+        "doubt"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-025.webp",
+      "name": "Endurance",
+      "keywords": [
+        "endurance"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-026.webp",
+      "name": "Exercise",
+      "keywords": [
+        "exercise"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-027.webp",
+      "name": "Exhaustion",
+      "keywords": [
+        "exhaustion"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-028.webp",
+      "name": "Family Time",
+      "keywords": [
+        "family",
+        "time"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-029.webp",
+      "name": "Favorite Activity",
+      "keywords": [
+        "favorite",
+        "activity"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-030.webp",
+      "name": "Fear",
+      "keywords": [
+        "fear"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-031.webp",
+      "name": "Financial Success",
+      "keywords": [
+        "financial",
+        "success"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-032.webp",
+      "name": "Growth",
+      "keywords": [
+        "growth"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-033.webp",
+      "name": "Happiness",
+      "keywords": [
+        "happiness"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-034.webp",
+      "name": "Health Recovery",
+      "keywords": [
+        "health",
+        "recovery"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-035.webp",
+      "name": "Inner Change",
+      "keywords": [
+        "inner",
+        "change"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-036.webp",
+      "name": "Job Satisfaction",
+      "keywords": [
+        "job",
+        "satisfaction"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-037.webp",
+      "name": "Joy",
+      "keywords": [
+        "joy"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-038.webp",
+      "name": "Learning",
+      "keywords": [
+        "learning"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-039.webp",
+      "name": "Leisure Time",
+      "keywords": [
+        "leisure",
+        "time"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-040.webp",
+      "name": "Loneliness",
+      "keywords": [
+        "loneliness"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-041.webp",
+      "name": "Loss",
+      "keywords": [
+        "loss"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-042.webp",
+      "name": "Love",
+      "keywords": [
+        "love"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-043.webp",
+      "name": "Mental Growth",
+      "keywords": [
+        "mental",
+        "growth"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-044.webp",
+      "name": "Mental Recovery",
+      "keywords": [
+        "mental",
+        "recovery"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-045.webp",
+      "name": "Merriment",
+      "keywords": [
+        "merriment"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-046.webp",
+      "name": "Nature Connection",
+      "keywords": [
+        "nature",
+        "connection"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-047.webp",
+      "name": "Nature Happiness",
+      "keywords": [
+        "nature",
+        "happiness"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-048.webp",
+      "name": "Nature Rest",
+      "keywords": [
+        "nature",
+        "rest"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-049.webp",
+      "name": "New Beginning",
+      "keywords": [
+        "new",
+        "beginning"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-050.webp",
+      "name": "New Beginning",
+      "keywords": [
+        "new",
+        "beginning"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-051.webp",
+      "name": "Overcoming Struggles",
+      "keywords": [
+        "overcoming",
+        "struggles"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-052.webp",
+      "name": "Perseverance",
+      "keywords": [
+        "perseverance"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-053.webp",
+      "name": "Personal Achievement",
+      "keywords": [
+        "personal",
+        "achievement"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-054.webp",
+      "name": "Planning",
+      "keywords": [
+        "planning"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-055.webp",
+      "name": "Pride",
+      "keywords": [
+        "pride"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-056.webp",
+      "name": "Problem-Solving",
+      "keywords": [
+        "problem",
+        "solving"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-057.webp",
+      "name": "Professionalism",
+      "keywords": [
+        "professionalism"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-058.webp",
+      "name": "Progress",
+      "keywords": [
+        "progress"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-059.webp",
+      "name": "Reflection",
+      "keywords": [
+        "reflection"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-060.webp",
+      "name": "Resolution",
+      "keywords": [
+        "resolution"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-061.webp",
+      "name": "Responsibility",
+      "keywords": [
+        "responsibility"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-062.webp",
+      "name": "Rest",
+      "keywords": [
+        "rest"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-063.webp",
+      "name": "Sadness",
+      "keywords": [
+        "sadness"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-064.webp",
+      "name": "Satisfaction",
+      "keywords": [
+        "satisfaction"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-065.webp",
+      "name": "Serenity",
+      "keywords": [
+        "serenity"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-066.webp",
+      "name": "Simple Life",
+      "keywords": [
+        "simple",
+        "life"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-067.webp",
+      "name": "Skill Development",
+      "keywords": [
+        "skill",
+        "development"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-068.webp",
+      "name": "Stress Relief",
+      "keywords": [
+        "stress",
+        "relief"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-069.webp",
+      "name": "Struggle",
+      "keywords": [
+        "struggle"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-070.webp",
+      "name": "Support",
+      "keywords": [
+        "support"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-071.webp",
+      "name": "Teamwork",
+      "keywords": [
+        "teamwork"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-072.webp",
+      "name": "Teamwork",
+      "keywords": [
+        "teamwork"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-073.webp",
+      "name": "Time Management",
+      "keywords": [
+        "time",
+        "management"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-074.webp",
+      "name": "Travel",
+      "keywords": [
+        "travel"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-075.webp",
+      "name": "Uncertainty",
+      "keywords": [
+        "uncertainty"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-076.webp",
+      "name": "Understanding",
+      "keywords": [
+        "understanding"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-077.webp",
+      "name": "Work Success",
+      "keywords": [
+        "work",
+        "success"
+      ],
+      "source": "visible artwork label"
+    },
+    {
+      "file": "card-078.webp",
+      "name": "Worry",
+      "keywords": [
+        "worry"
+      ],
+      "source": "visible artwork label"
+    }
+  ]
+}
+
