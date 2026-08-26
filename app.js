@@ -2,10 +2,13 @@ const DECK = Array.from(
   { length: 78 },
   (_, index) => `tarot-cards/card-${String(index + 1).padStart(3, "0")}.webp`,
 );
+const STORAGE_KEY = "tarot-daily-deck-v1";
 
 const state = {
   count: 1,
   drawn: [],
+  remaining: [],
+  notice: "",
 };
 
 const choiceButtons = [...document.querySelectorAll(".choice-button")];
@@ -15,6 +18,53 @@ const cardsGrid = document.querySelector("#cards-grid");
 const emptyState = document.querySelector("#empty-state");
 const resultCount = document.querySelector("#result-count");
 const resultMessage = document.querySelector("#result-message");
+const deckRemaining = document.querySelector("#deck-remaining");
+const drawnCount = document.querySelector("#drawn-count");
+const remainingCount = document.querySelector("#remaining-count");
+const progressPercent = document.querySelector("#progress-percent");
+const progressBar = document.querySelector("#progress-bar");
+const drawButtonLabel = document.querySelector("#draw-button-label");
+
+function isValidDeckList(list) {
+  return (
+    Array.isArray(list) &&
+    list.length <= DECK.length &&
+    new Set(list).size === list.length &&
+    list.every((card) => DECK.includes(card))
+  );
+}
+
+function loadSavedState() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY));
+    if (!saved || !isValidDeckList(saved.remaining)) {
+      return null;
+    }
+
+    return {
+      remaining: saved.remaining,
+      drawn: isValidDeckList(saved.drawn) ? saved.drawn.slice(0, 3) : [],
+      notice: typeof saved.notice === "string" ? saved.notice : "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveState() {
+  try {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        remaining: state.remaining,
+        drawn: state.drawn,
+        notice: state.notice,
+      }),
+    );
+  } catch {
+    // localStorage may be unavailable when the page is opened directly as a file.
+  }
+}
 
 function shuffle(items) {
   const shuffled = [...items];
@@ -35,6 +85,23 @@ function setCount(count) {
     button.classList.toggle("is-selected", isSelected);
     button.setAttribute("aria-pressed", String(isSelected));
   });
+}
+
+function updateProgress() {
+  const remaining = state.remaining.length;
+  const opened = DECK.length - remaining;
+  const percent = Math.round((opened / DECK.length) * 100);
+
+  deckRemaining.textContent = String(remaining);
+  drawnCount.textContent = String(opened);
+  remainingCount.textContent = String(remaining);
+  progressPercent.textContent = `${percent}%`;
+  progressBar.style.width = `${percent}%`;
+  progressBar.parentElement?.setAttribute("aria-valuenow", String(percent));
+
+  const isEmpty = remaining === 0;
+  drawButton.disabled = isEmpty;
+  drawButtonLabel.textContent = isEmpty ? "สำรับหมดแล้ว" : "เปิดไพ่";
 }
 
 function getCardNumber(fileName) {
@@ -64,14 +131,14 @@ function renderResult() {
     cardsGrid.classList.add("is-empty");
     cardsGrid.replaceChildren(emptyState);
     resultCount.textContent = "ยังไม่ได้เปิดไพ่";
-    resultMessage.textContent = "คำทำนายเป็นแนวทาง ใช้หัวใจของคุณตัดสินใจเสมอ";
+    resultMessage.textContent = state.notice || "คำทำนายเป็นแนวทาง ใช้หัวใจของคุณตัดสินใจเสมอ";
     return;
   }
 
   cardsGrid.classList.remove("is-empty");
   cardsGrid.replaceChildren(...state.drawn.map(createCard));
   resultCount.textContent = `${state.drawn.length} ใบที่เปิดได้`;
-  resultMessage.textContent = "ขอให้คำทำนายนี้นำพลังดี ๆ มาให้คุณ";
+  resultMessage.textContent = state.notice || "ขอให้คำทำนายนี้นำพลังดี ๆ มาให้คุณ";
 }
 
 function drawCards() {
@@ -79,7 +146,20 @@ function drawCards() {
   drawButton.setAttribute("aria-busy", "true");
 
   window.setTimeout(() => {
-    state.drawn = shuffle(DECK).slice(0, state.count);
+    const requestedCount = state.count;
+    const actualCount = Math.min(requestedCount, state.remaining.length);
+    state.drawn = state.remaining.splice(0, actualCount);
+
+    if (state.remaining.length === 0) {
+      state.notice = "เปิดครบทั้งสำรับแล้ว กด “ล้างคำทำนาย” เพื่อเริ่มใหม่";
+    } else if (actualCount < requestedCount) {
+      state.notice = `สำรับเหลือ ${actualCount} ใบ ระบบจึงเปิดให้ครบเท่าที่เหลือ`;
+    } else {
+      state.notice = "";
+    }
+
+    saveState();
+    updateProgress();
     renderResult();
     drawButton.classList.remove("is-busy");
     drawButton.removeAttribute("aria-busy");
@@ -87,7 +167,11 @@ function drawCards() {
 }
 
 function resetCards() {
+  state.remaining = shuffle(DECK);
   state.drawn = [];
+  state.notice = "เริ่มสำรับใหม่แล้ว ไพ่ทั้ง 78 ใบพร้อมให้เปิดอีกครั้ง";
+  saveState();
+  updateProgress();
   renderResult();
 }
 
@@ -97,3 +181,10 @@ choiceButtons.forEach((button) => {
 
 drawButton.addEventListener("click", drawCards);
 resetButton.addEventListener("click", resetCards);
+
+const savedState = loadSavedState();
+state.remaining = savedState?.remaining ?? shuffle(DECK);
+state.drawn = savedState?.drawn ?? [];
+state.notice = savedState?.notice ?? "";
+updateProgress();
+renderResult();

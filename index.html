@@ -34,7 +34,7 @@
         </a>
         <div class="deck-pill">
           <span class="status-dot" aria-hidden="true"></span>
-          <span><strong>78</strong> ใบในสำรับ</span>
+          <span><strong id="deck-remaining">78</strong> ใบเหลือ</span>
         </div>
       </header>
 
@@ -84,6 +84,32 @@
             </button>
           </div>
 
+          <div class="progress-card" aria-label="สถานะสำรับไพ่">
+            <div class="progress-topline">
+              <span class="progress-title"><span class="progress-star" aria-hidden="true">✦</span> สถานะสำรับ</span>
+              <strong id="progress-percent">0%</strong>
+            </div>
+            <div
+              class="progress-track"
+              role="progressbar"
+              aria-label="เปิดไพ่ไปแล้ว"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="0"
+            ><span id="progress-bar"></span></div>
+            <div class="progress-numbers">
+              <div>
+                <strong id="drawn-count">0</strong>
+                <span>เปิดไปแล้ว</span>
+              </div>
+              <span class="progress-divider" aria-hidden="true"></span>
+              <div>
+                <strong id="remaining-count">78</strong>
+                <span>ใบที่เหลือ</span>
+              </div>
+            </div>
+          </div>
+
           <div class="rule" aria-hidden="true"></div>
 
           <div class="tip-box">
@@ -93,7 +119,7 @@
 
           <button class="draw-button" id="draw-button" type="button">
             <span class="draw-button-icon" aria-hidden="true">✦</span>
-            <span>เปิดไพ่</span>
+            <span id="draw-button-label">เปิดไพ่</span>
             <span class="draw-button-arrow" aria-hidden="true">→</span>
           </button>
           <button class="reset-button" id="reset-button" type="button">ล้างคำทำนาย</button>

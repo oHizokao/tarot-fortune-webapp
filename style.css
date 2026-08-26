@@ -427,6 +427,90 @@ h2 {
   box-shadow: 0 0 13px rgba(45, 133, 255, 0.5);
 }
 
+.progress-card {
+  margin-top: 17px;
+  padding: 13px 13px 12px;
+  border: 1px solid rgba(161, 126, 255, 0.2);
+  border-radius: 14px;
+  background: rgba(48, 31, 111, 0.24);
+}
+
+.progress-topline,
+.progress-title,
+.progress-numbers,
+.progress-numbers div {
+  display: flex;
+  align-items: center;
+}
+
+.progress-topline {
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+
+.progress-title {
+  gap: 6px;
+  color: #a894cf;
+  font-size: 10px;
+}
+
+.progress-star {
+  color: var(--gold);
+  font-size: 13px;
+}
+
+.progress-topline > strong {
+  color: #d5c6f6;
+  font-family: "Kanit", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.progress-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(125, 103, 181, 0.24);
+}
+
+.progress-track span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7053ef, #ce8dff);
+  box-shadow: 0 0 12px rgba(164, 112, 255, 0.65);
+  transition: width 300ms ease;
+}
+
+.progress-numbers {
+  justify-content: space-between;
+  margin-top: 11px;
+}
+
+.progress-numbers div {
+  gap: 6px;
+}
+
+.progress-numbers strong {
+  color: #f5edff;
+  font-family: "Kanit", sans-serif;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.progress-numbers span:not(.progress-divider) {
+  color: #8675a9;
+  font-size: 9px;
+}
+
+.progress-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(167, 139, 232, 0.2);
+}
+
 .rule {
   height: 1px;
   margin: 22px 0 17px;
@@ -482,6 +566,13 @@ h2 {
 
 .draw-button:active {
   transform: translateY(0);
+}
+
+.draw-button:disabled {
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
 }
 
 .draw-button.is-busy {
