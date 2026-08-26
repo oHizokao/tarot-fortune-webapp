@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#100c2d" />
+    <meta
+      name="description"
+      content="เว็บแอปเปิดไพ่ทำนายจากสำรับไพ่ 78 ใบ เลือกเปิด 1, 2 หรือ 3 ใบได้ง่าย ๆ"
+    />
+    <title>Tarot Daily — เปิดไพ่ทำนาย</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="page-glow page-glow--top" aria-hidden="true"></div>
+    <div class="page-glow page-glow--bottom" aria-hidden="true"></div>
+
+    <main class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="หน้าแรก Tarot Daily">
+          <span class="brand-mark" aria-hidden="true">
+            <span class="brand-symbol">✦</span>
+          </span>
+          <span class="brand-copy">
+            <span class="brand-name">TAROT DAILY</span>
+            <span class="brand-subtitle">เปิดไพ่ทำนาย</span>
+          </span>
+        </a>
+        <div class="deck-pill">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span><strong>78</strong> ใบในสำรับ</span>
+        </div>
+      </header>
+
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span aria-hidden="true">✦</span> DAILY FORTUNE</p>
+          <h1 id="page-title">วันนี้ดวงของคุณ<br /><span>กำลังบอกอะไร?</span></h1>
+          <p class="hero-description">
+            ตั้งจิตให้สงบ แล้วเลือกจำนวนไพ่ที่อยากเปิด<br class="desktop-only" />
+            ไพ่ที่ได้อาจเป็นข้อความเล็ก ๆ สำหรับวันนี้
+          </p>
+        </div>
+        <div class="hero-orb" aria-hidden="true">
+          <div class="orb-ring orb-ring--one"></div>
+          <div class="orb-ring orb-ring--two"></div>
+          <span class="orb-spark orb-spark--one">✦</span>
+          <span class="orb-spark orb-spark--two">✧</span>
+          <div class="orb-card">?</div>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="เครื่องมือเปิดไพ่ทำนาย">
+        <aside class="control-panel panel">
+          <div class="panel-heading">
+            <div class="heading-icon" aria-hidden="true">♢</div>
+            <div>
+              <p class="panel-kicker">ตั้งคำถามในใจ</p>
+              <h2>เปิดไพ่กี่ใบ?</h2>
+            </div>
+          </div>
+
+          <div class="choice-group" role="group" aria-label="จำนวนไพ่ที่ต้องการเปิด">
+            <button class="choice-button is-selected" type="button" data-count="1" aria-pressed="true">
+              <span class="choice-number">01</span>
+              <span class="choice-label">ไพ่ใบเดียว</span>
+              <span class="choice-check" aria-hidden="true">✓</span>
+            </button>
+            <button class="choice-button" type="button" data-count="2" aria-pressed="false">
+              <span class="choice-number">02</span>
+              <span class="choice-label">ไพ่สองใบ</span>
+              <span class="choice-check" aria-hidden="true">✓</span>
+            </button>
+            <button class="choice-button" type="button" data-count="3" aria-pressed="false">
+              <span class="choice-number">03</span>
+              <span class="choice-label">ไพ่สามใบ</span>
+              <span class="choice-check" aria-hidden="true">✓</span>
+            </button>
+          </div>
+
+          <div class="rule" aria-hidden="true"></div>
+
+          <div class="tip-box">
+            <span class="tip-icon" aria-hidden="true">✦</span>
+            <p>ไพ่จะไม่ซ้ำกัน<br />ภายในรอบเดียว</p>
+          </div>
+
+          <button class="draw-button" id="draw-button" type="button">
+            <span class="draw-button-icon" aria-hidden="true">✦</span>
+            <span>เปิดไพ่</span>
+            <span class="draw-button-arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="reset-button" id="reset-button" type="button">ล้างคำทำนาย</button>
+        </aside>
+
+        <section class="result-panel panel" aria-labelledby="result-title" aria-live="polite">
+          <div class="result-heading">
+            <div>
+              <p class="panel-kicker">YOUR FORTUNE</p>
+              <h2 id="result-title">คำทำนายของคุณ</h2>
+            </div>
+            <span class="result-count" id="result-count">ยังไม่ได้เปิดไพ่</span>
+          </div>
+
+          <div class="cards-grid is-empty" id="cards-grid">
+            <div class="empty-state" id="empty-state">
+              <div class="empty-art">
+                <div class="empty-halo"></div>
+                <div class="tarot-back" aria-hidden="true"><span>✦</span></div>
+              </div>
+              <h3>พร้อมรับข้อความจากไพ่หรือยัง?</h3>
+              <p>เลือกจำนวนไพ่ทางซ้าย<br />แล้วกดปุ่ม “เปิดไพ่”</p>
+            </div>
+          </div>
+
+          <div class="result-footer">
+            <span class="footer-spark" aria-hidden="true">✦</span>
+            <span id="result-message">คำทำนายเป็นแนวทาง ใช้หัวใจของคุณตัดสินใจเสมอ</span>
+          </div>
+        </section>
+      </section>
+
+      <footer class="footer-note">
+        <span>TAROT DAILY</span>
+        <span class="footer-line" aria-hidden="true"></span>
+        <span>เปิดไพ่เพื่อความบันเทิง</span>
+      </footer>
+    </main>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
