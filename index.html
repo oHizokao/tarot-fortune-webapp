@@ -122,6 +122,11 @@
             <span id="draw-button-label">เปิดไพ่</span>
             <span class="draw-button-arrow" aria-hidden="true">→</span>
           </button>
+          <button class="copy-button" id="copy-button" type="button" disabled>
+            <span class="copy-button-icon" aria-hidden="true">▣</span>
+            <span>Copy รูปภาพชุดนี้</span>
+          </button>
+          <p class="copy-status" id="copy-status" role="status" aria-live="polite"></p>
           <button class="reset-button" id="reset-button" type="button">ล้างคำทำนาย</button>
         </aside>
 
@@ -150,6 +155,34 @@
             <span id="result-message">คำทำนายเป็นแนวทาง ใช้หัวใจของคุณตัดสินใจเสมอ</span>
           </div>
         </section>
+      </section>
+
+      <section class="history-panel panel" aria-labelledby="history-title">
+        <div class="history-heading">
+          <div>
+            <p class="panel-kicker">YOUR JOURNEY</p>
+            <h2 id="history-title">ประวัติชุดไพ่</h2>
+            <p class="history-description">ย้อนดูชุดไพ่ก่อนหน้าได้ทุกเมื่อ ประวัติจะเก็บไว้ในเบราว์เซอร์เครื่องนี้</p>
+          </div>
+          <div class="history-tools">
+            <label class="history-search">
+              <span class="sr-only">ค้นหาประวัติชุดไพ่</span>
+              <span aria-hidden="true">⌕</span>
+              <input id="history-search" type="search" placeholder="ค้นหาชุดหรือเลขไพ่" autocomplete="off" />
+            </label>
+            <button class="clear-history-button" id="clear-history-button" type="button">ล้างประวัติ</button>
+          </div>
+        </div>
+        <div class="history-summary">
+          <span id="history-count">ยังไม่มีชุดก่อนหน้า</span>
+          <span id="history-status" role="status" aria-live="polite"></span>
+        </div>
+        <div class="history-list" id="history-list">
+          <div class="history-empty" id="history-empty">
+            <span class="history-empty-icon" aria-hidden="true">✧</span>
+            <p>เปิดไพ่ชุดแรก แล้วประวัติจะปรากฏตรงนี้</p>
+          </div>
+        </div>
       </section>
 
       <footer class="footer-note">
