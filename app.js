@@ -24,6 +24,7 @@ const remainingCount = document.querySelector("#remaining-count");
 const progressPercent = document.querySelector("#progress-percent");
 const progressBar = document.querySelector("#progress-bar");
 const drawButtonLabel = document.querySelector("#draw-button-label");
+let drawTimer = null;
 
 function isValidDeckList(list) {
   return (
@@ -142,10 +143,15 @@ function renderResult() {
 }
 
 function drawCards() {
+  if (drawButton.disabled || drawButton.classList.contains("is-busy")) {
+    return;
+  }
+
   drawButton.classList.add("is-busy");
+  drawButton.disabled = true;
   drawButton.setAttribute("aria-busy", "true");
 
-  window.setTimeout(() => {
+  drawTimer = window.setTimeout(() => {
     const requestedCount = state.count;
     const actualCount = Math.min(requestedCount, state.remaining.length);
     state.drawn = state.remaining.splice(0, actualCount);
@@ -163,10 +169,18 @@ function drawCards() {
     renderResult();
     drawButton.classList.remove("is-busy");
     drawButton.removeAttribute("aria-busy");
+    drawTimer = null;
   }, 260);
 }
 
 function resetCards() {
+  if (drawTimer !== null) {
+    window.clearTimeout(drawTimer);
+    drawTimer = null;
+    drawButton.classList.remove("is-busy");
+    drawButton.removeAttribute("aria-busy");
+  }
+
   state.remaining = shuffle(DECK);
   state.drawn = [];
   state.notice = "เริ่มสำรับใหม่แล้ว ไพ่ทั้ง 78 ใบพร้อมให้เปิดอีกครั้ง";
