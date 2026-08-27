@@ -1586,7 +1586,13 @@ h2 {
 
   .hero {
     min-height: 235px;
-    padding: 34px 7px 25px;
+    padding: 32px 10px 25px;
+    gap: 8px;
+  }
+
+  .hero-copy {
+    min-width: 0;
+    flex: 1;
   }
 
   h1 {
@@ -1598,17 +1604,38 @@ h2 {
   }
 
   .hero-orb {
-    display: none;
+    display: grid;
+    width: 108px;
+    height: 108px;
+    margin-right: 0;
+    flex: 0 0 108px;
   }
 
-  .desktop-only {
-    display: none;
+  .orb-ring--one {
+    width: 94px;
+    height: 94px;
+  }
+
+  .orb-ring--two {
+    width: 108px;
+    height: 108px;
+  }
+
+  .orb-card {
+    width: 50px;
+    height: 66px;
+    border-radius: 11px;
+    font-size: 24px;
+  }
+
+  .orb-spark {
+    font-size: 14px;
   }
 
   .cards-grid:not(.is-empty) {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 4px 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 4px 0;
   }
 
   .result-panel {
