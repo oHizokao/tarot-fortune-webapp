@@ -538,7 +538,7 @@ function syncAiControls() {
   }
 }
 
-function setAiLoggedOut(message = "เข้าสู่ระบบเพื่อใช้ AI Tarot Reader", isError = false) {
+function setAiLoggedOut(message = "เข้าใช้งานเพื่อใช้ AI Tarot Reader", isError = false) {
   state.aiRequestVersion += 1;
   state.aiBusy = false;
   clearAiAnswer();
@@ -551,7 +551,7 @@ function setAiLoggedOut(message = "เข้าสู่ระบบเพื่
   betaCodeInput.value = "";
   aiQuestion.value = "";
   setAiStatus(betaAuthStatus, message, isError);
-  setAiStatus(aiRequestStatus, "พิมพ์คำถามไว้ได้ แล้วเข้าสู่ระบบเพื่อส่งคำถามให้ AI");
+  setAiStatus(aiRequestStatus, "พิมพ์คำถามไว้ได้ แล้วเข้าใช้งานเพื่อส่งคำถามให้ AI");
   askAiButton.disabled = true;
 }
 
@@ -595,9 +595,9 @@ async function loadBetaSession() {
     if (data.authenticated && data.user?.ai_enabled) {
       setAiLoggedIn(data.user, data.csrf_token || "");
     } else if (data.authenticated && data.user) {
-      setAiLoggedOut("เข้าสู่ระบบแล้ว แต่บัญชียังไม่ได้รับสิทธิ์ AI จากผู้ดูแล");
+      setAiLoggedOut("เข้าใช้งานแล้ว แต่บัญชียังไม่ได้รับสิทธิ์ AI จากผู้ดูแล");
     } else {
-      setAiLoggedOut("เข้าสู่ระบบเพื่อใช้ AI Tarot Reader");
+      setAiLoggedOut("เข้าใช้งานเพื่อใช้ AI Tarot Reader");
     }
   } catch (error) {
     const setupError = ["DATABASE_NOT_CONFIGURED", "SERVER_CONFIG_MISSING", "INVALID_JSON"].includes(error.code) || error.status === 404;
@@ -657,7 +657,7 @@ function getCardFileName(fileName) {
 
 async function askAi() {
   if (!state.aiUser) {
-    setAiStatus(betaAuthStatus, "กรุณาเข้าสู่ระบบก่อนใช้ AI Tarot Reader", true);
+    setAiStatus(betaAuthStatus, "กรุณาเข้าใช้งานก่อนใช้ AI Tarot Reader", true);
     return;
   }
 

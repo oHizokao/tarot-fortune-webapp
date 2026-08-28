@@ -4,7 +4,7 @@ import { AppError, query } from "../../lib/vercel/db.mjs";
 import { requireBetaUser } from "../../lib/vercel/auth.mjs";
 import { endpoint, assertSameOrigin, parseJson, requireMethod, success } from "../../lib/vercel/http.mjs";
 import { enforceAiRateLimit } from "../../lib/vercel/rate-limit.mjs";
-import { getOpenAiSettings } from "../../lib/vercel/settings.mjs";
+import { DEFAULT_TAROT_PROMPT, getOpenAiSettings, TAROT_SAFETY_GUARDRAILS } from "../../lib/vercel/settings.mjs";
 import { hashText } from "../../lib/vercel/security.mjs";
 
 let cardsPromise;
@@ -105,16 +105,10 @@ export function buildInput(question, metadata, conversation) {
   return input;
 }
 
-const instructions = [
-  "คุณคือ AI Tarot Reader ของ Tarot Daily ทำหน้าที่เป็นผู้ช่วยสะท้อนความคิดอย่างอบอุ่นและรับผิดชอบ",
-  "ตอบภาษาเดียวกับผู้ใช้ โดยถ้าผู้ใช้ถามภาษาไทยให้ตอบภาษาไทย",
-  "คำทำนายนี้เป็นการอ่านเชิงสัญลักษณ์เพื่อความบันเทิงและการทบทวนตัวเอง ไม่ใช่การวินิจฉัย ไม่ใช่คำสั่งชีวิต และห้ามอ้างว่าสิ่งใดจะเกิดขึ้นแน่นอน",
-  "ห้ามทำให้ผู้ใช้หวาดกลัว รู้สึกหมดหวัง หรือพึ่งพาคำทำนายจนตัดสินใจเรื่องสำคัญแทนข้อมูลจริง",
-  "ทุกคำตอบต้องอ่อนโยน มีทางเลือกที่ทำได้จริง และย้ำว่าผู้ใช้เป็นคนตัดสินใจเอง",
-  "อ่านจากคำที่พิมพ์อยู่บนไพ่ที่ส่งให้เท่านั้น เชื่อมความหมายของคำนั้นกับคำถามอย่างมีเหตุผล ห้ามสร้างชื่อไพ่ ใบที่ไม่ได้เปิด หรือความหมายลึกลับที่ไม่มีข้อมูล",
-  "ถ้าคำถามเกี่ยวกับการแพทย์ กฎหมาย การเงิน ความปลอดภัย หรือการทำร้ายตัวเอง ให้บอกอย่างสุภาพว่าไพ่แทนผู้เชี่ยวชาญหรือความช่วยเหลือฉุกเฉินไม่ได้ และชวนติดต่อผู้เชี่ยวชาญหรือคนที่ไว้ใจได้ตามความเหมาะสม",
-  "จัดคำตอบให้อ่านง่าย: (1) อ่านคำบนไพ่ที่เกี่ยวข้อง (2) เชื่อมกับคำถาม (3) ก้าวเล็ก ๆ ที่ทำได้ (4) คำถามชวนทบทวนหนึ่งข้อ",
-].join("\n");
+export function composeTarotInstructions(prompt) {
+  const selectedPrompt = String(prompt || "").trim() || DEFAULT_TAROT_PROMPT;
+  return [selectedPrompt, TAROT_SAFETY_GUARDRAILS].join("\n\n");
+}
 
 async function callOpenAi(input, settings, userId) {
   let response;
@@ -127,7 +121,7 @@ async function callOpenAi(input, settings, userId) {
       },
       body: JSON.stringify({
         model: settings.model,
-        instructions,
+        instructions: composeTarotInstructions(settings.prompt),
         input,
         max_output_tokens: 900,
         store: false,

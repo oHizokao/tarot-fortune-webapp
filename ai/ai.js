@@ -136,12 +136,12 @@ function setAccount(user, csrf = "") {
   const link = $("#account-link");
   const action = $("#account-action");
   if (!user) {
-    link.textContent = "เข้าสู่ระบบ";
+    link.textContent = "เข้าใช้งาน";
     link.href = "../login/?next=/ai/";
-    action.textContent = "เข้าสู่ระบบ";
+    action.textContent = "เข้าใช้งาน";
     action.href = "../login/?next=/ai/";
-    $("#account-title").textContent = "เข้าสู่ระบบเพื่อส่งคำถามให้ AI";
-    $("#account-message").textContent = state.backend ? "เปิดไพ่และพิมพ์คำถามได้เลย เมื่อพร้อมให้ AI ตอบให้เข้าสู่ระบบก่อน" : "โหมดเปิดไพ่ฟรีพร้อมใช้งาน แต่ยังไม่ได้เชื่อมต่อระบบสมาชิก";
+    $("#account-title").textContent = "เข้าใช้งานเพื่อส่งคำถามให้ AI";
+    $("#account-message").textContent = state.backend ? "เปิดไพ่และพิมพ์คำถามได้เลย เมื่อพร้อมให้ AI ตอบให้เข้าใช้งานก่อน" : "โหมดเปิดไพ่ฟรีพร้อมใช้งาน แต่ยังไม่ได้เชื่อมต่อระบบสมาชิก";
     $("#ask-ai-button").disabled = true;
     return;
   }
@@ -150,7 +150,7 @@ function setAccount(user, csrf = "") {
   action.textContent = "ออกจากระบบ";
   action.href = "#question-title";
   $("#account-title").textContent = user.ai_enabled ? `พร้อมอ่านไพ่ให้ ${user.name || user.username}` : "บัญชีนี้ยังรอสิทธิ์ AI";
-  $("#account-message").textContent = user.ai_enabled ? "พิมพ์คำถาม แล้วกดส่งให้ AI เชื่อมคำบนไพ่กับเรื่องของคุณ" : "บัญชีเข้าสู่ระบบแล้ว แต่ผู้ดูแลยังไม่ได้เปิดสิทธิ์ AI ให้บัญชีนี้";
+  $("#account-message").textContent = user.ai_enabled ? "พิมพ์คำถาม แล้วกดส่งให้ AI เชื่อมคำบนไพ่กับเรื่องของคุณ" : "บัญชีเข้าใช้งานแล้ว แต่ผู้ดูแลยังไม่ได้เปิดสิทธิ์ AI ให้บัญชีนี้";
   $("#ask-ai-button").disabled = !user.ai_enabled || !state.drawn.length || !$("#ai-question").value.trim();
 }
 
@@ -168,7 +168,7 @@ function syncQuestion() {
   const button = $("#ask-ai-button");
   button.disabled = state.busy || !state.user?.ai_enabled || !state.drawn.length || !hasQuestion;
   if (!state.drawn.length) $("#request-status").textContent = "เปิดไพ่ก่อน แล้วพิมพ์คำถามได้เลย";
-  else if (!state.user) $("#request-status").textContent = "เปิดไพ่แล้ว พิมพ์คำถามได้เลย — เข้าสู่ระบบเมื่ออยากให้ AI ตอบ";
+  else if (!state.user) $("#request-status").textContent = "เปิดไพ่แล้ว พิมพ์คำถามได้เลย — เข้าใช้งานเมื่ออยากให้ AI ตอบ";
   else if (!state.user.ai_enabled) $("#request-status").textContent = "บัญชีนี้ยังไม่ได้รับสิทธิ์ AI จากผู้ดูแล";
   else if (!state.busy && !$("#ai-answer").childElementCount) $("#request-status").textContent = hasQuestion ? "พร้อมเชื่อมคำบนไพ่กับคำถามของคุณ" : "พิมพ์คำถาม แล้วกดถาม AI Tarot Reader";
 }
@@ -196,7 +196,7 @@ async function askAi() {
     renderAnswer(answer);
     $("#request-status").textContent = "คำตอบนี้เป็นแนวทางสะท้อนความคิด คุณเป็นคนตัดสินใจเองเสมอ";
   } catch (error) {
-    if (error.status === 401 || error.code === "ACCOUNT_AUTH_REQUIRED") { setAccount(null); $("#request-status").textContent = "เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่"; }
+    if (error.status === 401 || error.code === "ACCOUNT_AUTH_REQUIRED") { setAccount(null); $("#request-status").textContent = "เซสชันหมดอายุ กรุณาเข้าใช้งานใหม่"; }
     else $("#request-status").textContent = error.message || "ระบบยังตอบไม่ได้ ลองใหม่อีกครั้ง";
   } finally { if (version === state.requestVersion) { state.busy = false; syncQuestion(); } }
 }

@@ -1,4 +1,4 @@
-const state = { csrf: "", accessCode: "" };
+const state = { csrf: "", accessCode: "", defaultPrompt: "" };
 const $ = (selector) => document.querySelector(selector);
 
 function showStatus(element, message, error = false) {
@@ -40,6 +40,8 @@ function toggleDashboard(show) {
 async function loadSettings() {
   const data = await api("/api/admin/settings");
   $("#openai-model").value = data.model || "";
+  state.defaultPrompt = data.default_prompt || "";
+  $("#ai-prompt").value = data.prompt || state.defaultPrompt;
   $("#use-card-images").checked = Boolean(data.use_card_images);
   $("#api-status-chip").textContent = data.configured ? "พร้อมใช้งาน" : "ยังไม่ตั้งค่า";
   $("#api-status-chip").classList.toggle("is-ready", Boolean(data.configured));
@@ -142,12 +144,21 @@ $("#settings-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const status = $("#settings-status");
   try {
-    const data = await api("/api/admin/settings", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ openai_api_key: $("#openai-api-key").value.trim(), openai_model: $("#openai-model").value.trim(), use_card_images: $("#use-card-images").checked }) });
+    const data = await api("/api/admin/settings", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ openai_api_key: $("#openai-api-key").value.trim(), openai_model: $("#openai-model").value.trim(), ai_prompt: $("#ai-prompt").value.trim(), use_card_images: $("#use-card-images").checked }) });
     $("#openai-api-key").value = "";
+    state.defaultPrompt = data.default_prompt || state.defaultPrompt;
+    $("#ai-prompt").value = data.prompt || state.defaultPrompt;
     $("#api-status-chip").textContent = data.configured ? "พร้อมใช้งาน" : "ยังไม่ตั้งค่า";
     $("#api-status-chip").classList.toggle("is-ready", Boolean(data.configured));
-    showStatus(status, "บันทึก API settings แล้ว");
+    showStatus(status, "บันทึก API และ Prompt แล้ว");
   } catch (error) { showStatus(status, error.message, true); }
+});
+
+const resetPromptButton = $("#reset-prompt-button");
+if (resetPromptButton) resetPromptButton.addEventListener("click", () => {
+  if (!state.defaultPrompt) return;
+  $("#ai-prompt").value = state.defaultPrompt;
+  showStatus($("#settings-status"), "คืนค่า Prompt ตั้งต้นแล้ว — กดบันทึกเพื่อใช้งาน");
 });
 
 $("#create-user-form").addEventListener("submit", async (event) => {

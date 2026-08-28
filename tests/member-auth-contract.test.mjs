@@ -43,7 +43,7 @@ test("public navigation keeps admin controls out and makes login prominent", asy
   assert.doesNotMatch(html, /href="\.\/admin\/">หลังบ้าน/);
   assert.doesNotMatch(html, /href="\.\/admin\/">ผู้ดูแลระบบ/);
   assert.match(html, /class="topbar-login-button"/);
-  assert.match(html, /aria-label="เข้าสู่ระบบหรือสมัครสมาชิก"/);
+  assert.match(html, /aria-label="เข้าใช้งานหรือสมัครสมาชิก"/);
   assert.match(css, /\.topbar-login-button\s*\{/);
   assert.match(loginButtonRule, /white-space:\s*nowrap/);
 });
@@ -58,7 +58,7 @@ test("schema supports usernames, regular members, and pending approval", async (
 });
 
 test("login identity helpers normalize usernames and keep AI access explicit", async () => {
-  const { canUseAi, isValidUsername, normalizeUsername, publicUser } = await import("../lib/vercel/auth.mjs");
+  const { canUseAi, isCustomerUser, isValidUsername, normalizeUsername, publicUser } = await import("../lib/vercel/auth.mjs");
 
   assert.equal(normalizeUsername("  oHizokao  "), "ohizokao");
   assert.equal(isValidUsername("oHizokao"), true);
@@ -66,5 +66,24 @@ test("login identity helpers normalize usernames and keep AI access explicit", a
   assert.equal(canUseAi({ role: "admin", status: "active" }), true);
   assert.equal(canUseAi({ role: "member", status: "active", access_mode: "member" }), false);
   assert.equal(canUseAi({ role: "beta_user", status: "active", access_mode: "beta_unlimited", access_expires_at: new Date(Date.now() + 60_000) }), true);
+  assert.equal(isCustomerUser({ role: "member" }), true);
+  assert.equal(isCustomerUser({ role: "beta_user" }), true);
+  assert.equal(isCustomerUser({ role: "admin" }), false);
   assert.equal(publicUser({ id: 1, username: "ohizokao", name: "Owner", password_hash: "secret" }).password_hash, undefined);
+});
+
+test("customer access copy and admin entry stay on separate pages", async () => {
+  const login = await read("login/index.html");
+  const loginScript = await read("login/login.js");
+  const root = await read("index.html");
+  const admin = await read("admin/index.html");
+
+  assert.match(login, /<title>Tarot Daily — เข้าใช้งาน<\/title>/);
+  assert.match(login, /<span>เข้าใช้งาน<\/span>/);
+  assert.doesNotMatch(login, /เข้าสู่ระบบหลังบ้าน/);
+  assert.match(loginScript, /\/ai\//);
+  assert.match(root, /aria-label="เข้าใช้งานหรือสมัครสมาชิก"/);
+  assert.match(root, /<span>เข้าใช้งาน<\/span>/);
+  assert.match(admin, /เข้าสู่ระบบหลังบ้าน/);
+  assert.match(admin, /id="admin-login-form"/);
 });

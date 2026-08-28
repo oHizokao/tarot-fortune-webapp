@@ -37,11 +37,11 @@ function setMode(mode) {
   $("#signup-tab").setAttribute("aria-selected", String(!login));
   $("#login-panel").hidden = !login;
   $("#signup-panel").hidden = login;
-  $("#auth-subtitle").textContent = login ? "ใช้ username และรหัสผ่านของคุณ" : "สร้างบัญชีเพื่อขอสิทธิ์ห้องถาม AI";
+  $("#auth-subtitle").textContent = login ? "ใช้ username และรหัสผ่านเพื่อเข้าใช้งาน" : "สร้างบัญชีเพื่อขอสิทธิ์ห้องถาม AI";
 }
 
-function redirectForUser(user) {
-  window.location.assign(user?.role === "admin" ? "/admin/" : safeNextPath());
+function redirectForUser() {
+  window.location.assign(safeNextPath());
 }
 
 $("#login-tab").addEventListener("click", () => setMode("login"));
@@ -55,10 +55,10 @@ $("#login-form").addEventListener("submit", async (event) => {
   showStatus(status, "กำลังตรวจสอบบัญชี...");
   try {
     const data = await api("/api/auth/login", { method: "POST", body: JSON.stringify({ username: $("#login-username").value.trim(), password: $("#login-password").value }) });
-    showStatus(status, "เข้าสู่ระบบแล้ว กำลังพาไปห้องอ่านไพ่...");
-    redirectForUser(data.user);
+    showStatus(status, "เข้าใช้งานสำเร็จ กำลังพาไปห้องอ่านไพ่...");
+    redirectForUser();
   } catch (error) {
-    showStatus(status, error.message || "เข้าสู่ระบบไม่สำเร็จ", true);
+    showStatus(status, error.message || "เข้าใช้งานไม่สำเร็จ", true);
   } finally {
     state.busy = false;
   }
@@ -77,11 +77,11 @@ $("#signup-form").addEventListener("submit", async (event) => {
   showStatus(status, "กำลังสร้างบัญชี...");
   try {
     await api("/api/auth/register", { method: "POST", body: JSON.stringify({ username: $("#signup-username").value.trim(), name: $("#signup-name").value.trim(), email: $("#signup-email").value.trim(), password }) });
-    showStatus(status, "สมัครสำเร็จแล้ว รอผู้ดูแลอนุมัติ จากนั้นจึงเข้าสู่ระบบเพื่อถาม AI ได้");
+    showStatus(status, "สมัครสำเร็จแล้ว รอผู้ดูแลอนุมัติ จากนั้นจึงเข้าใช้งานเพื่อถาม AI ได้");
     $("#login-username").value = $("#signup-username").value.trim();
     $("#signup-form").reset();
     setMode("login");
-    showStatus($("#login-status"), "สมัครสำเร็จแล้ว รอผู้ดูแลอนุมัติก่อนเข้าสู่ระบบ");
+    showStatus($("#login-status"), "สมัครสำเร็จแล้ว รอผู้ดูแลอนุมัติก่อนเข้าใช้งาน");
   } catch (error) {
     showStatus(status, error.message || "สมัครสมาชิกไม่สำเร็จ", true);
   } finally {
