@@ -3,7 +3,7 @@
   "functions": {
     "api/ai/tarot-chat.mjs": {
       "maxDuration": 60,
-      "includeFiles": ["data/cards.json"]
+      "includeFiles": "data/cards.json"
     }
   }
 }
