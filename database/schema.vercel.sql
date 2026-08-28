@@ -1,13 +1,14 @@
 CREATE TABLE IF NOT EXISTS users (
   id BIGSERIAL PRIMARY KEY,
+  username VARCHAR(80) NOT NULL,
   name VARCHAR(120) NOT NULL,
-  email VARCHAR(190) NOT NULL UNIQUE,
+  email VARCHAR(190) UNIQUE,
   password_hash TEXT,
   access_code_hash TEXT UNIQUE,
   access_code_hint VARCHAR(16),
-  role VARCHAR(20) NOT NULL DEFAULT 'beta_user' CHECK (role IN ('admin', 'beta_user')),
-  status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'expired')),
-  access_mode VARCHAR(30) NOT NULL DEFAULT 'beta_unlimited',
+  role VARCHAR(20) NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'beta_user', 'member')),
+  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('active', 'suspended', 'expired', 'pending')),
+  access_mode VARCHAR(30) NOT NULL DEFAULT 'member',
   access_started_at TIMESTAMPTZ,
   access_expires_at TIMESTAMPTZ,
   credits INTEGER NOT NULL DEFAULT 0,
@@ -16,6 +17,22 @@ CREATE TABLE IF NOT EXISTS users (
   last_login_at TIMESTAMPTZ,
   last_ai_used_at TIMESTAMPTZ
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(80);
+ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
+UPDATE users
+SET username = COALESCE(
+  NULLIF(BTRIM(username), ''),
+  COALESCE(NULLIF(SUBSTRING(REGEXP_REPLACE(SPLIT_PART(email, '@', 1), '[^a-zA-Z0-9_]+', '_', 'g') FROM 1 FOR 60), ''), 'user') || '_' || id::text
+)
+WHERE username IS NULL OR BTRIM(username) = '';
+ALTER TABLE users ALTER COLUMN username SET NOT NULL;
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('admin', 'beta_user', 'member'));
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_status_check;
+ALTER TABLE users ADD CONSTRAINT users_status_check CHECK (status IN ('active', 'suspended', 'expired', 'pending'));
+
+CREATE UNIQUE INDEX IF NOT EXISTS users_username_unique_idx ON users (LOWER(username));
 
 CREATE INDEX IF NOT EXISTS users_role_status_idx ON users (role, status);
 CREATE INDEX IF NOT EXISTS users_access_expires_idx ON users (access_expires_at);

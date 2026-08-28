@@ -7,7 +7,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check app.js && node --check admin/admin.js"
+    "check": "node --check app.js && node --check admin/admin.js && node --check login/login.js && node --check ai/ai.js && node --check lib/vercel/auth.mjs && node --check lib/vercel/routes/auth.mjs && node --check lib/vercel/routes/admin.mjs && node --check api/auth/[...route].mjs && node --check api/admin/[...route].mjs && node --check api/ai/tarot-chat.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

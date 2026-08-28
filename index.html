@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#100c2d" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <meta
       name="description"
       content="เว็บแอปเปิดไพ่ทำนายจากสำรับไพ่ 78 ใบ เลือกเปิด 1, 2 หรือ 3 ใบได้ง่าย ๆ"
@@ -33,7 +34,8 @@
           </span>
         </a>
         <div class="topbar-actions">
-          <a class="topbar-link" href="#ai-reader">ถาม AI</a>
+          <a class="topbar-link" href="./ai/">ถาม AI Tarot</a>
+          <a class="topbar-link" href="./login/">เข้าสู่ระบบ</a>
           <a class="topbar-link" href="./admin/">หลังบ้าน</a>
           <div class="deck-pill">
             <span class="status-dot" aria-hidden="true"></span>
@@ -173,7 +175,7 @@
             <p class="panel-kicker">BETA AI READER</p>
             <h2 id="ai-reader-title">ถามคำถามกับชุดไพ่</h2>
             <p class="ai-description">
-              เปิดไพ่ฟรีได้โดยไม่ต้องล็อกอิน ส่วนคำตอบจาก AI ใช้ Beta Access Code และจะอ่านจากคำบนไพ่ที่เปิดจริงเท่านั้น
+              เปิดไพ่ฟรีได้โดยไม่ต้องล็อกอิน ส่วนห้องถาม AI แยกสำหรับสมาชิกที่เข้าสู่ระบบ และจะอ่านจากคำบนไพ่ที่เปิดจริงเท่านั้น
             </p>
           </div>
           <span class="ai-orbit-mark" aria-hidden="true">✦</span>
@@ -183,8 +185,8 @@
           <div class="ai-login-copy">
             <span class="ai-lock" aria-hidden="true">◈</span>
             <div>
-              <strong>AI Tarot Reader — Beta Access</strong>
-              <p>ใส่รหัสที่ได้รับเพื่อเปิดคำทำนายแบบเชื่อมโยงกับคำถามของคุณ</p>
+              <strong>อยากคุยกับไพ่แบบเจาะจง?</strong>
+              <p>เข้าสู่ระบบหรือสมัครสมาชิก แล้วไปห้องถาม AI เพื่อพิมพ์คำถามของคุณได้เลย</p>
             </div>
           </div>
           <div class="ai-locked-question">
@@ -192,19 +194,23 @@
             <textarea id="ai-question-preview" rows="3" disabled placeholder="ล็อกอิน Beta ก่อน แล้วพิมพ์คำถามที่อยากถามไพ่ได้ตรงนี้"></textarea>
             <p class="ai-locked-note">ช่องนี้จะแสดงคำตอบจาก AI หลังเข้าสู่ระบบและเปิดไพ่แล้ว</p>
           </div>
-          <form class="ai-login-row" id="beta-login-form">
+          <div class="ai-login-row">
+            <a class="ai-button" href="./ai/">เปิดห้องถาม AI</a>
+            <a class="ai-text-link" href="./login/?next=/ai/">เข้าสู่ระบบ / สมัครสมาชิก</a>
+          </div>
+          <form class="ai-login-row legacy-beta-form" id="beta-login-form">
             <label class="sr-only" for="beta-code">Beta Access Code</label>
             <input id="beta-code" type="password" autocomplete="one-time-code" placeholder="กรอก Beta Access Code" />
             <button class="ai-button" id="beta-login-button" type="submit">เข้าสู่ Beta</button>
           </form>
           <p class="ai-status" id="beta-auth-status" role="status" aria-live="polite"></p>
-          <button class="ai-text-link" id="beta-focus-button" type="button">มี Beta Access แล้ว? เข้าสู่ระบบเพื่อถามไพ่</button>
+          <button class="ai-text-link" id="beta-focus-button" type="button">มี Beta Code เดิม? ใช้เข้าห้องนี้ได้</button>
         </div>
 
         <div class="ai-member-panel" id="ai-member-panel" hidden>
           <div class="ai-member-topline">
             <p class="ai-user-status" id="ai-user-status"></p>
-            <button class="ai-logout-button" id="beta-logout-button" type="button">ออกจาก Beta</button>
+            <button class="ai-logout-button" id="beta-logout-button" type="button">ออกจากระบบ</button>
           </div>
           <label class="ai-question-label" for="ai-question">คำถามของคุณ</label>
           <textarea id="ai-question" rows="4" maxlength="2000" placeholder="เช่น งานที่กำลังลังเลอยู่ ควรเริ่มจากตรงไหนดี?"></textarea>
@@ -248,7 +254,8 @@
         <span>TAROT DAILY</span>
         <span class="footer-line" aria-hidden="true"></span>
         <span>เปิดไพ่เพื่อความบันเทิง</span>
-        <a href="./admin/">ผู้ดูแลระบบ</a>
+          <a href="./login/">เข้าสู่ระบบ</a>
+          <a href="./admin/">ผู้ดูแลระบบ</a>
       </footer>
     </main>
 

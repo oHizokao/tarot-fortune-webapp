@@ -563,7 +563,9 @@ function setAiLoggedIn(user, csrfToken = "") {
   betaLogoutButton.hidden = false;
   aiUserStatus.hidden = false;
   betaCodeInput.value = "";
-  aiUserStatus.textContent = `${user.name || "Beta user"} · ใช้ได้ถึง ${formatAccessExpiry(user.access_expires_at)}`;
+  aiUserStatus.textContent = user.role === "admin"
+    ? `${user.name || user.username || "ผู้ดูแล"} · สิทธิ์ผู้ดูแลใช้งานได้ตลอด`
+    : `${user.name || user.username || "สมาชิก"} · ใช้ได้ถึง ${formatAccessExpiry(user.access_expires_at)}`;
   setAiStatus(aiRequestStatus, state.drawn.length ? "พร้อมเชื่อมคำบนไพ่กับคำถามของคุณ" : "เปิดไพ่ก่อน แล้วพิมพ์คำถามได้เลย");
   syncAiControls();
 }
@@ -590,10 +592,12 @@ async function loadBetaSession() {
       return;
     }
     state.aiBackendAvailable = true;
-    if (data.authenticated && data.user) {
+    if (data.authenticated && data.user?.ai_enabled) {
       setAiLoggedIn(data.user, data.csrf_token || "");
+    } else if (data.authenticated && data.user) {
+      setAiLoggedOut("เข้าสู่ระบบแล้ว แต่บัญชียังไม่ได้รับสิทธิ์ AI จากผู้ดูแล");
     } else {
-      setAiLoggedOut("ใส่ Beta Access Code เพื่อใช้ AI Tarot Reader");
+      setAiLoggedOut("เข้าสู่ระบบเพื่อใช้ AI Tarot Reader");
     }
   } catch (error) {
     const setupError = ["DATABASE_NOT_CONFIGURED", "SERVER_CONFIG_MISSING", "INVALID_JSON"].includes(error.code) || error.status === 404;

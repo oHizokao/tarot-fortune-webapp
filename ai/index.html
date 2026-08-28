@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#100c2d" />
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <meta name="description" content="ห้องเปิดไพ่และถาม AI Tarot Reader จากคำบนไพ่ที่คุณเปิดจริง" />
+    <title>Tarot Daily — ห้องถามไพ่ AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./ai.css" />
+  </head>
+  <body>
+    <div class="ai-bg ai-bg--one" aria-hidden="true"></div>
+    <div class="ai-bg ai-bg--two" aria-hidden="true"></div>
+    <main class="ai-shell" id="ai-reader-app">
+      <header class="ai-topbar">
+        <a class="brand" href="../" aria-label="กลับหน้าหลัก Tarot Daily"><span class="brand-mark" aria-hidden="true">✦</span><span><strong>TAROT DAILY</strong><small>AI TAROT READER</small></span></a>
+        <nav class="top-actions" aria-label="เมนูหลัก"><a href="../">เปิดไพ่ฟรี</a><a href="../#history-title">ประวัติ</a><a class="account-link" id="account-link" href="../login/?next=/ai/">เข้าสู่ระบบ</a></nav>
+      </header>
+
+      <section class="ai-hero">
+        <div><p class="eyebrow">A QUIET QUESTION / A CLEARER NEXT STEP</p><h1>เปิดไพ่ แล้วคุยกับ<br /><span>ความหมายที่อยู่ตรงหน้า</span></h1><p>เลือกไพ่ 1–3 ใบ พิมพ์คำถามของคุณ และให้ AI เชื่อม “คำบนไพ่” กับเรื่องที่คุณกำลังคิดอย่างอ่อนโยน</p></div>
+        <div class="hero-seal" aria-hidden="true"><span>✦</span><small>78<br />CARDS</small></div>
+      </section>
+
+      <section class="reading-layout">
+        <section class="spread-panel panel" aria-labelledby="spread-title">
+          <div class="panel-top"><div><p class="panel-kicker">01 / YOUR SPREAD</p><h2 id="spread-title">เลือกจำนวนไพ่</h2></div><span class="deck-status"><i></i><strong id="remaining-count">78</strong> ใบเหลือ</span></div>
+          <div class="choice-row" role="group" aria-label="จำนวนไพ่ที่ต้องการเปิด"><button class="choice-button is-selected" data-count="1" type="button" aria-pressed="true"><b>01</b><span>ใบเดียว</span></button><button class="choice-button" data-count="2" type="button" aria-pressed="false"><b>02</b><span>สองใบ</span></button><button class="choice-button" data-count="3" type="button" aria-pressed="false"><b>03</b><span>สามใบ</span></button></div>
+          <div class="progress-wrap"><div class="progress-label"><span>สำรับรอบนี้</span><strong><span id="opened-count">0</span> / 78</strong></div><div class="progress-track" role="progressbar" aria-label="เปิดไพ่ไปแล้ว" aria-valuemin="0" aria-valuemax="78" aria-valuenow="0"><span id="progress-bar"></span></div><p id="deck-message">ไพ่จะไม่ซ้ำกันจนกว่าจะครบทั้งสำรับ</p></div>
+          <button class="draw-button" id="draw-button" type="button"><span>✦</span><b id="draw-label">เปิดไพ่ให้ฉัน</b><span>→</span></button><button class="reset-button" id="reset-button" type="button">ล้างคำทำนาย · เริ่มสำรับใหม่</button>
+        </section>
+
+        <section class="cards-panel panel" aria-labelledby="cards-title"><div class="panel-top"><div><p class="panel-kicker">02 / CARDS IN FRONT OF YOU</p><h2 id="cards-title">ไพ่ที่เปิดได้</h2></div><span class="spread-count" id="spread-count">ยังไม่ได้เปิด</span></div><div class="cards-grid is-empty" id="cards-grid"><div class="empty-card"><span>?</span><p>ตั้งใจนึกถึงคำถาม<br />แล้วกดเปิดไพ่</p></div></div><p class="reading-note" id="reading-note">คำตอบจาก AI จะอ้างอิงเฉพาะคำที่อยู่บนไพ่ชุดนี้</p></section>
+      </section>
+
+      <section class="question-panel panel" aria-labelledby="question-title"><div class="question-heading"><div><p class="panel-kicker">03 / ASK THE CARDS</p><h2 id="question-title">คำถามที่อยากให้ไพ่ช่วยสะท้อน</h2><p>คำถามปลายเปิดจะช่วยให้คำตอบนำไปใช้กับชีวิตจริงได้มากขึ้น</p></div><span class="question-orbit" aria-hidden="true">✧</span></div><div class="account-callout" id="account-callout"><span aria-hidden="true">◈</span><div><strong id="account-title">เข้าสู่ระบบเพื่อส่งคำถามให้ AI</strong><p id="account-message">เปิดไพ่และพิมพ์คำถามได้เลย เมื่อพร้อมให้ AI ตอบให้เข้าสู่ระบบก่อน</p></div><a class="small-action" id="account-action" href="../login/?next=/ai/">เข้าสู่ระบบ</a></div><label class="question-label" for="ai-question">คำถามของคุณ</label><textarea id="ai-question" maxlength="2000" rows="4" placeholder="เช่น งานที่กำลังลังเลอยู่ ควรเริ่มจากตรงไหนดี?"></textarea><div class="question-actions"><p class="request-status" id="request-status" role="status" aria-live="polite">เปิดไพ่ก่อน แล้วพิมพ์คำถามได้เลย</p><button class="ask-button" id="ask-ai-button" type="button" disabled><span>ถาม AI Tarot Reader</span><span aria-hidden="true">✦</span></button></div><div class="answer-box" id="ai-answer" aria-live="polite" aria-label="คำตอบจาก AI"></div></section>
+
+      <footer class="ai-footer"><span>✦ TAROT DAILY</span><span>คำทำนายเป็นแนวทาง ไม่ใช่คำตัดสินชีวิต</span><a href="../admin/">สำหรับผู้ดูแล</a></footer>
+    </main>
+    <script src="./ai.js" defer></script>
+  </body>
+</html>

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /*
- * Copy this file to config.php or config.local.php on Hostinger.
+ * Legacy PHP configuration example. The Vercel deployment uses environment variables instead.
  * Prefer environment variables where your hosting plan supports them.
  * Never commit a file containing a real OpenAI key.
  */

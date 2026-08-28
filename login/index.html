@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#100c2d" />
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <meta name="description" content="เข้าสู่ระบบ Tarot Daily เพื่อใช้ห้องถามไพ่ AI และจัดการบัญชีของคุณ" />
+    <title>Tarot Daily — เข้าสู่ระบบ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./login.css" />
+  </head>
+  <body>
+    <div class="auth-glow auth-glow--one" aria-hidden="true"></div>
+    <div class="auth-glow auth-glow--two" aria-hidden="true"></div>
+    <main class="auth-shell">
+      <header class="auth-topbar">
+        <a class="brand" href="../" aria-label="กลับหน้าหลัก Tarot Daily">
+          <span class="brand-mark" aria-hidden="true">✦</span>
+          <span><strong>TAROT DAILY</strong><small>ห้องอ่านไพ่ของคุณ</small></span>
+        </a>
+        <a class="back-link" href="../">กลับไปเปิดไพ่ฟรี <span aria-hidden="true">→</span></a>
+      </header>
+
+      <section class="auth-layout">
+        <div class="auth-intro">
+          <p class="eyebrow">PERSONAL TAROT SPACE</p>
+          <h1>คำถามของคุณ<br /><span>มีพื้นที่ให้ไพ่เล่า</span></h1>
+          <p>เปิดไพ่ได้ฟรีโดยไม่ต้องสมัครสมาชิก และเข้าสู่ระบบเมื่ออยากเก็บสิทธิ์ถาม AI Tarot Reader ของตัวเอง</p>
+          <div class="intro-points">
+            <div><span>01</span><strong>เปิดไพ่แบบไม่ซ้ำ</strong><small>จนกว่าจะครบสำรับ 78 ใบ</small></div>
+            <div><span>02</span><strong>ถาม AI จากคำบนไพ่</strong><small>เชื่อมกับคำถามอย่างอ่อนโยน</small></div>
+            <div><span>03</span><strong>บัญชีของคุณเอง</strong><small>ผู้ดูแลเป็นคนอนุมัติสิทธิ์ AI</small></div>
+          </div>
+        </div>
+
+        <section class="auth-card" aria-labelledby="auth-title">
+          <div class="auth-card-heading">
+            <p class="eyebrow">WELCOME BACK</p>
+            <h2 id="auth-title">เข้าสู่ห้องอ่านไพ่</h2>
+            <p id="auth-subtitle">ใช้ username และรหัสผ่านของคุณ</p>
+          </div>
+          <div class="auth-tabs" role="tablist" aria-label="บัญชี Tarot Daily">
+            <button class="auth-tab is-active" id="login-tab" type="button" role="tab" aria-selected="true" aria-controls="login-panel">เข้าสู่ระบบ</button>
+            <button class="auth-tab" id="signup-tab" type="button" role="tab" aria-selected="false" aria-controls="signup-panel">สมัครสมาชิก</button>
+          </div>
+
+          <div id="login-panel" role="tabpanel" aria-labelledby="login-tab">
+            <form class="auth-form" id="login-form">
+              <label>Username<input id="login-username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required placeholder="เช่น yourname" /></label>
+              <label>รหัสผ่าน<input id="login-password" type="password" autocomplete="current-password" required placeholder="••••••••" /></label>
+              <button class="primary-button" type="submit"><span>เข้าสู่ระบบ</span><span aria-hidden="true">→</span></button>
+            </form>
+            <p class="form-status" id="login-status" role="status" aria-live="polite"></p>
+            <p class="auth-note">ยังไม่มีบัญชี? กด “สมัครสมาชิก” ได้เลย สมัครแล้วรอผู้ดูแลเปิดสิทธิ์ก่อนใช้ AI</p>
+          </div>
+
+          <div id="signup-panel" role="tabpanel" aria-labelledby="signup-tab" hidden>
+            <form class="auth-form" id="signup-form">
+              <label>Username<input id="signup-username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" minlength="3" maxlength="32" required placeholder="a-z, 0-9 และ _" /></label>
+              <label>ชื่อที่ให้แสดง<input id="signup-name" type="text" autocomplete="name" maxlength="120" required placeholder="ชื่อของคุณ" /></label>
+              <label>อีเมล <span class="optional">(ไม่ใส่ก็ได้)</span><input id="signup-email" type="email" autocomplete="email" placeholder="you@example.com" /></label>
+              <label>ตั้งรหัสผ่าน<input id="signup-password" type="password" autocomplete="new-password" minlength="8" required placeholder="อย่างน้อย 8 ตัวอักษร" /></label>
+              <label>ยืนยันรหัสผ่าน<input id="signup-password-confirm" type="password" autocomplete="new-password" minlength="8" required placeholder="พิมพ์ซ้ำอีกครั้ง" /></label>
+              <button class="primary-button" type="submit"><span>สร้างบัญชี</span><span aria-hidden="true">✦</span></button>
+            </form>
+            <p class="form-status" id="signup-status" role="status" aria-live="polite"></p>
+            <p class="auth-note">หลังสมัคร บัญชีจะอยู่ในสถานะรออนุมัติ เพื่อให้เจ้าของระบบเป็นคนเปิดสิทธิ์ AI ให้เอง</p>
+          </div>
+        </section>
+      </section>
+
+      <footer class="auth-footer"><span>✦ TAROT DAILY</span><span>เปิดไพ่เพื่อความบันเทิงและการทบทวนตัวเอง</span><a href="../ai/">ไปห้องถาม AI</a></footer>
+    </main>
+    <script src="./login.js" defer></script>
+  </body>
+</html>

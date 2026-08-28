@@ -1,5 +1,5 @@
 -- Tarot Daily / Tarot Fortune Web App
--- Import this file into a MySQL or MariaDB database on Hostinger.
+-- Legacy MySQL/MariaDB schema. The Vercel deployment uses schema.vercel.sql instead.
 -- Application timestamps are written in UTC; the UI displays Asia/Bangkok time.
 
 CREATE TABLE IF NOT EXISTS users (
