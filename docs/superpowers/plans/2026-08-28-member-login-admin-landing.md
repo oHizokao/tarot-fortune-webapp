@@ -168,10 +168,10 @@ Verify Guest draw, Login/Signup form validation, admin landing layout, AI page l
 - `/login/`, `/ai/`, and `/admin/` return HTML.
 - `/api/health` returns JSON and the four-function Hobby architecture remains intact.
 
-- [ ] **Step 1: Run `npm test`, `npm run check`, and all `.mjs` syntax checks**
-- [ ] **Step 2: Run desktop and 390px responsive browser checks**
-- [ ] **Step 3: Push `main` and wait for a Ready Vercel deployment**
-- [ ] **Step 4: Verify production Guest draw, page links, and backend-configured messaging**
-- [ ] **Step 5: Report the exact Neon/environment setup required before live Login/AI**
+- [x] **Step 1: Run `npm test`, `npm run check`, and all `.mjs` syntax checks**
+- [x] **Step 2: Run desktop and 390px responsive browser checks**
+- [x] **Step 3: Push `main` and wait for a Ready Vercel deployment**
+- [x] **Step 4: Verify production Guest draw, page links, and backend-configured messaging**
+- [x] **Step 5: Report the exact Neon/environment setup required before live Login/AI**
 
 The owner must still connect Neon, run `database/schema.vercel.sql`, set session/encryption/bootstrap secrets, and add the OpenAI key before the new account can log in against production.

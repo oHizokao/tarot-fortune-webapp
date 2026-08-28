@@ -538,7 +538,7 @@ function syncAiControls() {
   }
 }
 
-function setAiLoggedOut(message = "ใส่ Beta Access Code เพื่อใช้ AI Tarot Reader", isError = false) {
+function setAiLoggedOut(message = "เข้าสู่ระบบเพื่อใช้ AI Tarot Reader", isError = false) {
   state.aiRequestVersion += 1;
   state.aiBusy = false;
   clearAiAnswer();
@@ -551,7 +551,7 @@ function setAiLoggedOut(message = "ใส่ Beta Access Code เพื่อใ
   betaCodeInput.value = "";
   aiQuestion.value = "";
   setAiStatus(betaAuthStatus, message, isError);
-  setAiStatus(aiRequestStatus, "พิมพ์คำถามไว้ได้ แล้วเข้าสู่ Beta เพื่อส่งคำถามให้ AI");
+  setAiStatus(aiRequestStatus, "พิมพ์คำถามไว้ได้ แล้วเข้าสู่ระบบเพื่อส่งคำถามให้ AI");
   askAiButton.disabled = true;
 }
 
@@ -657,7 +657,7 @@ function getCardFileName(fileName) {
 
 async function askAi() {
   if (!state.aiUser) {
-    setAiStatus(betaAuthStatus, "กรุณาเข้าสู่ Beta ก่อนใช้ AI Tarot Reader", true);
+    setAiStatus(betaAuthStatus, "กรุณาเข้าสู่ระบบก่อนใช้ AI Tarot Reader", true);
     return;
   }
 
