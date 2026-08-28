@@ -17,14 +17,19 @@ test("AI reader exposes the active reading Memory and a clear new-reading action
 });
 
 test("AI reader persists Memory for the same spread and clears it on a new reading", () => {
+  assert.match(script, /const STORAGE_KEY = "tarot-daily-ai-reading-v1"/);
+  assert.doesNotMatch(script, /const STORAGE_KEY = "tarot-daily-deck-v1"/);
   assert.match(script, /memory: null/);
   assert.match(script, /memory: state\.memory/);
+  assert.match(script, /pendingMemory/);
+  assert.match(script, /memoryOwner/);
   assert.match(script, /normalizeReadingMemory/);
   assert.match(script, /isMemoryForSpread/);
   assert.match(script, /conversationForSpread\(state\.memory, state\.drawn\)/);
   assert.match(script, /appendReadingTurn/);
   assert.match(script, /state\.memory = null/);
   assert.match(script, /new-reading-button/);
+  assert.match(script, /\$\("#ai-question"\)\.value = ""/);
 });
 
 test("stored AI Memory is restored only for an authenticated member and is cleared on logout", () => {
@@ -32,4 +37,5 @@ test("stored AI Memory is restored only for an authenticated member and is clear
   assert.match(script, /function clearPrivateMemory\(\)/);
   assert.match(script, /restoreSavedMemoryAnswer\(\)/);
   assert.match(script, /clearPrivateMemory\(\)/);
+  assert.match(script, /error\.status === 401[\s\S]*clearPrivateMemory\(\)/);
 });

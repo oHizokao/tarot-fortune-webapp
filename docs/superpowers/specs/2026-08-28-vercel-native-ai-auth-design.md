@@ -55,7 +55,7 @@ Vercel project ต้องมี environment variables ต่อไปนี้
 - APP_ENCRYPTION_KEY — random secret 32 bytes ในรูป base64 สำหรับเข้ารหัส API key ที่เก็บใน DB.
 - TAROT_BOOTSTRAP_SECRET — secret ใช้สร้าง Admin คนแรกครั้งเดียว.
 - OPENAI_API_KEY — optional fallback; Admin สามารถบันทึก key ผ่านหน้า settings หลัง database พร้อม.
-- OPENAI_MODEL — optional default model เช่น gpt-5.4-mini.
+- OPENAI_MODEL — optional default model เช่น gpt-5.6-luna.
 
 ต้องรัน database/schema.vercel.sql ใน Neon SQL Editor ก่อนสร้าง Admin. การทดสอบ local ที่ไม่มี database จะต้องแสดง error ชัดเจนและยังคงให้ Guest เปิดไพ่ได้.
 

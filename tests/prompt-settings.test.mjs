@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { DEFAULT_OPENAI_MODEL, DEFAULT_TAROT_PROMPT, resolveOpenAiModel, resolveTarotPrompt } from "../lib/vercel/settings.mjs";
 import { composeTarotInstructions } from "../api/ai/tarot-chat.mjs";
@@ -28,10 +31,19 @@ test("custom reading prompt never removes the permanent safety guardrails", () =
   assert.match(instructions, /ตอบสั้น ๆ และเชื่อมกับคำถามของผู้ใช้/);
   assert.match(instructions, /ห้ามทำให้ผู้ใช้หวาดกลัว/);
   assert.match(instructions, /ผู้ใช้เป็นคนตัดสินใจเอง/);
+  assert.match(instructions, /อ่านจากคำที่พิมพ์อยู่บนไพ่/);
+  assert.match(instructions, /ห้ามสร้างชื่อไพ่/);
 });
 
 test("default tarot prompt explains how to handle follow-up memory", () => {
   assert.match(DEFAULT_TAROT_PROMPT, /บริบทการสนทนาก่อนหน้า/);
   assert.match(DEFAULT_TAROT_PROMPT, /คำถามตั้งต้น/);
   assert.match(DEFAULT_TAROT_PROMPT, /ไพ่ชุดเดิม/);
+});
+
+test("admin settings can explicitly reset the saved model to the fallback", async () => {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  const source = await fs.readFile(path.join(root, "lib/vercel", "routes", "admin.mjs"), "utf8");
+  assert.match(source, /hasModel/);
+  assert.match(source, /setPlainSetting\("openai_model", model\)/);
 });
