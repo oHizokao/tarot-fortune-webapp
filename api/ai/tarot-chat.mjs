@@ -95,11 +95,16 @@ export function buildInput(question, metadata, conversation) {
     const keywords = Array.isArray(card.keywords) ? card.keywords.join(", ") : "";
     return String(index + 1) + ") " + card.file + " — คำบนไพ่: " + (card.name || "") + " — คีย์เวิร์ด: " + keywords;
   });
-  const previous = Array.isArray(conversation) ? conversation.slice(-4).map((message) => {
+  const recentConversation = Array.isArray(conversation) ? conversation.slice(-4) : [];
+  const originalConversation = Array.isArray(conversation) ? conversation.slice(0, Math.min(2, conversation.length - recentConversation.length)) : [];
+  const selectedConversation = Array.isArray(conversation) && conversation.length > recentConversation.length
+    ? [...originalConversation, ...recentConversation]
+    : recentConversation;
+  const previous = selectedConversation.map((message) => {
     const role = message?.role === "assistant" ? "ASSISTANT" : "USER";
     const content = String(message?.content || "").trim().slice(0, 1200);
     return content ? role + ": " + content : "";
-  }).filter(Boolean) : [];
+  }).filter(Boolean);
   let input = "คำถามของผู้ใช้:\n" + question + "\n\nไพ่ที่เปิดจริง:\n" + cardLines.join("\n");
   if (previous.length) input += "\n\nบริบทการสนทนาก่อนหน้า:\n" + previous.join("\n");
   return input;

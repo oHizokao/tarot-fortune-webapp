@@ -47,3 +47,21 @@ test("AI input contains the exact selected card words and not arbitrary labels",
   assert.match(input, /Worry/);
   assert.doesNotMatch(input, /card-001\.webp/);
 });
+
+test("AI input keeps the original reading context alongside the latest follow-up", async () => {
+  const { buildInput } = await import("../api/ai/tarot-chat.mjs");
+  const conversation = [
+    { role: "user", content: "คำถามตั้งต้น" },
+    { role: "assistant", content: "คำตอบตั้งต้น" },
+    { role: "user", content: "คำถามต่อเนื่อง 1" },
+    { role: "assistant", content: "คำตอบต่อเนื่อง 1" },
+    { role: "user", content: "คำถามต่อเนื่องล่าสุด" },
+    { role: "assistant", content: "คำตอบล่าสุด" },
+  ];
+  const input = buildInput("ขอถามต่อจากเรื่องเดิม", [{ file: "card-001.webp", name: "Worry", keywords: ["worry"] }], conversation);
+
+  assert.match(input, /USER: คำถามตั้งต้น/);
+  assert.match(input, /ASSISTANT: คำตอบตั้งต้น/);
+  assert.match(input, /USER: คำถามต่อเนื่องล่าสุด/);
+  assert.match(input, /ASSISTANT: คำตอบล่าสุด/);
+});
