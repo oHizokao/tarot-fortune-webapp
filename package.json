@@ -1,0 +1,16 @@
+{
+  "name": "tarot-fortune-webapp",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check app.js && node --check admin/admin.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "bcryptjs": "^3.0.2"
+  }
+}

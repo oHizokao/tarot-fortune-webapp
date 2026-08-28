@@ -32,9 +32,13 @@
             <span class="brand-subtitle">เปิดไพ่ทำนาย</span>
           </span>
         </a>
-        <div class="deck-pill">
-          <span class="status-dot" aria-hidden="true"></span>
-          <span><strong id="deck-remaining">78</strong> ใบเหลือ</span>
+        <div class="topbar-actions">
+          <a class="topbar-link" href="#ai-reader">ถาม AI</a>
+          <a class="topbar-link" href="./admin/">หลังบ้าน</a>
+          <div class="deck-pill">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span><strong id="deck-remaining">78</strong> ใบเหลือ</span>
+          </div>
         </div>
       </header>
 
@@ -183,12 +187,18 @@
               <p>ใส่รหัสที่ได้รับเพื่อเปิดคำทำนายแบบเชื่อมโยงกับคำถามของคุณ</p>
             </div>
           </div>
+          <div class="ai-locked-question">
+            <label class="ai-question-label" for="ai-question-preview">ช่องถามไพ่ของคุณ</label>
+            <textarea id="ai-question-preview" rows="3" disabled placeholder="ล็อกอิน Beta ก่อน แล้วพิมพ์คำถามที่อยากถามไพ่ได้ตรงนี้"></textarea>
+            <p class="ai-locked-note">ช่องนี้จะแสดงคำตอบจาก AI หลังเข้าสู่ระบบและเปิดไพ่แล้ว</p>
+          </div>
           <form class="ai-login-row" id="beta-login-form">
             <label class="sr-only" for="beta-code">Beta Access Code</label>
             <input id="beta-code" type="password" autocomplete="one-time-code" placeholder="กรอก Beta Access Code" />
             <button class="ai-button" id="beta-login-button" type="submit">เข้าสู่ Beta</button>
           </form>
           <p class="ai-status" id="beta-auth-status" role="status" aria-live="polite"></p>
+          <button class="ai-text-link" id="beta-focus-button" type="button">มี Beta Access แล้ว? เข้าสู่ระบบเพื่อถามไพ่</button>
         </div>
 
         <div class="ai-member-panel" id="ai-member-panel" hidden>
@@ -238,6 +248,7 @@
         <span>TAROT DAILY</span>
         <span class="footer-line" aria-hidden="true"></span>
         <span>เปิดไพ่เพื่อความบันเทิง</span>
+        <a href="./admin/">ผู้ดูแลระบบ</a>
       </footer>
     </main>
 

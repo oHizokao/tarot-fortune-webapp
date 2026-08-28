@@ -3,4 +3,6 @@ api/config/config.local.php
 .env
 .env.*
 .vercel-upload/
+node_modules/
+.playwright-cli/
 *.log

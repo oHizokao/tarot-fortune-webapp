@@ -16,6 +16,7 @@ const state = {
   aiConversation: [],
   aiBackendAvailable: true,
   aiUser: null,
+  aiCsrfToken: "",
   aiBusy: false,
   aiRequestVersion: 0,
   copyBusy: false,
@@ -44,6 +45,7 @@ const historyList = document.querySelector("#history-list");
 const historyEmpty = document.querySelector("#history-empty");
 const aiGuestPanel = document.querySelector("#ai-guest-panel");
 const aiMemberPanel = document.querySelector("#ai-member-panel");
+const aiQuestionPreview = document.querySelector("#ai-question-preview");
 const betaLoginForm = document.querySelector("#beta-login-form");
 const betaCodeInput = document.querySelector("#beta-code");
 const betaLoginButton = document.querySelector("#beta-login-button");
@@ -54,6 +56,7 @@ const aiQuestion = document.querySelector("#ai-question");
 const askAiButton = document.querySelector("#ask-ai-button");
 const aiRequestStatus = document.querySelector("#ai-request-status");
 const aiAnswer = document.querySelector("#ai-answer");
+const betaFocusButton = document.querySelector("#beta-focus-button");
 let drawTimer = null;
 
 function isValidDeckList(list) {
@@ -540,6 +543,7 @@ function setAiLoggedOut(message = "ใส่ Beta Access Code เพื่อใ
   state.aiBusy = false;
   clearAiAnswer();
   state.aiUser = null;
+  state.aiCsrfToken = "";
   aiGuestPanel.hidden = false;
   aiMemberPanel.hidden = true;
   betaCodeInput.value = "";
@@ -548,8 +552,9 @@ function setAiLoggedOut(message = "ใส่ Beta Access Code เพื่อใ
   askAiButton.disabled = true;
 }
 
-function setAiLoggedIn(user) {
+function setAiLoggedIn(user, csrfToken = "") {
   state.aiUser = user;
+  state.aiCsrfToken = csrfToken;
   aiGuestPanel.hidden = true;
   aiMemberPanel.hidden = false;
   betaCodeInput.value = "";
@@ -573,22 +578,28 @@ function resetAiReaderState() {
 
 async function loadBetaSession() {
   try {
-    const data = await fetchApiJson("./api/auth/me.php");
+    const data = await fetchApiJson("/api/auth/me");
+    if (data.backend_configured === false) {
+      state.aiBackendAvailable = false;
+      setAiLoggedOut("โหมดเปิดไพ่ใช้ฟรีพร้อมใช้งานแล้ว — กรุณาตั้งค่า Neon DATABASE_URL ใน Vercel เพื่อเปิด Beta และ AI");
+      return;
+    }
     state.aiBackendAvailable = true;
     if (data.authenticated && data.user) {
-      setAiLoggedIn(data.user);
+      setAiLoggedIn(data.user, data.csrf_token || "");
     } else {
       setAiLoggedOut("ใส่ Beta Access Code เพื่อใช้ AI Tarot Reader");
     }
   } catch (error) {
-    state.aiBackendAvailable = error.code !== "INVALID_JSON" && error.status !== 404;
+    const setupError = ["DATABASE_NOT_CONFIGURED", "SERVER_CONFIG_MISSING", "INVALID_JSON"].includes(error.code) || error.status === 404;
+    state.aiBackendAvailable = !setupError;
     betaLoginButton.disabled = false;
     setAiStatus(
       betaAuthStatus,
-      error.code === "INVALID_JSON" || error.status === 404
-        ? "โหมดเปิดไพ่ใช้ฟรีพร้อมใช้งานแล้ว — AI Reader จะพร้อมหลังอัปโหลด PHP backend ไป Hostinger"
+      setupError
+        ? "โหมดเปิดไพ่ใช้ฟรีพร้อมใช้งานแล้ว — ตั้งค่า Neon DATABASE_URL ใน Vercel เพื่อเปิดล็อกอินและ AI"
         : "ยังเชื่อมต่อ AI backend ไม่ได้ ลองใหม่อีกครั้งภายหลัง",
-      !(error.code === "INVALID_JSON" || error.status === 404),
+      !setupError,
     );
     syncAiControls();
   }
@@ -605,13 +616,13 @@ async function loginBeta() {
   setAiStatus(betaAuthStatus, "กำลังตรวจสอบรหัส...");
 
   try {
-    const data = await fetchApiJson("./api/auth/beta-login.php", {
+    const data = await fetchApiJson("/api/auth/beta-login", {
       method: "POST",
       body: JSON.stringify({ access_code: accessCode }),
     });
     state.aiBackendAvailable = true;
     clearAiAnswer();
-    setAiLoggedIn(data.user);
+    setAiLoggedIn(data.user, data.csrf_token || "");
   } catch (error) {
     setAiStatus(betaAuthStatus, error.message || "รหัสไม่ถูกต้องหรือหมดอายุแล้ว", true);
   } finally {
@@ -622,7 +633,7 @@ async function loginBeta() {
 async function logoutBeta() {
   betaLogoutButton.disabled = true;
   try {
-    await fetchApiJson("./api/auth/logout.php", { method: "POST", body: "{}" });
+    await fetchApiJson("/api/auth/logout", { method: "POST", body: "{}" });
   } catch {
     // Clear the local UI even if the host is temporarily unavailable.
   } finally {
@@ -659,8 +670,9 @@ async function askAi() {
   setAiStatus(aiRequestStatus, "กำลังอ่านคำบนไพ่และเชื่อมโยงกับคำถาม...");
 
   try {
-    const data = await fetchApiJson("./api/ai/tarot-chat.php", {
+    const data = await fetchApiJson("/api/ai/tarot-chat", {
       method: "POST",
+      headers: { "X-CSRF-Token": state.aiCsrfToken },
       body: JSON.stringify({
         question,
         cards: state.drawn.map(getCardFileName),
@@ -823,6 +835,10 @@ betaLoginForm.addEventListener("submit", (event) => {
 betaLogoutButton.addEventListener("click", logoutBeta);
 aiQuestion.addEventListener("input", syncAiControls);
 askAiButton.addEventListener("click", askAi);
+betaFocusButton.addEventListener("click", () => {
+  betaCodeInput.focus();
+  betaCodeInput.scrollIntoView({ behavior: "smooth", block: "center" });
+});
 
 const savedState = loadSavedState();
 state.remaining = savedState?.remaining ?? shuffle(DECK);

@@ -1,80 +1,103 @@
 # Tarot Fortune Web App
 
-เว็บแอปเปิดไพ่จากภาพในสำรับ 78 ใบ เลือกเปิด 1, 2 หรือ 3 ใบ ไพ่ไม่ซ้ำกันจนกว่าจะครบสำรับ มีประวัติชุดไพ่, ค้นหา, Copy เป็น PNG และ Motion เปิดไพ่ทีละใบ
+เว็บเปิดไพ่จากภาพสำรับ 78 ใบ เลือกเปิด 1, 2 หรือ 3 ใบ ไพ่ไม่ซ้ำจนกว่าจะครบสำรับ มีประวัติ, ค้นหา, Copy PNG และ Motion เปิดไพ่ทีละใบ
 
-ผู้ใช้ทั่วไปเปิดไพ่ได้ฟรีโดยไม่ต้องล็อกอิน ส่วน AI Tarot Reader ใช้ Beta Access Code และทำงานผ่าน PHP backend ที่เหมาะกับ Hostinger shared hosting
+เวอร์ชันนี้ทำงานบน Vercel ทั้งระบบ:
 
-## โครงสร้างสำคัญ
+- Guest เปิดไพ่ได้ทันทีโดยไม่ต้องล็อกอิน
+- Beta user ล็อกอินด้วย Access Code รายบุคคล แล้วพิมพ์ถาม AI จากไพ่ที่เปิดจริง
+- Admin จัดการผู้ทดสอบ, สิทธิ์, วันหมดอายุ, API key และสถิติได้ที่ /admin/
+- Backend ใช้ Vercel Node.js Functions และ Neon serverless Postgres
 
-- `index.html`, `style.css`, `app.js` — หน้าเว็บและระบบสุ่มไพ่ฝั่ง browser
-- `tarot-cards/` — ภาพไพ่ 78 ใบ (`card-001.webp` ถึง `card-078.webp`)
-- `data/cards.json` — คำภาษาอังกฤษที่ตรวจจาก label บนภาพไพ่ ใช้เป็นข้อมูลให้ AI เชื่อมกับคำถาม
-- `api/` — PHP JSON API สำหรับ Beta login, AI, admin และการตั้งค่า
-- `admin/` — หน้า `/admin/` สำหรับผู้ดูแล
-- `database/schema.sql` — schema MySQL/MariaDB
-- `scripts/create-admin.php` — สร้างบัญชีแอดมินครั้งแรกผ่าน SSH/CLI
+## โครงสร้าง
 
-## ใช้งานหน้าเปิดไพ่แบบไม่ใช้ backend
+- index.html, style.css, app.js — หน้าเปิดไพ่และ AI reader
+- tarot-cards/ — ภาพไพ่ card-001.webp ถึง card-078.webp
+- data/cards.json — คำบนไพ่ที่อ่านจาก artwork
+- api/**/*.mjs — Vercel Functions สำหรับ auth, AI และ admin
+- lib/vercel/ — database, session, security และ settings helpers
+- admin/index.html, admin/admin.js — หน้าหลังบ้านแบบ static
+- database/schema.vercel.sql — schema สำหรับ Neon Postgres
+- api/**/*.php — legacy Hostinger files; ถูก .vercelignore กันไม่ให้ขึ้น Vercel
 
-```powershell
+## Deploy บน Vercel
+
+1. เชื่อม GitHub repository นี้กับ Vercel project แล้ว deploy branch main
+2. จาก Vercel Marketplace เชื่อม Neon Postgres แล้วเพิ่ม environment variable DATABASE_URL
+3. รัน database/schema.vercel.sql ใน Neon SQL Editor
+4. เพิ่ม Environment Variables ใน Vercel:
+
+   - DATABASE_URL — จาก Neon
+   - SESSION_SECRET — random secret ยาวอย่างน้อย 32 ตัวอักษร
+   - APP_ENCRYPTION_KEY — random secret สำหรับเข้ารหัส API key ที่เก็บในฐานข้อมูล
+   - TAROT_BOOTSTRAP_SECRET — secret สำหรับสร้าง Admin คนแรก
+   - OPENAI_API_KEY — ใส่ได้เป็น fallback แต่แนะนำให้กรอกผ่านหลังบ้าน
+   - OPENAI_MODEL — รุ่นที่บัญชี API เปิดใช้ เช่น gpt-4.1-mini
+
+5. Redeploy หลังเพิ่ม variables แล้วเปิด /admin/
+6. ครั้งแรกกรอก First-time Setup เพื่อสร้าง Admin คนแรก จากนั้นล็อกอินด้วยอีเมล/รหัสผ่าน
+7. ในหลังบ้านกรอก OpenAI API key และ model แล้วกดบันทึก
+8. สร้าง Beta Tester ระบบจะแสดง Access Code เฉพาะครั้งนั้น ให้ส่ง code ให้ผู้ใช้รายบุคคล
+
+ถ้าใช้คำสั่งสร้าง secret ใน PowerShell:
+
+~~~powershell
+$bytes = [byte[]](1..32 | ForEach-Object { Get-Random -Maximum 256 })
+[Convert]::ToBase64String($bytes)
+~~~
+
+ใช้ค่าที่ได้เป็น APP_ENCRYPTION_KEY และสร้างค่า SESSION_SECRET/TAROT_BOOTSTRAP_SECRET ที่ไม่ซ้ำกัน
+
+## การใช้งาน
+
+1. Guest เปิดไพ่ 1/2/3 ใบได้เลย
+2. ผู้ใช้ที่มี Beta Access Code กรอก code ในส่วน “ถามคำถามกับชุดไพ่”
+3. หลังล็อกอินและเปิดไพ่แล้ว จะเห็นช่องพิมพ์คำถามและปุ่มถาม AI
+4. AI เชื่อมคำบนไพ่ เช่น Worry, Relaxation หรือ Career Advancement กับคำถาม โดยตอบเป็นแนวทาง ไม่ฟันธงอนาคต
+
+## API หลัก
+
+- GET /api/health
+- GET /api/auth/me
+- POST /api/auth/beta-login
+- POST /api/auth/logout
+- POST /api/ai/tarot-chat
+- POST /api/admin/bootstrap
+- POST /api/admin/login, GET /api/admin/me, POST /api/admin/logout
+- GET /api/admin/users, POST /api/admin/create-user, POST /api/admin/update-user
+- GET/POST /api/admin/settings
+- GET /api/admin/usage
+
+## ความปลอดภัย
+
+- API key ไม่อยู่ใน frontend และไม่ถูกคืนกลับไปที่ browser
+- API key ที่บันทึกจากหลังบ้านถูกเข้ารหัสก่อนเก็บใน Postgres
+- Session ใช้ HttpOnly/Secure signed cookie
+- Admin mutation และ AI request ใช้ CSRF token
+- จำกัดชื่อไฟล์ไพ่เฉพาะ 78 ใบจริง
+- ไม่เก็บคำถาม/คำตอบเต็มโดยค่าเริ่มต้น
+- Prompt AI กำชับให้ตอบอย่างอ่อนโยน ไม่ทำให้ผู้ใช้หวาดกลัว และไม่แทนผู้เชี่ยวชาญด้านสุขภาพ กฎหมาย การเงิน หรือความปลอดภัย
+
+## Local development
+
+โหมด Guest ที่ไม่ใช้ backend:
+
+~~~powershell
 python -m http.server 4173
-```
+~~~
 
-เปิด `http://localhost:4173` ได้เลย ระบบสุ่มไพ่, ประวัติ, Copy PNG และ Motion ใช้ได้โดยไม่ต้องล็อกอิน
+เปิด http://localhost:4173 ได้ทันที ส่วน Beta/Admin/AI ต้องใช้ Vercel Functions พร้อม DATABASE_URL และ environment variables
 
-## ติดตั้งบน Hostinger ให้ AI ใช้งาน
+คำสั่งตรวจสอบ:
 
-ต้องใช้ PHP 8.0+ พร้อม PDO MySQL และ cURL
+~~~powershell
+npm install
+npm test
+npm run check
+~~~
 
-1. สร้าง MySQL database/user ใน hPanel แล้ว import `database/schema.sql` ผ่าน phpMyAdmin
-2. อัปโหลด `index.html`, `style.css`, `app.js`, `tarot-cards/`, `data/`, `api/` และ `admin/` เข้า `public_html` โดยคงโครงสร้างโฟลเดอร์เดิม
-3. คัดลอก `api/config/config.example.php` เป็น `api/config/config.php` แล้วแก้ค่า `db.dsn`, `db.username`, `db.password`
-4. ตั้งค่า `OPENAI_API_KEY` และ `OPENAI_MODEL` ใน environment ของโฮสต์ถ้าทำได้ หรือใส่ใน `config.php`/`config.local.php` ที่ถูก ignore จาก Git โดยห้าม commit คีย์จริง
-5. สร้างแอดมินครั้งแรกผ่าน SSH:
+## หมายเหตุ
 
-```bash
-php scripts/create-admin.php "ชื่อแอดมิน" admin@example.com "รหัสผ่านยาวอย่างน้อย 10 ตัว"
-```
-
-6. เปิด `https://โดเมนของคุณ/admin/` ล็อกอิน แล้วใช้ช่อง OpenAI API key ในหลังบ้านได้ คีย์เดิมจะไม่ถูกแสดงกลับไปยัง browser
-7. สร้าง Beta tester เลือกเวลา 3 ชั่วโมง, 12 ชั่วโมง, 24 ชั่วโมง, 3 วัน หรือ 7 วัน ระบบจะแสดง Access Code ให้คัดลอกครั้งเดียว
-
-ถ้าโฮสต์ไม่มี SSH ให้รันสคริปต์นี้จากเครื่องที่ติดตั้ง PHP โดยตั้งค่า database ให้ชี้ไปยัง Hostinger หรือสร้าง admin hash ผ่านสภาพแวดล้อม PHP ที่ไว้ใจได้
-
-## พฤติกรรม Beta และ AI
-
-- หน้าเปิดไพ่ยังใช้งานได้เมื่อไม่มี session หรือไม่มี backend
-- AI endpoint ตรวจ session, role, status และวันหมดอายุทุกครั้งก่อนเรียก OpenAI
-- จำกัดคำขอเริ่มต้นประมาณ 6 ครั้งต่อนาทีต่อผู้ใช้ และ 60 ครั้งต่อชั่วโมง
-- รับเฉพาะชื่อไฟล์ `card-001.webp` ถึง `card-078.webp` ป้องกัน path traversal
-- ค่าเริ่มต้นไม่เก็บคำถาม/คำตอบฉบับเต็มลง `ai_usage` (`LOG_AI_CONTENT=false`)
-- คำตอบใช้คำบนไพ่จริง เช่น `Worry`, `Relaxation`, `Career Advancement` เชื่อมกับคำถามเป็นมุมมองสะท้อนความคิด ไม่ฟันธงอนาคต
-- Prompt กำชับให้ตอบอย่างอ่อนโยน ไม่ทำให้จิตตก ไม่แทนแพทย์/ทนาย/ที่ปรึกษาการเงิน และชวนหาความช่วยเหลือที่เหมาะสมเมื่อเป็นเรื่องความปลอดภัย
-- `AI_USE_CARD_IMAGES=1` เป็นโหมดเสริมที่ส่งภาพไพ่เข้า AI เพิ่มเติม ใช้ token มากขึ้น; ค่าเริ่มต้นคือ metadata mode
-
-## Endpoint หลัก
-
-- `POST /api/auth/beta-login.php`
-- `GET /api/auth/me.php`
-- `POST /api/auth/logout.php`
-- `POST /api/ai/tarot-chat.php`
-- `POST /api/admin/login.php`
-- `GET /api/admin/users.php`, `POST /api/admin/create-user.php`, `POST /api/admin/update-user.php`
-- `GET/POST /api/admin/settings.php`
-- `GET /api/admin/usage.php`
-
-## ตรวจสอบก่อนเปิดจริง
-
-- Guest: เปิด 1/2/3 ใบ, refresh, ประวัติ, ค้นหา, Copy PNG ทั้งมือถือและคอม
-- New browser session: ไม่แสดงคำทำนายชุดเก่าค้างหน้า แต่ยังรักษาความคืบหน้าสำรับและประวัติไว้; ถ้าครบ 78 ใบจะเริ่มรอบใหม่อัตโนมัติ
-- Beta: code ถูก, code ผิด, หมดอายุ, ถูกระงับ, logout และยิง AI เกิน rate limit
-- Admin: login, สร้าง tester, ต่ออายุ, suspend/reactivate, revoke, สร้าง code ใหม่, ลบ และดู usage
-- AI: คำตอบต้องอ้างคำบนไพ่ที่เปิดจริงและให้คำแนะนำที่ผู้ใช้เลือกทำต่อได้
-
-## หมายเหตุเรื่อง Vercel
-
-Vercel deployment แบบ static ใช้หน้าเปิดไพ่ได้ แต่ไม่รันไฟล์ PHP และไม่ควรเก็บ OpenAI key ไว้ใน static frontend ดังนั้นถ้าต้องการ AI/Beta/Admin ให้ชี้โดเมนไปยัง Hostinger ที่ติดตั้ง `api/` แล้ว ส่วน Vercel ใช้เป็น preview ของหน้าเปิดไพ่ได้
-
-โปรเจกต์ Vercel preview เชื่อมกับ `oHizokao/tarot-fortune-webapp` แล้ว การ push เข้า branch `main` จะสร้าง deployment ใหม่อัตโนมัติสำหรับหน้า static
+Vercel Functions ถูกตรวจจากไฟล์ในโฟลเดอร์ api/ โดยอัตโนมัติ; ไฟล์ PHP legacy จะไม่ถูก deploy. หากยังไม่ตั้งค่า Neon หรือ secret หน้า Guest ยังคงเปิดไพ่ได้ และหน้า AI จะแจ้งขั้นตอนตั้งค่าอย่างชัดเจนแทนการทำงานเงียบ ๆ
 
 ใช้เพื่อความบันเทิงและการทบทวนตัวเอง ผู้ใช้เป็นคนตัดสินใจชีวิตของตัวเองเสมอ

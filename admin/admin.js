@@ -18,6 +18,7 @@ async function api(url, options = {}) {
   if (!response.ok || data.ok === false) {
     const error = new Error(data.message || data.error || "ทำรายการไม่สำเร็จ");
     error.status = response.status;
+    error.code = data.code || data.error || "REQUEST_FAILED";
     throw error;
   }
   return data;
@@ -34,14 +35,14 @@ function toggleDashboard(show) {
 }
 
 async function loadSettings() {
-  const data = await api("../api/admin/settings.php");
+  const data = await api("/api/admin/settings");
   $("#openai-model").value = data.model || "";
   $("#api-status-chip").textContent = data.configured ? "พร้อมใช้งาน" : "ยังไม่ตั้งค่า";
   $("#api-status-chip").classList.toggle("is-ready", Boolean(data.configured));
 }
 
 async function loadUsage() {
-  const data = await api("../api/admin/usage.php");
+  const data = await api("/api/admin/usage");
   const stats = data.stats || {};
   $("#stat-users").textContent = stats.active_beta_users ?? "—";
   $("#stat-requests").textContent = stats.total_requests ?? "—";
@@ -88,7 +89,7 @@ function renderUsers(users) {
 }
 
 async function loadUsers() {
-  const data = await api("../api/admin/users.php");
+  const data = await api("/api/admin/users");
   renderUsers(data.users || []);
 }
 
@@ -105,7 +106,7 @@ $("#admin-login-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const status = $("#admin-login-status");
   try {
-    const data = await api("../api/admin/login.php", { method: "POST", body: JSON.stringify({ email: $("#admin-email").value.trim(), password: $("#admin-password").value }) });
+    const data = await api("/api/admin/login", { method: "POST", body: JSON.stringify({ email: $("#admin-email").value.trim(), password: $("#admin-password").value }) });
     state.csrf = data.csrf_token || "";
     $("#admin-welcome").textContent = `เข้าสู่ระบบในชื่อ ${data.user?.name || "Admin"}`;
     toggleDashboard(true);
@@ -117,7 +118,7 @@ $("#settings-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const status = $("#settings-status");
   try {
-    const data = await api("../api/admin/settings.php", { method: "POST", body: JSON.stringify({ csrf_token: state.csrf, openai_api_key: $("#openai-api-key").value.trim(), openai_model: $("#openai-model").value.trim(), use_card_images: $("#use-card-images").checked }) });
+    const data = await api("/api/admin/settings", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ openai_api_key: $("#openai-api-key").value.trim(), openai_model: $("#openai-model").value.trim(), use_card_images: $("#use-card-images").checked }) });
     $("#openai-api-key").value = "";
     $("#api-status-chip").textContent = data.configured ? "พร้อมใช้งาน" : "ยังไม่ตั้งค่า";
     $("#api-status-chip").classList.toggle("is-ready", Boolean(data.configured));
@@ -129,7 +130,7 @@ $("#create-user-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const status = $("#create-user-status");
   try {
-    const data = await api("../api/admin/create-user.php", { method: "POST", body: JSON.stringify({ csrf_token: state.csrf, name: $("#tester-name").value.trim(), email: $("#tester-email").value.trim(), duration: $("#tester-duration").value }) });
+    const data = await api("/api/admin/create-user", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ name: $("#tester-name").value.trim(), email: $("#tester-email").value.trim(), duration: $("#tester-duration").value }) });
     state.accessCode = data.access_code || "";
     $("#new-access-code").textContent = state.accessCode;
     $("#new-code-output").hidden = false;
@@ -150,18 +151,40 @@ $("#users-table-body").addEventListener("click", async (event) => {
   const action = button.dataset.action;
   if (action === "delete" && !window.confirm("ลบ Beta user นี้หรือไม่? ประวัติ AI ของผู้ใช้นี้จะถูกลบตามฐานข้อมูล")) return;
   try {
-    const data = await api("../api/admin/update-user.php", { method: "POST", body: JSON.stringify({ csrf_token: state.csrf, id: Number(button.dataset.id), action, duration: button.dataset.duration || "24h" }) });
+    const data = await api("/api/admin/update-user", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ id: Number(button.dataset.id), action, duration: button.dataset.duration || "24h" }) });
     if (data.access_code) { state.accessCode = data.access_code; $("#new-access-code").textContent = state.accessCode; $("#new-code-output").hidden = false; showStatus($("#users-status"), "สร้าง Code ใหม่แล้ว — คัดลอกก่อนปิดหน้านี้"); }
     await refreshAll();
   } catch (error) { showStatus($("#users-status"), error.message, true); }
 });
 
 $("#refresh-users-button").addEventListener("click", refreshAll);
-$("#admin-logout-button").addEventListener("click", async () => { try { await api("../api/admin/logout.php", { method: "POST", body: "{}" }); } finally { toggleDashboard(false); } });
+$("#admin-logout-button").addEventListener("click", async () => { try { await api("/api/admin/logout", { method: "POST", body: "{}" }); } finally { toggleDashboard(false); } });
+
+$("#bootstrap-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const status = $("#bootstrap-status");
+  try {
+    const data = await api("/api/admin/bootstrap", {
+      method: "POST",
+      body: JSON.stringify({
+        setup_secret: $("#bootstrap-secret").value,
+        name: $("#bootstrap-name").value.trim(),
+        email: $("#bootstrap-email").value.trim(),
+        password: $("#bootstrap-password").value,
+      }),
+    });
+    state.csrf = data.csrf_token || "";
+    $("#admin-welcome").textContent = "เข้าสู่ระบบในชื่อ " + (data.user?.name || "Admin");
+    toggleDashboard(true);
+    await refreshAll();
+  } catch (error) {
+    showStatus(status, error.message, true);
+  }
+});
 
 (async function boot() {
   try {
-    const data = await api("../api/admin/me.php");
+    const data = await api("/api/admin/me");
     state.csrf = data.csrf_token || "";
     $("#admin-welcome").textContent = `เข้าสู่ระบบในชื่อ ${data.user?.name || "Admin"}`;
     toggleDashboard(true);

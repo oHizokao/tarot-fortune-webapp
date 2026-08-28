@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/ai/tarot-chat.mjs": {
+      "maxDuration": 60,
+      "includeFiles": ["data/cards.json"]
+    }
+  }
+}

@@ -1,0 +1,5 @@
+api/**/*.php
+api/config/**
+admin/index.php
+database/schema.sql
+scripts/**/*.php

@@ -94,6 +94,24 @@ button {
   justify-content: space-between;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-link {
+  color: #b4c8eb;
+  font-size: 11px;
+  text-decoration: none;
+  transition: color 180ms ease;
+}
+
+.topbar-link:hover,
+.topbar-link:focus-visible {
+  color: #fff;
+}
+
 .brand {
   gap: 11px;
   color: inherit;
@@ -1009,6 +1027,44 @@ h2 {
   font-size: 10px;
 }
 
+.ai-locked-question {
+  margin-top: 15px;
+  padding: 12px;
+  border: 1px dashed rgba(170, 143, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(8, 15, 48, 0.28);
+}
+
+.ai-locked-question .ai-question-label {
+  margin: 0 0 7px;
+}
+
+#ai-question-preview {
+  display: block;
+  width: 100%;
+  min-height: 78px;
+  padding: 11px 12px;
+  color: #a8b8d5;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.65;
+  border: 1px solid rgba(138, 153, 221, 0.19);
+  border-radius: 11px;
+  outline: 0;
+  resize: none;
+  background: rgba(10, 13, 44, 0.28);
+}
+
+#ai-question-preview::placeholder {
+  color: #6f83ad;
+}
+
+.ai-locked-note {
+  margin: 7px 0 0;
+  color: #798db4;
+  font-size: 10px;
+}
+
 .ai-login-row {
   display: flex;
   gap: 9px;
@@ -1072,6 +1128,23 @@ h2 {
   color: #8aa1c8;
   font-size: 10px;
   line-height: 1.55;
+}
+
+.ai-text-link {
+  margin-top: 9px;
+  padding: 0;
+  color: #b8a8ff;
+  font: inherit;
+  font-size: 10px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.ai-text-link:hover,
+.ai-text-link:focus-visible {
+  color: #fff;
+  text-decoration: underline;
 }
 
 .ai-user-status {
@@ -1402,6 +1475,16 @@ h2 {
   background: #2c4d7e;
 }
 
+.footer-note a {
+  color: #8da6d0;
+  text-decoration: none;
+}
+
+.footer-note a:hover,
+.footer-note a:focus-visible {
+  color: #fff;
+}
+
 @keyframes reveal-card {
   to {
     opacity: 1;
@@ -1564,6 +1647,14 @@ h2 {
   .deck-pill {
     padding: 7px 9px;
     font-size: 10px;
+  }
+
+  .topbar-actions {
+    gap: 7px;
+  }
+
+  .topbar-link {
+    font-size: 9px;
   }
 
   .brand-mark {
