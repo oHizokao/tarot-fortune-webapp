@@ -14,11 +14,11 @@
 - index.html, style.css, app.js — หน้าเปิดไพ่และ AI reader
 - tarot-cards/ — ภาพไพ่ card-001.webp ถึง card-078.webp
 - data/cards.json — คำบนไพ่ที่อ่านจาก artwork
-- api/**/*.mjs — Vercel Functions สำหรับ auth, AI และ admin
+- api/health.mjs, api/ai/tarot-chat.mjs และ catch-all routes ใน api/auth/ กับ api/admin/ — Vercel Functions (รวม 4 functions เพื่อใช้กับ Hobby plan)
 - lib/vercel/ — database, session, security และ settings helpers
 - admin/index.html, admin/admin.js — หน้าหลังบ้านแบบ static
 - database/schema.vercel.sql — schema สำหรับ Neon Postgres
-- api/**/*.php — legacy Hostinger files; ถูก .vercelignore กันไม่ให้ขึ้น Vercel
+- api/**/*.php — ไฟล์เก่าที่ถูก .vercelignore กันไม่ให้ขึ้น Vercel
 
 ## Deploy บน Vercel
 
@@ -98,6 +98,6 @@ npm run check
 
 ## หมายเหตุ
 
-Vercel Functions ถูกตรวจจากไฟล์ในโฟลเดอร์ api/ โดยอัตโนมัติ; ไฟล์ PHP legacy จะไม่ถูก deploy. หากยังไม่ตั้งค่า Neon หรือ secret หน้า Guest ยังคงเปิดไพ่ได้ และหน้า AI จะแจ้งขั้นตอนตั้งค่าอย่างชัดเจนแทนการทำงานเงียบ ๆ
+Vercel Functions ถูกตรวจจากไฟล์ในโฟลเดอร์ api/ โดยอัตโนมัติ; ไฟล์เก่าที่ไม่ใช่ flow ของ Vercel จะไม่ถูก deploy. หากยังไม่ตั้งค่า Neon หรือ secret หน้า Guest ยังคงเปิดไพ่ได้ และหน้า AI จะแจ้งขั้นตอนตั้งค่าอย่างชัดเจนแทนการทำงานเงียบ ๆ
 
 ใช้เพื่อความบันเทิงและการทบทวนตัวเอง ผู้ใช้เป็นคนตัดสินใจชีวิตของตัวเองเสมอ

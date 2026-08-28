@@ -19,7 +19,7 @@ test("auth session reports missing Vercel database instead of pretending to be l
   const previous = process.env.DATABASE_URL;
   delete process.env.DATABASE_URL;
   try {
-    const handler = handlerFor(await import("../api/auth/me.mjs"), "GET");
+    const handler = handlerFor(await import("../api/auth/[...route].mjs"), "GET");
     const response = await handler(new Request("https://tarot.example/api/auth/me", { method: "GET" }));
     const body = await response.json();
     assert.equal(response.status, 200);

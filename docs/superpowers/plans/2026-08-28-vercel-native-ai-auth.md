@@ -2,9 +2,9 @@
 
 > For agentic workers: REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
-Goal: ย้ายระบบ backend จาก PHP/Hostinger ไปเป็น Vercel Node.js Functions + Neon Postgres เพื่อให้ Guest, Beta login, AI reader และ Admin ใช้งานได้จาก Vercel โดเมนเดียว
+Goal: ย้ายระบบ backend จาก PHP ไปเป็น Vercel Node.js Functions + Neon Postgres เพื่อให้ Guest, Beta login, AI reader และ Admin ใช้งานได้จาก Vercel โดเมนเดียว
 
-Architecture: Static frontend เรียก same-origin /api/* Vercel Functions. Functions ใช้ Neon serverless Postgres สำหรับ users, AI usage และ encrypted settings; session เป็น signed HttpOnly cookie และ OpenAI key อยู่เฉพาะ server.
+Architecture: Static frontend เรียก same-origin /api/* Vercel Functions. Hobby plan ใช้ catch-all functions สี่ไฟล์ (health, auth, AI, admin) เพื่อไม่เกิน function limit. Functions ใช้ Neon serverless Postgres สำหรับ users, AI usage และ encrypted settings; session เป็น signed HttpOnly cookie และ OpenAI key อยู่เฉพาะ server.
 
 Tech Stack: Vanilla HTML/CSS/JavaScript, Vercel Node.js Functions, Neon Postgres, @neondatabase/serverless, bcryptjs, Node built-in crypto, OpenAI Responses API ผ่าน fetch, Node test runner, Playwright checks.
 
@@ -16,7 +16,7 @@ Spec: docs/superpowers/specs/2026-08-28-vercel-native-ai-auth-design.md
 - Beta user ต้องได้รับ code จาก Admin และถาม AI ได้เฉพาะไพ่ที่เปิดจริง.
 - API key ห้ามอยู่ใน client bundle, GitHub หรือ response ใด ๆ.
 - คำตอบ AI ต้องเป็นแนวทางที่ปลอดภัย ไม่ฟันธงชีวิตและไม่ทำให้ผู้ใช้จิตตก.
-- Vercel เป็น runtime หลัก; ห้ามพึ่ง Hostinger/PHP สำหรับ flow ใด ๆ.
+- Vercel เป็น runtime เดียวของ flow นี้; ห้ามพึ่ง PHP สำหรับ flow ใด ๆ.
 - ต้องรองรับ desktop/mobile และ reduced-motion.
 
 ---
@@ -57,13 +57,10 @@ Interfaces:
 
 Files:
 - Create: api/health.mjs
-- Create: api/auth/me.mjs
-- Create: api/auth/beta-login.mjs
-- Create: api/auth/logout.mjs
-- Create: api/admin/bootstrap.mjs
-- Create: api/admin/login.mjs
-- Create: api/admin/me.mjs
-- Create: api/admin/logout.mjs
+- Create: api/auth/[...route].mjs
+- Create: api/admin/[...route].mjs
+- Create: lib/vercel/routes/auth.mjs
+- Create: lib/vercel/routes/admin.mjs
 
 Interfaces:
 - Browser uses /api/auth/* and /api/admin/* without .php.
@@ -71,18 +68,15 @@ Interfaces:
 - Bootstrap creates exactly one active admin when no admin exists and requires TAROT_BOOTSTRAP_SECRET.
 
 - [ ] Step 1: Add handler-export contract tests and run them RED.
-- [ ] Step 2: Implement health, Beta login/session, and admin login/session handlers.
+- [ ] Step 2: Implement health, Beta login/session, and admin login/session handlers behind catch-all routes.
 - [ ] Step 3: Set/clear HttpOnly, Secure, SameSite cookies and return CSRF token after login.
 - [ ] Step 4: Run focused tests and syntax checks GREEN.
 
 ### Task 4: Implement Admin user/settings/usage functions
 
 Files:
-- Create: api/admin/users.mjs
-- Create: api/admin/create-user.mjs
-- Create: api/admin/update-user.mjs
-- Create: api/admin/settings.mjs
-- Create: api/admin/usage.mjs
+- Modify: lib/vercel/routes/admin.mjs
+- Modify: api/admin/[...route].mjs
 
 Interfaces:
 - Admin actions: list, create tester with duration, suspend, reactivate, revoke, extend, delete, regenerate code.
@@ -91,7 +85,7 @@ Interfaces:
 
 - [ ] Step 1: Add tests for authorization and API-key redaction, then run RED.
 - [ ] Step 2: Implement handlers with parameterized queries and one-time TF-... codes.
-- [ ] Step 3: Run focused and full tests GREEN.
+- [ ] Step 3: Run focused and full tests GREEN; confirm the deployed API function count remains under Hobby's limit.
 
 ### Task 5: Implement AI Tarot Function
 
@@ -144,6 +138,6 @@ Interfaces:
 
 - [ ] Step 1: Configure Node function duration for AI and use the existing main deployment.
 - [ ] Step 2: Run full local verification: npm test, syntax checks, card metadata checks, and Playwright guest/mobile/admin route tests.
-- [ ] Step 3: Run the available Vercel build command and inspect that api/*.mjs are detected as Functions.
+- [ ] Step 3: Run the available Vercel build command and inspect that the four api/*.mjs routes are detected as Functions.
 - [ ] Step 4: Push main, inspect the latest Vercel deployment, and verify root plus /admin/ return HTML while /api/health returns JSON.
 - [ ] Step 5: Report exact environment/database setup still required if Vercel does not already have it; do not claim live AI/auth until the function can read the database and configured key.

@@ -20,13 +20,9 @@ test("frontend exposes a guest chat preview and uses Vercel endpoint paths", asy
 test("Vercel functions and Postgres schema exist", async () => {
   const requiredFiles = [
     "api/health.mjs",
-    "api/auth/me.mjs",
-    "api/auth/beta-login.mjs",
-    "api/auth/logout.mjs",
+    "api/auth/[...route].mjs",
     "api/ai/tarot-chat.mjs",
-    "api/admin/bootstrap.mjs",
-    "api/admin/login.mjs",
-    "api/admin/settings.mjs",
+    "api/admin/[...route].mjs",
     "database/schema.vercel.sql",
   ];
 
@@ -34,6 +30,8 @@ test("Vercel functions and Postgres schema exist", async () => {
 
   const functions = await Promise.all(requiredFiles.filter((file) => file.endsWith(".mjs")).map((file) => read(file)));
   assert.ok(functions.every((source) => /export const (GET|POST)/.test(source)), "every Vercel function exposes an HTTP method export");
+  const apiFiles = (await fs.readdir(path.join(root, "api"), { recursive: true })).filter((file) => file.endsWith(".mjs"));
+  assert.equal(apiFiles.length, 4, "Hobby deployment stays within the four-function Vercel architecture");
 });
 
 test("admin is a static Vercel page", async () => {

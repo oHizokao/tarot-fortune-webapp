@@ -11,7 +11,7 @@
 ## Architecture
 
 - Static UI: index.html, style.css, app.js, admin/index.html, admin/admin.js.
-- Server: Vercel Node.js Functions ใน api/**/*.mjs; endpoint ใช้ same-origin path เช่น /api/auth/me.
+- Server: Vercel Node.js Functions ใน api/**/*.mjs; auth และ admin ใช้ catch-all route เพื่อลดจำนวน functions บน Hobby plan; endpoint ใช้ same-origin path เช่น /api/auth/me.
 - Database: Neon serverless Postgres ผ่าน @neondatabase/serverless, เชื่อมด้วย DATABASE_URL ของ Vercel Marketplace.
 - Authentication: HttpOnly signed session cookie ที่ตรวจสถานะ/วันหมดอายุจากฐานข้อมูลทุก request. Beta Access Code ถูกเก็บเป็น bcrypt hash และใช้ได้กับผู้ใช้รายบุคคลที่ Admin สร้าง.
 - Secrets: OPENAI_API_KEY ใช้จาก Vercel environment หรือค่าที่ Admin บันทึกแบบเข้ารหัสด้วย APP_ENCRYPTION_KEY; ห้ามส่ง key ไป browser และห้าม commit key.
