@@ -1,9 +1,10 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const source = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+const source = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'app.js'), 'utf8');
 
 function functionBody(name) {
   const start = source.indexOf(`function ${name}(`);
