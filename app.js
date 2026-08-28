@@ -545,10 +545,13 @@ function setAiLoggedOut(message = "ใส่ Beta Access Code เพื่อใ
   state.aiUser = null;
   state.aiCsrfToken = "";
   aiGuestPanel.hidden = false;
-  aiMemberPanel.hidden = true;
+  aiMemberPanel.hidden = false;
+  betaLogoutButton.hidden = true;
+  aiUserStatus.hidden = true;
   betaCodeInput.value = "";
   aiQuestion.value = "";
   setAiStatus(betaAuthStatus, message, isError);
+  setAiStatus(aiRequestStatus, "พิมพ์คำถามไว้ได้ แล้วเข้าสู่ Beta เพื่อส่งคำถามให้ AI");
   askAiButton.disabled = true;
 }
 
@@ -557,6 +560,8 @@ function setAiLoggedIn(user, csrfToken = "") {
   state.aiCsrfToken = csrfToken;
   aiGuestPanel.hidden = true;
   aiMemberPanel.hidden = false;
+  betaLogoutButton.hidden = false;
+  aiUserStatus.hidden = false;
   betaCodeInput.value = "";
   aiUserStatus.textContent = `${user.name || "Beta user"} · ใช้ได้ถึง ${formatAccessExpiry(user.access_expires_at)}`;
   setAiStatus(aiRequestStatus, state.drawn.length ? "พร้อมเชื่อมคำบนไพ่กับคำถามของคุณ" : "เปิดไพ่ก่อน แล้วพิมพ์คำถามได้เลย");
