@@ -38,12 +38,14 @@ test("admin is a landing page with member approval controls", async () => {
 test("public navigation keeps admin controls out and makes login prominent", async () => {
   const html = await read("index.html");
   const css = await read("style.css");
+  const loginButtonRule = css.match(/\.topbar-login-button\s*\{[^}]*\}/)?.[0] || "";
 
   assert.doesNotMatch(html, /href="\.\/admin\/">หลังบ้าน/);
   assert.doesNotMatch(html, /href="\.\/admin\/">ผู้ดูแลระบบ/);
   assert.match(html, /class="topbar-login-button"/);
   assert.match(html, /aria-label="เข้าสู่ระบบหรือสมัครสมาชิก"/);
   assert.match(css, /\.topbar-login-button\s*\{/);
+  assert.match(loginButtonRule, /white-space:\s*nowrap/);
 });
 
 test("schema supports usernames, regular members, and pending approval", async () => {
