@@ -35,6 +35,17 @@ test("admin is a landing page with member approval controls", async () => {
   assert.match(script, /action.*grant_beta|grant_beta.*action/);
 });
 
+test("public navigation keeps admin controls out and makes login prominent", async () => {
+  const html = await read("index.html");
+  const css = await read("style.css");
+
+  assert.doesNotMatch(html, /href="\.\/admin\/">หลังบ้าน/);
+  assert.doesNotMatch(html, /href="\.\/admin\/">ผู้ดูแลระบบ/);
+  assert.match(html, /class="topbar-login-button"/);
+  assert.match(html, /aria-label="เข้าสู่ระบบหรือสมัครสมาชิก"/);
+  assert.match(css, /\.topbar-login-button\s*\{/);
+});
+
 test("schema supports usernames, regular members, and pending approval", async () => {
   const schema = await read("database/schema.vercel.sql");
 

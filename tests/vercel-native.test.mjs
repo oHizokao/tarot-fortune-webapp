@@ -12,7 +12,8 @@ test("frontend exposes a guest chat preview and uses Vercel endpoint paths", asy
   const app = await read("app.js");
 
   assert.match(html, /id="ai-question-preview"/);
-  assert.match(html, /href="\.\/admin\/"/);
+  assert.match(html, /class="topbar-login-button"/);
+  assert.doesNotMatch(html, /href="\.\/admin\/"/);
   assert.match(app, /\/api\/auth\/me/);
   assert.doesNotMatch(app, /api\/auth\/me\.php/);
 });

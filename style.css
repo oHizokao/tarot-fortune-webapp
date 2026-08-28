@@ -112,6 +112,37 @@ button {
   color: #fff;
 }
 
+.topbar-login-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 13px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid rgba(188, 163, 255, 0.52);
+  border-radius: 999px;
+  background: linear-gradient(120deg, rgba(105, 74, 224, 0.96), rgba(47, 117, 211, 0.92));
+  box-shadow: 0 8px 20px rgba(46, 40, 141, 0.25);
+  transition: filter 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.topbar-login-button:hover,
+.topbar-login-button:focus-visible {
+  color: #fff;
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(46, 40, 141, 0.38);
+}
+
+.topbar-login-icon {
+  color: #ffe3a6;
+  font-size: 11px;
+  line-height: 1;
+}
+
 .brand {
   gap: 11px;
   color: inherit;
@@ -1655,6 +1686,16 @@ h2 {
 
   .topbar-link {
     font-size: 9px;
+  }
+
+  .topbar-login-button {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 10px;
+  }
+
+  .topbar-login-icon {
+    display: none;
   }
 
   .brand-mark {
