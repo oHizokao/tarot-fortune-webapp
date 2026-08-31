@@ -14,3 +14,13 @@ test("admin operations expose quota and temporary-password controls", async () =
   assert.match(source, /revoke_sessions/);
   assert.match(source, /writeAudit/);
 });
+
+test("admin delete audits a removed user without keeping a deleted foreign-key target", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const source = await readFile("lib/vercel/routes/admin.mjs", "utf8");
+  const deleteBlock = source.match(/else if \(action === "delete"\) \{[\s\S]*?\n  \} else if \(action === "set_daily_limit"\)/)?.[0] || "";
+
+  assert.match(deleteBlock, /DELETE FROM users/);
+  assert.doesNotMatch(deleteBlock, /targetUserId: id/);
+  assert.match(deleteBlock, /deleted_user_id/);
+});
