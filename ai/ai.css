@@ -25,3 +25,16 @@ a { color: inherit; }
 .retry-button { min-height: 40px; padding: 0 11px; color: #d9d0ff; border: 1px solid rgba(169,145,255,.32); border-radius: 10px; background: rgba(86,69,171,.18); cursor: pointer; font-size: 10px; }.retry-button:hover { border-color: rgba(169,145,255,.65); }.answer-title { margin: 23px 0 0; color: #b9c5e8; font: 500 14px "Kanit", sans-serif; outline: none; }.answer-title:focus-visible { color: var(--gold); }.answer-box { margin-top: 10px; }.question-actions { gap: 10px; }
 @media (max-width: 650px) { .retry-button { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+
+.flow-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-bottom: 26px; padding: 10px; border: 1px solid rgba(159,175,243,.13); border-radius: 15px; background: rgba(4,8,29,.22); }
+.flow-step { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 9px 10px; color: #7f8db3; border: 1px solid transparent; border-radius: 11px; transition: 180ms ease; }
+.flow-step > span { display: grid; width: 28px; height: 28px; flex: 0 0 auto; place-items: center; color: #91a0c8; border: 1px solid rgba(159,175,243,.2); border-radius: 50%; font: 500 11px "Kanit", sans-serif; }
+.flow-step div { min-width: 0; }
+.flow-step strong, .flow-step small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flow-step strong { color: #b9c5e8; font: 500 11px "Kanit", sans-serif; }
+.flow-step small { margin-top: 2px; color: #7182aa; font-size: 9px; }
+.flow-step.is-current { border-color: rgba(169,145,255,.38); background: rgba(91,68,190,.18); box-shadow: 0 8px 20px rgba(50,37,136,.16); }
+.flow-step.is-current > span { color: #fff; border-color: rgba(194,177,255,.68); background: linear-gradient(140deg, #7960e6, #4778d6); box-shadow: 0 0 16px rgba(123,96,230,.35); }
+.flow-step.is-complete > span { color: #0a2c2a; border-color: rgba(129,228,189,.55); background: var(--green); }
+.flow-step.is-complete strong { color: #d8f5e9; }
+@media (max-width: 650px) { .flow-steps { grid-template-columns: 1fr; gap: 4px; margin-bottom: 22px; padding: 7px; }.flow-step { padding: 8px 9px; }.flow-step small { display: inline; margin-left: 5px; } }

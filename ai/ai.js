@@ -3,7 +3,7 @@ import { messageForError } from "../lib/client/error-copy.js";
 const DECK = Array.from({ length: 78 }, (_, index) => `card-${String(index + 1).padStart(3, "0")}.webp`);
 const STORAGE_KEY = "tarot-daily-ai-reading-v2";
 const MAX_HISTORY = 60;
-const state = { count: 1, drawn: [], remaining: [], history: [], memory: null, readingId: "", user: null, csrf: "", backend: true, busy: false, requestVersion: 0, failedQuestion: "" };
+const state = { count: 1, drawn: [], remaining: [], history: [], memory: null, readingId: "", user: null, csrf: "", backend: true, busy: false, requestVersion: 0, failedQuestion: "", activeQuestion: "" };
 const $ = (selector) => document.querySelector(selector);
 const choiceButtons = [...document.querySelectorAll(".choice-button")];
 let drawTimer = null;
@@ -40,6 +40,28 @@ function setCount(count) {
   choiceButtons.forEach((button) => { const selected = Number(button.dataset.count) === count; button.classList.toggle("is-selected", selected); button.setAttribute("aria-pressed", String(selected)); });
 }
 
+function hasQuestion() { return $("#ai-question").value.trim().length > 0; }
+
+function hasAnswer() { return Boolean($("#ai-answer")?.childElementCount); }
+
+function renderFlow() {
+  const hasSpread = state.drawn.length > 0;
+  const current = !hasSpread ? (hasQuestion() ? "draw" : "question") : "answer";
+  const steps = [
+    ["question", hasQuestion()],
+    ["draw", hasSpread],
+    ["answer", hasAnswer()],
+  ];
+  steps.forEach(([step, complete]) => {
+    const element = $(`#flow-step-${step}`);
+    if (!element) return;
+    element.classList.toggle("is-current", current === step);
+    element.classList.toggle("is-complete", complete);
+    if (current === step) element.setAttribute("aria-current", "step");
+    else element.removeAttribute("aria-current");
+  });
+}
+
 function renderProgress() {
   const opened = DECK.length - state.remaining.length;
   const percent = Math.round((opened / DECK.length) * 100);
@@ -48,11 +70,20 @@ function renderProgress() {
   $("#progress-bar").style.width = `${percent}%`;
   $(".progress-track").setAttribute("aria-valuenow", String(opened));
   const empty = state.remaining.length === 0;
-  $("#draw-button").disabled = empty || state.busy;
+  const hasSpread = state.drawn.length > 0;
+  const questionReady = hasQuestion();
+  $("#draw-button").disabled = empty || state.busy || hasSpread || !questionReady;
   $("#reset-button").disabled = state.busy;
-  choiceButtons.forEach((button) => { button.disabled = state.busy; });
-  $("#draw-label").textContent = empty ? "สำรับหมดแล้ว" : "เปิดไพ่ให้ฉัน";
-  $("#deck-message").textContent = empty ? "เปิดครบทั้ง 78 ใบแล้ว กดล้างคำทำนายเพื่อเริ่มรอบใหม่" : `เปิดแล้ว ${opened} ใบ · เหลืออีก ${state.remaining.length} ใบ`;
+  choiceButtons.forEach((button) => { button.disabled = state.busy || hasSpread; });
+  $("#draw-label").textContent = empty ? "สำรับหมดแล้ว" : hasSpread ? "ชุดนี้เปิดแล้ว" : questionReady ? "จับไพ่ให้ฉัน" : "พิมพ์คำถามก่อน";
+  $("#deck-message").textContent = empty
+    ? "เปิดครบทั้ง 78 ใบแล้ว กดล้างไพ่เพื่อเริ่มรอบใหม่"
+    : hasSpread
+      ? `เปิดแล้ว ${opened} ใบ · ถามต่อจากชุดนี้ได้ หรือกดล้างไพ่เพื่อเริ่มเรื่องใหม่`
+      : questionReady
+        ? `คำถามพร้อมแล้ว · กดจับไพ่เพื่อเริ่มอ่าน (เหลือ ${state.remaining.length} ใบ)`
+        : "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงจับไพ่";
+  renderFlow();
 }
 
 function getNumber(file) { return file.match(/card-(\d{3})/)?.[1] || "—"; }
@@ -61,7 +92,7 @@ function renderCards() {
   const grid = $("#cards-grid");
   if (!state.drawn.length) {
     grid.classList.add("is-empty");
-    grid.innerHTML = '<div class="empty-card"><span>?</span><p>ตั้งใจนึกถึงคำถาม<br />แล้วกดเปิดไพ่</p></div>';
+    grid.innerHTML = '<div class="empty-card"><span>?</span><p>พิมพ์คำถามให้ชัดเจนก่อน<br />แล้วจึงกดจับไพ่</p></div>';
     $("#spread-count").textContent = "ยังไม่ได้เปิด";
     $("#reading-note").textContent = "คำตอบจาก AI จะอ้างอิงเฉพาะคำที่อยู่บนไพ่ชุดนี้";
     renderMemory();
@@ -113,6 +144,7 @@ function renderMemory() {
     title.textContent = "Memory พร้อม · ถามต่อจากคำถามเดิมได้";
     message.textContent = `คำถามตั้งต้น: “${firstQuestion}${firstQuestion.length >= 90 ? "…" : ""}” · ถ้าเป็นเรื่องใหม่ให้กดล้างไพ่`;
   }
+  renderFlow();
 }
 
 function clearAnswer() { $("#ai-answer").replaceChildren(); }
@@ -125,12 +157,23 @@ function restoreSavedMemoryAnswer() {
 function clearPrivateMemory() {
   state.memory = null;
   state.readingId = "";
+  state.activeQuestion = "";
+  state.failedQuestion = "";
   clearAnswer();
   renderMemory();
 }
 
 function drawCards() {
+  const question = $("#ai-question").value.trim();
+  if (!question) {
+    $("#request-status").textContent = "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงกดจับไพ่";
+    $("#ai-question").focus();
+    renderFlow();
+    return;
+  }
   if ($("#draw-button").disabled) return;
+  state.activeQuestion = question;
+  state.failedQuestion = "";
   state.busy = true;
   renderProgress();
   $("#draw-button").classList.add("is-busy");
@@ -148,12 +191,14 @@ function drawCards() {
     renderCards();
     $("#draw-button").classList.remove("is-busy");
     drawTimer = null;
+    if (state.user?.ai_enabled && !state.user.must_change_password) void askAi(question);
+    else syncQuestion();
   }, 420);
 }
 
 async function closeServerReading() {
   if (!state.readingId || !state.user?.ai_enabled) return;
-  try { await api(`/api/ai/readings/${encodeURIComponent(state.readingId)}/close`, { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: "{}" }); } catch { /* local reset must remain usable if the network is unavailable */ }
+  try { await api(`/api/ai/tarot-chat?reading_id=${encodeURIComponent(state.readingId)}&action=close`, { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: "{}" }); } catch { /* local reset must remain usable if the network is unavailable */ }
 }
 
 function resetCards() {
@@ -169,6 +214,8 @@ function resetCards() {
   state.history = [];
   state.memory = null;
   state.readingId = "";
+  state.activeQuestion = "";
+  state.failedQuestion = "";
   state.busy = false;
   $("#ai-question").value = "";
   clearAnswer();
@@ -202,7 +249,7 @@ function setAccount(user, csrf = "") {
     action.textContent = "เข้าใช้งาน";
     action.href = "../login/?next=/ai/";
     $("#account-title").textContent = "เข้าใช้งานเพื่อส่งคำถามให้ AI";
-    $("#account-message").textContent = state.backend ? "เปิดไพ่และพิมพ์คำถามได้เลย เมื่อพร้อมให้ AI ตอบให้เข้าใช้งานก่อน" : "โหมดเปิดไพ่ฟรีพร้อมใช้งาน แต่ยังไม่ได้เชื่อมต่อระบบสมาชิก";
+    $("#account-message").textContent = state.backend ? "พิมพ์คำถามก่อน แล้วกดจับไพ่ได้ฟรี เมื่ออยากรับคำตอบจาก AI ให้เข้าใช้งาน" : "โหมดเปิดไพ่ฟรีพร้อมใช้งาน แต่ยังไม่ได้เชื่อมต่อระบบสมาชิก";
     $("#ask-ai-button").disabled = true;
     return;
   }
@@ -211,8 +258,8 @@ function setAccount(user, csrf = "") {
   action.textContent = "ออกจากระบบ";
   action.href = "#question-title";
   $("#account-title").textContent = user.must_change_password ? "กรุณาเปลี่ยนรหัสผ่านก่อน" : user.ai_enabled ? `พร้อมอ่านไพ่ให้ ${user.name || user.username}` : "บัญชีนี้ยังรอสิทธิ์ AI";
-  $("#account-message").textContent = user.must_change_password ? "รหัสผ่านชั่วคราวต้องเปลี่ยนที่หน้าเข้าใช้งานก่อน จึงจะใช้ AI ได้" : user.ai_enabled ? "พิมพ์คำถาม แล้วกดส่งให้ AI เชื่อมคำบนไพ่กับเรื่องของคุณ" : "บัญชีเข้าใช้งานแล้ว แต่ผู้ดูแลยังไม่ได้เปิดสิทธิ์ AI ให้บัญชีนี้";
-  $("#ask-ai-button").disabled = !user.ai_enabled || Boolean(user.must_change_password) || !state.drawn.length || !$("#ai-question").value.trim();
+  $("#account-message").textContent = user.must_change_password ? "รหัสผ่านชั่วคราวต้องเปลี่ยนที่หน้าเข้าใช้งานก่อน จึงจะใช้ AI ได้" : user.ai_enabled ? "พิมพ์คำถามก่อน แล้วกดจับไพ่ ระบบจะอ่านคำตอบให้โดยอัตโนมัติ และจำบริบทไว้ถามต่อ" : "บัญชีเข้าใช้งานแล้ว แต่ผู้ดูแลยังไม่ได้เปิดสิทธิ์ AI ให้บัญชีนี้";
+  syncQuestion();
 }
 
 async function loadServerReadingForSpread() {
@@ -220,7 +267,7 @@ async function loadServerReadingForSpread() {
   const data = await api("/api/ai/readings");
   const match = (data.readings || []).find((reading) => JSON.stringify(reading.cards) === JSON.stringify(state.drawn) && reading.status === "active");
   if (!match) return;
-  const detail = await api(`/api/ai/readings/${encodeURIComponent(match.id)}`);
+  const detail = await api(`/api/ai/tarot-chat?reading_id=${encodeURIComponent(match.id)}`);
   state.readingId = detail.reading?.id || "";
   state.memory = detail.reading || null;
   renderMemory();
@@ -238,17 +285,26 @@ async function loadSession() {
     } else clearPrivateMemory();
   } catch { state.backend = false; setAccount(null); clearPrivateMemory(); }
   syncQuestion();
+  if (state.user?.ai_enabled && !state.user.must_change_password && state.drawn.length && hasQuestion() && !hasAnswer()) void askAi();
 }
 
 function syncQuestion() {
-  const hasQuestion = $("#ai-question").value.trim().length > 0;
+  const questionReady = hasQuestion();
+  const spreadReady = state.drawn.length > 0;
+  const answered = hasAnswer();
   const button = $("#ask-ai-button");
-  button.disabled = state.busy || !state.user?.ai_enabled || Boolean(state.user?.must_change_password) || !state.drawn.length || !hasQuestion;
-  if (!state.drawn.length) $("#request-status").textContent = "เปิดไพ่ก่อน แล้วพิมพ์คำถามได้เลย";
-  else if (!state.user) $("#request-status").textContent = "เปิดไพ่แล้ว พิมพ์คำถามได้เลย — เข้าใช้งานเมื่ออยากให้ AI ตอบ";
+  button.disabled = state.busy || !state.user?.ai_enabled || Boolean(state.user?.must_change_password) || !spreadReady || !questionReady;
+  button.querySelector("span")?.replaceChildren(document.createTextNode(answered ? "ถามต่อจากชุดเดิม" : "รับคำตอบจาก AI"));
+  if (!questionReady && answered) $("#request-status").textContent = "คำตอบพร้อมแล้ว · พิมพ์คำถามต่อเพื่ออ้างอิงไพ่ชุดเดิม";
+  else if (!questionReady && !spreadReady) $("#request-status").textContent = "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงกดจับไพ่";
+  else if (!spreadReady) $("#request-status").textContent = "คำถามพร้อมแล้ว · กดจับไพ่เพื่อเริ่มอ่าน";
+  else if (!state.user) $("#request-status").textContent = "จับไพ่แล้ว · เข้าใช้งานเพื่อรับคำตอบจาก AI";
   else if (state.user.must_change_password) $("#request-status").textContent = "เปลี่ยนรหัสผ่านก่อนจึงจะถาม AI ได้";
   else if (!state.user.ai_enabled) $("#request-status").textContent = "บัญชีนี้ยังไม่ได้รับสิทธิ์ AI จากผู้ดูแล";
-  else if (!state.busy && !$("#ai-answer").childElementCount) $("#request-status").textContent = hasQuestion ? "พร้อมเชื่อมคำบนไพ่กับคำถามของคุณ" : "พิมพ์คำถาม แล้วกดถาม AI Tarot Reader";
+  else if (!state.busy && !answered) $("#request-status").textContent = questionReady ? "กำลังเตรียมคำตอบจากคำบนไพ่..." : "พิมพ์คำถามเพื่อรับคำตอบ";
+  else if (!state.busy && answered && questionReady) $("#request-status").textContent = "คำถามนี้จะเชื่อมกับ Memory ของไพ่ชุดเดิม";
+  renderProgress();
+  renderFlow();
 }
 
 function renderAnswer(answer) {
@@ -265,9 +321,9 @@ async function ensureReading() {
   if (!state.readingId) throw new Error("สร้างชุดไพ่สำหรับ Memory ไม่สำเร็จ");
 }
 
-async function askAi() {
+async function askAi(questionOverride = "") {
   if (!state.user?.ai_enabled || state.user.must_change_password || !state.drawn.length) return syncQuestion();
-  const question = $("#ai-question").value.trim() || state.failedQuestion;
+  const question = String(questionOverride || $("#ai-question").value.trim() || state.failedQuestion).trim();
   if (!question || state.busy) return syncQuestion();
   const version = ++state.requestVersion;
   state.busy = true;
@@ -275,7 +331,8 @@ async function askAi() {
   $("#request-status").textContent = "กำลังอ่านคำบนไพ่และเชื่อมโยงกับคำถาม...";
   try {
     await ensureReading();
-    const data = await api(`/api/ai/readings/${encodeURIComponent(state.readingId)}/messages`, { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ question }) });
+    if (version !== state.requestVersion) return;
+    const data = await api(`/api/ai/tarot-chat?reading_id=${encodeURIComponent(state.readingId)}&action=message`, { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ question }) });
     if (version !== state.requestVersion) return;
     state.memory = data.reading || state.memory;
     renderAnswer(String(data.answer || "").trim());
