@@ -7,7 +7,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check app.js && node --check admin/admin.js && node --check login/login.js && node --check ai/ai.js && node --check ai/memory.mjs && node --check lib/client/error-copy.js && node --check lib/vercel/auth.mjs && node --check lib/vercel/routes/auth.mjs && node --check lib/vercel/routes/admin.mjs && node --check lib/vercel/routes/ai.mjs && node --check lib/vercel/readiness.mjs && node --check lib/vercel/openai.mjs && node --check lib/vercel/readings.mjs && node --check lib/vercel/retention.mjs && node --check lib/vercel/logging.mjs && node --check scripts/migrate.mjs && node --check scripts/static-server.mjs && node --check api/auth/[...route].mjs && node --check api/admin/[...route].mjs && node --check api/ai/[...route].mjs",
+    "check": "node --check app.js && node --check admin/admin.js && node --check login/login.js && node --check ai/ai.js && node --check ai/memory.mjs && node --check lib/client/error-copy.js && node --check lib/vercel/auth.mjs && node --check lib/vercel/routes/auth.mjs && node --check lib/vercel/routes/admin.mjs && node --check lib/vercel/routes/ai.mjs && node --check lib/vercel/readiness.mjs && node --check lib/vercel/openai.mjs && node --check lib/vercel/readings.mjs && node --check lib/vercel/retention.mjs && node --check lib/vercel/logging.mjs && node --check scripts/migrate.mjs && node --check scripts/static-server.mjs && node --check scripts/vercel-build.mjs && node --check api/auth/[...route].mjs && node --check api/admin/[...route].mjs && node --check api/ai/[...route].mjs",
     "migrate": "node scripts/migrate.mjs",
     "test:e2e": "playwright test"
   },

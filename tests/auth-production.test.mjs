@@ -4,7 +4,16 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { isReaderLoginAllowed } from "../lib/vercel/auth.mjs";
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+test("owner admin can use the customer reader login without losing admin access", () => {
+  assert.equal(isReaderLoginAllowed({ role: "admin" }), true);
+  assert.equal(isReaderLoginAllowed({ role: "member" }), true);
+  assert.equal(isReaderLoginAllowed({ role: "beta_user" }), true);
+  assert.equal(isReaderLoginAllowed({ role: "unknown" }), false);
+});
 
 test("session is rejected after session_version changes", async () => {
   const previous = process.env.SESSION_SECRET;
