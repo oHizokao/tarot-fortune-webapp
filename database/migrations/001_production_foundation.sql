@@ -1,12 +1,3 @@
--- Fresh-install baseline for Vercel + Neon.
--- Existing databases should use: npm run migrate
-
-CREATE TABLE IF NOT EXISTS schema_migrations (
-  version INTEGER PRIMARY KEY,
-  name VARCHAR(160) NOT NULL,
-  applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
 CREATE TABLE IF NOT EXISTS users (
   id BIGSERIAL PRIMARY KEY,
   username VARCHAR(80) NOT NULL,
@@ -22,14 +13,30 @@ CREATE TABLE IF NOT EXISTS users (
   access_expires_at TIMESTAMPTZ,
   credits INTEGER NOT NULL DEFAULT 0,
   daily_ai_limit INTEGER NOT NULL DEFAULT 20 CHECK (daily_ai_limit BETWEEN 0 AND 500),
-  session_version INTEGER NOT NULL DEFAULT 1 CHECK (session_version >= 1),
+  session_version INTEGER NOT NULL DEFAULT 1,
   must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
-  last_password_changed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   last_login_at TIMESTAMPTZ,
   last_ai_used_at TIMESTAMPTZ
 );
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(80);
+ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
+UPDATE users SET username = COALESCE(NULLIF(BTRIM(username), ''), 'user_' || id::text) WHERE username IS NULL OR BTRIM(username) = '';
+ALTER TABLE users ALTER COLUMN username SET NOT NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_ai_limit INTEGER NOT NULL DEFAULT 20;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS session_version INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_password_changed_at TIMESTAMPTZ;
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_daily_ai_limit_check;
+ALTER TABLE users ADD CONSTRAINT users_daily_ai_limit_check CHECK (daily_ai_limit BETWEEN 0 AND 500);
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_session_version_check;
+ALTER TABLE users ADD CONSTRAINT users_session_version_check CHECK (session_version >= 1);
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('admin', 'beta_user', 'member'));
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_status_check;
+ALTER TABLE users ADD CONSTRAINT users_status_check CHECK (status IN ('active', 'suspended', 'expired', 'pending'));
 
 CREATE UNIQUE INDEX IF NOT EXISTS users_username_unique_idx ON users (LOWER(username));
 CREATE INDEX IF NOT EXISTS users_role_status_idx ON users (role, status);
@@ -57,6 +64,12 @@ CREATE TABLE IF NOT EXISTS app_settings (
   encrypted_value TEXT,
   plain_value TEXT,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  version INTEGER PRIMARY KEY,
+  name VARCHAR(160) NOT NULL,
+  applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS rate_limit_buckets (

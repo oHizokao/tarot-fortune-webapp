@@ -56,6 +56,19 @@ async function loadUsage() {
   $("#stat-tokens").textContent = Number(stats.input_tokens || 0) + Number(stats.output_tokens || 0);
 }
 
+async function loadDiagnostics() {
+  const data = await api("/api/admin/diagnostics");
+  const labels = { database: "ฐานข้อมูลพร้อม", schema: "Migration พร้อม", admin: "มี Owner Admin", openai: data.openai?.model ? `พร้อม · ${data.openai.model}` : "ยังไม่พร้อม" };
+  Object.entries(labels).forEach(([key, label]) => {
+    const item = document.querySelector(`[data-check="${key}"]`);
+    if (!item) return;
+    const ready = Boolean(data[key]?.ok);
+    item.classList.toggle("is-ready", ready);
+    item.classList.toggle("is-error", !ready);
+    item.querySelector("strong").textContent = ready ? label : "ยังไม่พร้อม";
+  });
+}
+
 function actionButton(label, action, id, danger = false, duration = "") {
   const button = document.createElement("button");
   button.type = "button";
@@ -123,9 +136,9 @@ async function loadUsers() {
 
 async function refreshAll() {
   try {
-    await Promise.all([loadUsers(), loadUsage(), loadSettings()]);
+    await Promise.all([loadUsers(), loadUsage(), loadSettings(), loadDiagnostics()]);
     showStatus($("#users-status"), "อัปเดตข้อมูลแล้ว");
-  } catch (error) { showStatus($("#users-status"), error.message, true); }
+  } catch (error) { showStatus($("#users-status"), error.message, true); showStatus($("#diagnostics-status"), "ตรวจระบบไม่สำเร็จ ลองอีกครั้ง", true); }
 }
 
 $("#admin-login-form").addEventListener("submit", async (event) => {
@@ -193,6 +206,10 @@ $("#users-table-body").addEventListener("click", async (event) => {
 });
 
 $("#refresh-users-button").addEventListener("click", refreshAll);
+$("#refresh-diagnostics-button").addEventListener("click", async () => {
+  try { await loadDiagnostics(); showStatus($("#diagnostics-status"), "ตรวจระบบแล้ว"); }
+  catch (error) { showStatus($("#diagnostics-status"), error.message, true); }
+});
 $("#admin-logout-button").addEventListener("click", async () => { try { await api("/api/admin/logout", { method: "POST", body: "{}" }); } finally { toggleDashboard(false); } });
 
 $("#bootstrap-form").addEventListener("submit", async (event) => {
