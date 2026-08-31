@@ -23,3 +23,9 @@ test("fresh schema includes the production tables", async () => {
   assert.match(sql, /daily_ai_limit\s+INTEGER/i);
   assert.match(sql, /session_version\s+INTEGER/i);
 });
+
+test("migration runner submits raw statements as Neon transaction queries", async () => {
+  const source = await fs.readFile(path.join(root, "scripts/migrate.mjs"), "utf8");
+  assert.match(source, /txn\.query\(statement, \[\]\)/);
+  assert.doesNotMatch(source, /txn\.unsafe\(statement\)/);
+});

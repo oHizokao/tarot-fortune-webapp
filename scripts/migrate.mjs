@@ -24,7 +24,7 @@ for (const file of files) {
   const source = await readFile(path.join(migrationsDir, file), "utf8");
   const statements = source.split(/;\s*(?=\S)/).map((statement) => statement.trim()).filter(Boolean);
   if (!statements.length) continue;
-  await sql.transaction((txn) => statements.map((statement) => txn.unsafe(statement)));
+  await sql.transaction((txn) => statements.map((statement) => txn.query(statement, [])));
   console.log(`Applied migration ${file}`);
 }
 
