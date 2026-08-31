@@ -5,8 +5,10 @@ test("approved member asks a follow-up in the same reading", async ({ page }) =>
   await page.goto("/login/");
   await page.locator("#login-username").fill(process.env.E2E_TEST_USERNAME);
   await page.locator("#login-password").fill(process.env.E2E_TEST_PASSWORD);
-  await page.getByRole("button", { name: "เข้าใช้งาน" }).click();
-  await page.goto("/ai/");
+  await Promise.all([
+    page.waitForURL("**/ai/**"),
+    page.getByRole("button", { name: "เข้าใช้งาน" }).click(),
+  ]);
   await expect(page.locator("#account-link")).toContainText("oHizokao", { timeout: 10_000 });
   await page.getByLabel("คำถามของคุณ").fill("วันนี้ควรเริ่มดูแลตัวเองจากตรงไหน?");
   await expect(page.locator("#draw-button")).toBeEnabled();
