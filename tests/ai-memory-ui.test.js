@@ -35,3 +35,7 @@ test("server AI Memory is restored only for an authenticated member and is clear
   assert.match(script, /error\.status === 401[\s\S]*clearPrivateMemory\(\)/);
   assert.match(script, /loadServerReadingForSpread/);
 });
+
+test("AI reset stays enabled after the first answer finishes", () => {
+  assert.match(script, /if \(version === state\.requestVersion\) \{\s*state\.busy = false;\s*renderMemory\(\);\s*syncQuestion\(\);\s*\}/);
+});

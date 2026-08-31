@@ -345,7 +345,7 @@ async function askAi(questionOverride = "") {
   } catch (error) {
     if (error.status === 401 || error.code === "ACCOUNT_AUTH_REQUIRED") { setAccount(null); clearPrivateMemory(); $("#request-status").textContent = "เซสชันหมดอายุ กรุณาเข้าใช้งานใหม่"; }
     else { state.failedQuestion = question; $("#retry-ai-button").hidden = !["AI_TIMEOUT", "AI_UPSTREAM_ERROR", "EMPTY_AI_RESPONSE", "OFFLINE"].includes(error.code); $("#request-status").textContent = messageForError(error.code, error.requestId); }
-  } finally { if (version === state.requestVersion) { state.busy = false; syncQuestion(); } }
+  } finally { if (version === state.requestVersion) { state.busy = false; renderMemory(); syncQuestion(); } }
 }
 
 $("#draw-button").addEventListener("click", drawCards);
