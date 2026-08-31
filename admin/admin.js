@@ -37,6 +37,16 @@ function toggleDashboard(show) {
   $("#admin-dashboard").hidden = !show;
 }
 
+function clearSensitiveFields() {
+  $("#admin-username").value = "";
+  $("#admin-password").value = "";
+  $("#bootstrap-secret").value = "";
+  $("#bootstrap-password").value = "";
+  $("#openai-api-key").value = "";
+  state.csrf = "";
+  state.accessCode = "";
+}
+
 async function loadSettings() {
   const data = await api("/api/admin/settings");
   $("#openai-model").value = data.model || "";
@@ -247,7 +257,7 @@ $("#refresh-diagnostics-button").addEventListener("click", async () => {
   try { await loadDiagnostics(); showStatus($("#diagnostics-status"), "ตรวจระบบแล้ว"); }
   catch (error) { showStatus($("#diagnostics-status"), error.message, true); }
 });
-$("#admin-logout-button").addEventListener("click", async () => { try { await api("/api/admin/logout", { method: "POST", body: "{}" }); } finally { toggleDashboard(false); } });
+$("#admin-logout-button").addEventListener("click", async () => { try { await api("/api/admin/logout", { method: "POST", body: "{}" }); } finally { clearSensitiveFields(); toggleDashboard(false); } });
 
 $("#bootstrap-form").addEventListener("submit", async (event) => {
   event.preventDefault();

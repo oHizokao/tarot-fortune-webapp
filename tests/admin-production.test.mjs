@@ -24,3 +24,14 @@ test("admin delete audits a removed user without keeping a deleted foreign-key t
   assert.doesNotMatch(deleteBlock, /targetUserId: id/);
   assert.match(deleteBlock, /deleted_user_id/);
 });
+
+test("admin logout clears credentials and sensitive setup fields from the page", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const source = await readFile("admin/admin.js", "utf8");
+
+  assert.match(source, /admin-username.*value\s*=\s*["']{2}/s);
+  assert.match(source, /admin-password.*value\s*=\s*["']{2}/s);
+  assert.match(source, /bootstrap-secret.*value\s*=\s*["']{2}/s);
+  assert.match(source, /bootstrap-password.*value\s*=\s*["']{2}/s);
+  assert.match(source, /openai-api-key.*value\s*=\s*["']{2}/s);
+});
