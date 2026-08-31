@@ -69,6 +69,21 @@ async function loadDiagnostics() {
   });
 }
 
+async function loadAudit() {
+  const data = await api("/api/admin/audit");
+  const list = $("#audit-list");
+  if (!list) return;
+  list.replaceChildren();
+  if (!(data.audit || []).length) { const empty = document.createElement("p"); empty.className = "muted small"; empty.textContent = "ยังไม่มีรายการ"; list.append(empty); return; }
+  data.audit.forEach((entry) => {
+    const item = document.createElement("div"); item.className = "audit-row";
+    const label = document.createElement("strong"); label.textContent = entry.action;
+    const detail = document.createElement("span"); detail.textContent = `Admin #${entry.admin_user_id}${entry.target_user_id ? ` · ผู้ใช้ #${entry.target_user_id}` : ""}`;
+    const date = document.createElement("time"); date.textContent = formatDate(entry.created_at);
+    item.append(label, detail, date); list.append(item);
+  });
+}
+
 function actionButton(label, action, id, danger = false, duration = "") {
   const button = document.createElement("button");
   button.type = "button";
@@ -93,7 +108,7 @@ function renderUsers(users) {
   if (!users.length) {
     const row = document.createElement("tr");
     const cell = document.createElement("td");
-    cell.colSpan = 4;
+    cell.colSpan = 5;
     cell.textContent = "ยังไม่มีสมาชิกหรือ Tester";
     row.append(cell);
     body.append(row);
@@ -110,6 +125,8 @@ function renderUsers(users) {
     status.textContent = `${user.role === "beta_user" ? "Beta" : "สมาชิก"} · ${statusLabel(user)}`;
     const expiry = document.createElement("td");
     expiry.textContent = user.ai_enabled ? formatDate(user.access_expires_at) : "ยังไม่มีสิทธิ์ AI";
+    const quota = document.createElement("td");
+    quota.textContent = `${user.ai_usage_today || 0} / ${user.daily_ai_limit ?? 20}`;
     const actions = document.createElement("td");
     const actionWrap = document.createElement("div");
     actionWrap.className = "table-actions";
@@ -122,9 +139,12 @@ function renderUsers(users) {
     if (user.status === "suspended") actionWrap.append(actionButton("เปิดใช้งาน", "reactivate", user.id));
     else if (user.status !== "pending") actionWrap.append(actionButton("ระงับ", "suspend", user.id));
     if (user.role === "beta_user") actionWrap.append(actionButton("สร้าง Code ใหม่", "generate_code", user.id));
+    if (user.status === "active") actionWrap.append(actionButton("ตั้งโควตา", "set_daily_limit", user.id));
+    actionWrap.append(actionButton("ออกทุกอุปกรณ์", "revoke_sessions", user.id));
+    actionWrap.append(actionButton("ออกรหัสชั่วคราว", "reset_password", user.id));
     actionWrap.append(actionButton("ลบ", "delete", user.id, true));
     actions.append(actionWrap);
-    row.append(identity, status, expiry, actions);
+    row.append(identity, status, expiry, quota, actions);
     body.append(row);
   });
 }
@@ -136,7 +156,7 @@ async function loadUsers() {
 
 async function refreshAll() {
   try {
-    await Promise.all([loadUsers(), loadUsage(), loadSettings(), loadDiagnostics()]);
+    await Promise.all([loadUsers(), loadUsage(), loadSettings(), loadDiagnostics(), loadAudit()]);
     showStatus($("#users-status"), "อัปเดตข้อมูลแล้ว");
   } catch (error) { showStatus($("#users-status"), error.message, true); showStatus($("#diagnostics-status"), "ตรวจระบบไม่สำเร็จ ลองอีกครั้ง", true); }
 }
@@ -165,6 +185,16 @@ $("#settings-form").addEventListener("submit", async (event) => {
     $("#api-status-chip").classList.toggle("is-ready", Boolean(data.configured));
     showStatus(status, "บันทึก API และ Prompt แล้ว");
   } catch (error) { showStatus(status, error.message, true); }
+});
+
+$("#ai-check-button").addEventListener("click", async () => {
+  const button = $("#ai-check-button");
+  button.disabled = true;
+  try {
+    const data = await api("/api/admin/ai-check", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: "{}" });
+    showStatus($("#settings-status"), data.connection_ok ? `เชื่อมต่อสำเร็จ · ${data.model} · ${data.latency_ms} ms` : `เชื่อมต่อไม่สำเร็จ (${data.code || "UNKNOWN"})`, !data.connection_ok);
+  } catch (error) { showStatus($("#settings-status"), error.message, true); }
+  finally { button.disabled = false; }
 });
 
 const resetPromptButton = $("#reset-prompt-button");
@@ -198,9 +228,16 @@ $("#users-table-body").addEventListener("click", async (event) => {
   if (!button) return;
   const action = button.dataset.action;
   if (action === "delete" && !window.confirm("ลบผู้ใช้นี้หรือไม่? ประวัติ AI ของผู้ใช้นี้จะถูกลบตามฐานข้อมูล")) return;
+  const extra = {};
+  if (action === "set_daily_limit") {
+    const value = window.prompt("โควตา AI ต่อวัน (0–500)", "20");
+    if (value === null) return;
+    extra.daily_limit = Number(value);
+  }
   try {
-    const data = await api("/api/admin/update-user", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ id: Number(button.dataset.id), action, duration: button.dataset.duration || "24h" }) });
+    const data = await api("/api/admin/update-user", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ id: Number(button.dataset.id), action, duration: button.dataset.duration || "24h", ...extra }) });
     if (data.access_code) { state.accessCode = data.access_code; $("#new-access-code").textContent = data.access_code; $("#new-code-output").hidden = false; showStatus($("#users-status"), "สร้าง Code ใหม่แล้ว — คัดลอกก่อนปิดหน้านี้"); }
+    if (data.temporary_password) { state.accessCode = data.temporary_password; $("#new-access-code").textContent = data.temporary_password; $("#new-code-output").hidden = false; showStatus($("#users-status"), "ออกรหัสผ่านชั่วคราวแล้ว — คัดลอกให้ผู้ใช้และให้เปลี่ยนหลังเข้าใช้งาน"); }
     await refreshAll();
   } catch (error) { showStatus($("#users-status"), error.message, true); }
 });

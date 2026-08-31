@@ -5,7 +5,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { DEFAULT_OPENAI_MODEL, DEFAULT_TAROT_PROMPT, resolveOpenAiModel, resolveTarotPrompt } from "../lib/vercel/settings.mjs";
-import { composeTarotInstructions } from "../api/ai/tarot-chat.mjs";
+import { composeTarotInstructions } from "../lib/vercel/routes/ai.mjs";
 
 test("tarot settings keep the original prompt when no custom prompt is saved", () => {
   assert.equal(resolveTarotPrompt("", ""), DEFAULT_TAROT_PROMPT);

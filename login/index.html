@@ -57,6 +57,11 @@
             <p class="auth-note">ยังไม่มีบัญชี? กด “สมัครสมาชิก” ได้เลย สมัครแล้วรอผู้ดูแลเปิดสิทธิ์ก่อนใช้ AI</p>
           </div>
 
+          <div id="change-password-panel" role="region" aria-labelledby="change-password-title" hidden>
+            <p class="eyebrow">SECURITY CHECK</p><h3 id="change-password-title">ตั้งรหัสผ่านใหม่</h3><p class="auth-note">รหัสชั่วคราวใช้ได้ครั้งเดียว กรุณาตั้งรหัสผ่านใหม่ก่อนเข้าใช้งาน AI</p>
+            <form class="auth-form" id="change-password-form"><label>รหัสผ่านปัจจุบัน<input id="current-password" type="password" autocomplete="current-password" required /></label><label>รหัสผ่านใหม่<input id="new-password" type="password" minlength="8" autocomplete="new-password" required /></label><label>ยืนยันรหัสผ่านใหม่<input id="new-password-confirm" type="password" minlength="8" autocomplete="new-password" required /></label><button class="primary-button" type="submit"><span>บันทึกรหัสผ่านใหม่</span><span aria-hidden="true">→</span></button></form><p class="form-status" id="change-password-status" role="status" aria-live="polite"></p>
+          </div>
+
           <div id="signup-panel" role="tabpanel" aria-labelledby="signup-tab" hidden>
             <form class="auth-form" id="signup-form">
               <label>Username<input id="signup-username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" minlength="3" maxlength="32" required placeholder="a-z, 0-9 และ _" /></label>
@@ -72,8 +77,8 @@
         </section>
       </section>
 
-      <footer class="auth-footer"><span>✦ TAROT DAILY</span><span>เปิดไพ่เพื่อความบันเทิงและการทบทวนตัวเอง</span><a href="../ai/">ไปห้องถาม AI</a></footer>
+      <footer class="auth-footer"><span>✦ TAROT DAILY</span><span>เปิดไพ่เพื่อความบันเทิงและการทบทวนตัวเอง</span><a href="../privacy/">ความเป็นส่วนตัว</a><a href="../terms/">ข้อกำหนด</a><a href="../ai/">ไปห้องถาม AI</a></footer>
     </main>
-    <script src="./login.js" defer></script>
+    <script type="module" src="./login.js" defer></script>
   </body>
 </html>

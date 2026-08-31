@@ -26,19 +26,22 @@
 
 1. เชื่อม GitHub repository นี้กับ Vercel project แล้ว deploy branch `main`
 2. จาก Vercel Marketplace เชื่อม Neon Postgres แล้วเพิ่ม `DATABASE_URL`
-3. รันไฟล์ `database/schema.vercel.sql` ใน Neon SQL Editor
-4. เพิ่ม Environment Variables ใน Vercel:
+3. รัน migration ในฐานข้อมูลเดียวกับ Vercel โดยตั้ง `DATABASE_URL` ชั่วคราวในเครื่องแล้วใช้ `npm run migrate` (หรือใช้ `database/schema.vercel.sql` เป็น baseline สำหรับฐานข้อมูลใหม่)
+4. เพิ่ม Environment Variables ใน Vercel ทุก Environment ที่ใช้งานจริง:
 
    - `DATABASE_URL` — connection string จาก Neon
    - `SESSION_SECRET` — secret แบบสุ่มยาวอย่างน้อย 32 ตัวอักษร
-   - `APP_ENCRYPTION_KEY` — secret สำหรับเข้ารหัส API key ในฐานข้อมูล
-   - `TAROT_BOOTSTRAP_SECRET` — secret สำหรับสร้าง Admin คนแรก
+   - `APP_ENCRYPTION_KEY` — secret สำหรับเข้ารหัส API key ในฐานข้อมูล (ใช้ค่า base64 ของ 32 bytes หรือข้อความสุ่มยาว)
+   - `TAROT_BOOTSTRAP_SECRET` — secret สำหรับสร้าง Admin คนแรก (ใช้ครั้งเดียวแล้วเปลี่ยน/ลบได้)
+   - `CRON_SECRET` — secret อย่างน้อย 32 ตัวอักษรสำหรับงานล้างข้อมูลอัตโนมัติ
    - `OPENAI_API_KEY` — fallback ได้ แต่แนะนำให้กรอกผ่านหลังบ้าน
    - `OPENAI_MODEL` — รุ่น API ที่บัญชีเปิดใช้ (ถ้าเว้นว่าง ระบบใช้ `gpt-5.6-luna`)
 
-5. Redeploy แล้วเปิด `/admin/`
-6. ในกล่อง First-time Setup ใส่ Setup secret, username (ค่าเริ่มต้นคือ `oHizokao`), ชื่อ และรหัสผ่านที่ต้องการใช้ จากนั้นกดสร้าง Admin คนแรก
-7. เข้า `/admin/` และล็อกอินหลังบ้าน แล้วใส่ OpenAI API key/model รวมถึง Prompt หลักในส่วนตั้งค่า AI โดยแนะนำ `gpt-5.6-luna` สำหรับคำถามเปิดไพ่ 1–3 ใบ
+5. Redeploy แล้วเปิด `/api/health` ต้องเห็น `ready: true` และเปิด `/admin/`
+6. ในกล่อง First-time Setup ใส่ Setup secret, username, ชื่อ และรหัสผ่านที่ต้องการใช้ จากนั้นกดสร้าง Admin คนแรก
+7. เข้า `/admin/` แล้วตรวจ Diagnostics ให้ Database, Schema, Owner และ OpenAI เป็นสีเขียว
+8. ใส่ OpenAI API key/model และ Prompt หลักในส่วนตั้งค่า AI จากนั้นกด “ทดสอบการเชื่อมต่อ” ก่อนเปิดให้สมาชิกใช้
+9. สร้าง/อนุมัติสมาชิก กำหนดโควตารายวัน และทดสอบ Guest → สมัคร/เข้าใช้งาน → เปิดไพ่ → ถาม AI → ถามต่อ
 
 รหัสผ่านของ Admin จะถูก hash ฝั่ง server และไม่ควรใส่ไว้ใน source code, HTML หรือ GitHub
 
@@ -62,12 +65,16 @@
 - `POST /api/auth/login`
 - `POST /api/auth/beta-login` (compatibility)
 - `POST /api/auth/logout`
-- `POST /api/ai/tarot-chat`
+- `POST /api/auth/change-password`
+- `POST /api/ai/readings`, `GET /api/ai/readings`
+- `GET /api/ai/readings/:id`
+- `POST /api/ai/readings/:id/messages`, `POST /api/ai/readings/:id/close`
+- `POST /api/ai/tarot-chat` (compatibility)
 - `POST /api/admin/bootstrap`
 - `POST /api/admin/login`, `GET /api/admin/me`, `POST /api/admin/logout`
 - `GET /api/admin/users`, `POST /api/admin/create-user`, `POST /api/admin/update-user`
-- `GET/POST /api/admin/settings`
-- `GET /api/admin/usage`
+- `GET/POST /api/admin/settings`, `POST /api/admin/ai-check`
+- `GET /api/admin/usage`, `GET /api/admin/audit`, `GET /api/admin/diagnostics`
 
 ## ความปลอดภัยและคำตอบ AI
 
@@ -77,7 +84,9 @@
 - Admin mutation และ AI request ใช้ CSRF token
 - จำกัดชื่อไฟล์ไพ่เฉพาะ 78 ใบจริง และห้ามส่งไพ่ซ้ำในคำถามหนึ่งครั้ง
 - Prompt AI ให้อ่านจากคำบนไพ่ที่เปิดจริง ตอบอย่างอ่อนโยน ไม่ฟันธงอนาคต และไม่ทำให้ผู้ใช้หวาดกลัว
-- Memory ของห้อง AI เก็บคำถามตั้งต้นและคำตอบไว้ใน browser ของผู้ใช้สำหรับถามต่อจากไพ่ชุดเดิม และผูกกับบัญชีที่กำลังใช้งาน; ปุ่มเริ่มเรื่องใหม่จะล้างบริบทนี้
+- Memory ของห้อง AI เก็บชุดไพ่ คำถาม และคำตอบไว้ฝั่ง server ในฐานข้อมูล โดยผูกกับบัญชีและตรวจสิทธิ์ทุกครั้ง; ปุ่มเริ่มเรื่องใหม่จะปิดห้องเดิมและสร้างบริบทใหม่
+- Guest ใช้เปิดไพ่ได้โดยไม่เก็บ Memory ส่วนตัวไว้ใน browser; สมาชิกใช้ Memory ข้ามการรีเฟรช/อุปกรณ์ได้ตามบัญชี
+- มี rate limit ระดับฐานข้อมูล, โควตา AI รายวัน, revoke session, audit log และงานล้างข้อมูลตามอายุที่ตั้งไว้
 - ถ้าคำถามเกี่ยวกับการแพทย์ กฎหมาย การเงิน ความปลอดภัย หรือการทำร้ายตัวเอง AI จะชวนติดต่อผู้เชี่ยวชาญหรือความช่วยเหลือที่เหมาะสม
 
 ## Local development
@@ -85,10 +94,10 @@
 โหมด Guest ที่ไม่ใช้ backend:
 
 ```powershell
-python -m http.server 4173
+npm run test:e2e
 ```
 
-เปิด `http://localhost:4173` ได้ทันที ส่วนสมาชิก/Admin/AI ต้องมี Vercel Functions, Neon และ environment variables
+คำสั่งนี้จะเปิด static test server และตรวจ Guest ทั้ง desktop/mobile emulation ส่วนสมาชิก/Admin/AI ต้องมี Vercel Functions, Neon และ environment variables
 
 คำสั่งตรวจสอบ:
 
@@ -96,6 +105,9 @@ python -m http.server 4173
 npm install
 npm test
 npm run check
+npm run test:e2e
 ```
+
+รายละเอียดขั้นตอนปล่อยจริงและ rollback ดูที่ [`docs/runbooks/production-launch.md`](docs/runbooks/production-launch.md)
 
 ใช้เพื่อความบันเทิงและการทบทวนตัวเอง ผู้ใช้เป็นคนตัดสินใจชีวิตของตัวเองเสมอ

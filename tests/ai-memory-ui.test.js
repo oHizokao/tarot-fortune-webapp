@@ -13,29 +13,25 @@ test("AI reader exposes the active reading Memory and a clear new-reading action
   assert.match(html, /id="memory-status"/);
   assert.match(html, /id="memory-title"/);
   assert.match(html, /id="new-reading-button"/);
-  assert.match(script, /from "\.\/memory\.mjs"/);
+  assert.match(script, /\/api\/ai\/readings/);
 });
 
-test("AI reader persists Memory for the same spread and clears it on a new reading", () => {
-  assert.match(script, /const STORAGE_KEY = "tarot-daily-ai-reading-v1"/);
-  assert.doesNotMatch(script, /const STORAGE_KEY = "tarot-daily-deck-v1"/);
-  assert.match(script, /memory: null/);
-  assert.match(script, /memory: state\.memory/);
-  assert.match(script, /pendingMemory/);
-  assert.match(script, /memoryOwner/);
-  assert.match(script, /normalizeReadingMemory/);
-  assert.match(script, /isMemoryForSpread/);
-  assert.match(script, /conversationForSpread\(state\.memory, state\.drawn\)/);
-  assert.match(script, /appendReadingTurn/);
+test("AI reader uses server Memory for the same spread and clears it on a new reading", () => {
+  assert.match(script, /const STORAGE_KEY = "tarot-daily-ai-reading-v2"/);
+  assert.match(script, /readingId/);
+  assert.match(script, /\/api\/ai\/readings/);
+  assert.match(script, /ensureReading\(\)/);
   assert.match(script, /state\.memory = null/);
+  assert.doesNotMatch(script, /JSON\.stringify\(\{[^}]*memory/);
   assert.match(script, /new-reading-button/);
   assert.match(script, /\$\("#ai-question"\)\.value = ""/);
 });
 
-test("stored AI Memory is restored only for an authenticated member and is cleared on logout", () => {
+test("server AI Memory is restored only for an authenticated member and is cleared on logout", () => {
   assert.match(script, /function restoreSavedMemoryAnswer\(\)/);
   assert.match(script, /function clearPrivateMemory\(\)/);
   assert.match(script, /restoreSavedMemoryAnswer\(\)/);
   assert.match(script, /clearPrivateMemory\(\)/);
   assert.match(script, /error\.status === 401[\s\S]*clearPrivateMemory\(\)/);
+  assert.match(script, /loadServerReadingForSpread/);
 });

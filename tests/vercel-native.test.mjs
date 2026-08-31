@@ -22,7 +22,7 @@ test("Vercel functions and Postgres schema exist", async () => {
   const requiredFiles = [
     "api/health.mjs",
     "api/auth/[...route].mjs",
-    "api/ai/tarot-chat.mjs",
+    "api/ai/[...route].mjs",
     "api/admin/[...route].mjs",
     "database/schema.vercel.sql",
   ];

@@ -1,9 +1,9 @@
-import { appendReadingTurn, conversationForSpread, createReadingMemory, isMemoryForSpread, normalizeReadingMemory } from "./memory.mjs";
+import { messageForError } from "../lib/client/error-copy.js";
 
 const DECK = Array.from({ length: 78 }, (_, index) => `card-${String(index + 1).padStart(3, "0")}.webp`);
-const STORAGE_KEY = "tarot-daily-ai-reading-v1";
+const STORAGE_KEY = "tarot-daily-ai-reading-v2";
 const MAX_HISTORY = 60;
-const state = { count: 1, drawn: [], remaining: [], history: [], memory: null, memoryOwner: "", pendingMemory: null, pendingMemoryOwner: "", user: null, csrf: "", backend: true, busy: false, requestVersion: 0 };
+const state = { count: 1, drawn: [], remaining: [], history: [], memory: null, readingId: "", user: null, csrf: "", backend: true, busy: false, requestVersion: 0, failedQuestion: "" };
 const $ = (selector) => document.querySelector(selector);
 const choiceButtons = [...document.querySelectorAll(".choice-button")];
 let drawTimer = null;
@@ -21,37 +21,18 @@ function isValidCards(cards) {
   return Array.isArray(cards) && cards.length <= DECK.length && new Set(cards).size === cards.length && cards.every((card) => DECK.includes(card));
 }
 
-function emptySavedState() {
-  return { remaining: shuffle(DECK), drawn: [], history: [], memory: null, memoryOwner: "", pendingMemory: null, pendingMemoryOwner: "" };
-}
+function emptySavedState() { return { remaining: shuffle(DECK), drawn: [], history: [] }; }
 
 function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!saved || !isValidCards(saved.remaining)) return emptySavedState();
-    const drawn = isValidCards(saved.drawn) ? saved.drawn.slice(0, 3) : [];
-    const memory = normalizeReadingMemory(saved.memory);
-    return {
-      remaining: saved.remaining,
-      drawn,
-      history: Array.isArray(saved.history) ? saved.history.slice(0, MAX_HISTORY) : [],
-      memory: null,
-      memoryOwner: "",
-      pendingMemory: memory && isMemoryForSpread(memory, drawn) ? memory : null,
-      pendingMemoryOwner: memory && isMemoryForSpread(memory, drawn) ? String(saved.memory_owner || "") : "",
-    };
+    return { remaining: saved.remaining, drawn: isValidCards(saved.drawn) ? saved.drawn.slice(0, 3) : [], history: Array.isArray(saved.history) ? saved.history.slice(0, MAX_HISTORY) : [] };
   } catch { return emptySavedState(); }
 }
 
 function saveState() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ remaining: state.remaining, drawn: state.drawn, history: state.history, memory: state.memory, memory_owner: state.memoryOwner })); } catch { /* private browsing can disable storage */ }
-}
-
-function userIdentity(user) {
-  const id = Number(user?.id);
-  if (Number.isInteger(id) && id > 0) return `id:${id}`;
-  const username = String(user?.username || "").trim().toLowerCase();
-  return username ? `username:${username}` : "";
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ remaining: state.remaining, drawn: state.drawn, history: state.history })); } catch { /* private browsing can disable storage */ }
 }
 
 function setCount(count) {
@@ -68,6 +49,8 @@ function renderProgress() {
   $(".progress-track").setAttribute("aria-valuenow", String(opened));
   const empty = state.remaining.length === 0;
   $("#draw-button").disabled = empty || state.busy;
+  $("#reset-button").disabled = state.busy;
+  choiceButtons.forEach((button) => { button.disabled = state.busy; });
   $("#draw-label").textContent = empty ? "สำรับหมดแล้ว" : "เปิดไพ่ให้ฉัน";
   $("#deck-message").textContent = empty ? "เปิดครบทั้ง 78 ใบแล้ว กดล้างคำทำนายเพื่อเริ่มรอบใหม่" : `เปิดแล้ว ${opened} ใบ · เหลืออีก ${state.remaining.length} ใบ`;
 }
@@ -106,24 +89,27 @@ function renderCards() {
   syncQuestion();
 }
 
+function memoryMessages() { return Array.isArray(state.memory?.messages) ? state.memory.messages : []; }
+
 function renderMemory() {
   const title = $("#memory-title");
   const message = $("#memory-message");
   const action = $("#new-reading-button");
   const status = $("#memory-status");
   if (!title || !message || !action || !status) return;
-  const turns = Array.isArray(state.memory?.turns) ? state.memory.turns : [];
+  const messages = memoryMessages();
+  const turns = Math.floor(messages.filter((item) => item.role === "assistant").length);
   const hasSpread = state.drawn.length > 0;
   action.disabled = !hasSpread || state.busy;
-  status.classList.toggle("is-active", turns.length > 0);
+  status.classList.toggle("is-active", turns > 0);
   if (!hasSpread) {
     title.textContent = "Memory ของชุดไพ่ยังว่าง";
     message.textContent = "หลังเปิดไพ่ชุดใหม่ คำถามแรกจะกลายเป็นคำถามตั้งต้น";
-  } else if (!turns.length) {
+  } else if (!turns) {
     title.textContent = "พร้อมจำคำถามของชุดนี้";
-    message.textContent = "ถามครั้งแรกแล้ว AI จะจำบริบทไว้ให้คุณถามต่อจากเรื่องเดิมได้";
+    message.textContent = state.user?.ai_enabled ? "ถามครั้งแรกแล้วระบบจะจำบริบทไว้บนบัญชีของคุณ เพื่อถามต่อจากไพ่ชุดเดิมได้" : "เมื่อเข้าใช้งานและได้รับสิทธิ์ AI แล้ว ระบบจะจำบริบทไว้บนบัญชีของคุณ";
   } else {
-    const firstQuestion = String(state.memory.initialQuestion || turns[0].question || "").slice(0, 90);
+    const firstQuestion = String(messages.find((item) => item.role === "user")?.content || "").slice(0, 90);
     title.textContent = "Memory พร้อม · ถามต่อจากคำถามเดิมได้";
     message.textContent = `คำถามตั้งต้น: “${firstQuestion}${firstQuestion.length >= 90 ? "…" : ""}” · ถ้าเป็นเรื่องใหม่ให้กดล้างไพ่`;
   }
@@ -132,34 +118,15 @@ function renderMemory() {
 function clearAnswer() { $("#ai-answer").replaceChildren(); }
 
 function restoreSavedMemoryAnswer() {
-  const latestTurn = state.memory?.turns?.at(-1);
-  if (latestTurn?.answer) renderAnswer(latestTurn.answer);
+  const latest = [...memoryMessages()].reverse().find((message) => message.role === "assistant");
+  if (latest?.content) renderAnswer(latest.content);
 }
 
 function clearPrivateMemory() {
   state.memory = null;
-  state.memoryOwner = "";
-  state.pendingMemory = null;
-  state.pendingMemoryOwner = "";
+  state.readingId = "";
   clearAnswer();
-  saveState();
   renderMemory();
-}
-
-function restorePendingMemoryForUser(user) {
-  const identity = userIdentity(user);
-  const hadPendingMemory = Boolean(state.pendingMemory);
-  const canRestore = !state.memory
-    && state.pendingMemory
-    && state.pendingMemoryOwner === identity
-    && isMemoryForSpread(state.pendingMemory, state.drawn);
-  if (canRestore) {
-    state.memory = state.pendingMemory;
-    state.memoryOwner = identity;
-  }
-  state.pendingMemory = null;
-  state.pendingMemoryOwner = "";
-  if (canRestore || hadPendingMemory) saveState();
 }
 
 function drawCards() {
@@ -170,10 +137,8 @@ function drawCards() {
   drawTimer = window.setTimeout(() => {
     const amount = Math.min(state.count, state.remaining.length);
     state.drawn = state.remaining.splice(0, amount);
-    state.memory = amount ? createReadingMemory(state.drawn) : null;
-    state.memoryOwner = amount ? userIdentity(state.user) : "";
-    state.pendingMemory = null;
-    state.pendingMemoryOwner = "";
+    state.memory = null;
+    state.readingId = "";
     if (amount) state.history.unshift({ id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, createdAt: Date.now(), cards: [...state.drawn] });
     state.history = state.history.slice(0, MAX_HISTORY);
     state.busy = false;
@@ -186,36 +151,43 @@ function drawCards() {
   }, 420);
 }
 
+async function closeServerReading() {
+  if (!state.readingId || !state.user?.ai_enabled) return;
+  try { await api(`/api/ai/readings/${encodeURIComponent(state.readingId)}/close`, { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: "{}" }); } catch { /* local reset must remain usable if the network is unavailable */ }
+}
+
 function resetCards() {
   if (drawTimer !== null) {
     window.clearTimeout(drawTimer);
     drawTimer = null;
     $("#draw-button").classList.remove("is-busy");
   }
+  closeServerReading();
   state.requestVersion += 1;
   state.remaining = shuffle(DECK);
   state.drawn = [];
   state.history = [];
   state.memory = null;
-  state.memoryOwner = "";
-  state.pendingMemory = null;
-  state.pendingMemoryOwner = "";
+  state.readingId = "";
   state.busy = false;
   $("#ai-question").value = "";
   clearAnswer();
   saveState();
   renderProgress();
   renderCards();
-  $("#request-status").textContent = "เริ่มสำรับใหม่แล้ว ไพ่ทั้ง 78 ใบพร้อมให้เปิด · Memory เดิมถูกล้างแล้ว";
+  $("#request-status").textContent = "เริ่มสำรับใหม่แล้ว ไพ่ทั้ง 78 ใบพร้อมให้เปิด · Memory เดิมถูกปิดแล้ว";
   renderMemory();
 }
 
 async function api(url, options = {}) {
-  const response = await fetch(url, { credentials: "same-origin", ...options, headers: { Accept: "application/json", ...(options.body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) } });
+  const headers = { Accept: "application/json", "X-Client-Request-Id": crypto.randomUUID?.() || String(Date.now()), ...(options.body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) };
+  let response;
+  try { response = await fetch(url, { credentials: "same-origin", ...options, headers }); }
+  catch (error) { const offline = new Error("ตรวจการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่"); offline.code = navigator.onLine === false ? "OFFLINE" : "AI_UPSTREAM_ERROR"; offline.cause = error; throw offline; }
   const raw = await response.text();
   let data = {};
   try { data = raw ? JSON.parse(raw) : {}; } catch { throw new Error("เซิร์ฟเวอร์ส่งข้อมูลที่อ่านไม่ได้"); }
-  if (!response.ok || data.ok === false) { const error = new Error(data.message || data.error || "ทำรายการไม่สำเร็จ"); error.code = data.code || "REQUEST_FAILED"; error.status = response.status; throw error; }
+  if (!response.ok || data.ok === false) { const error = new Error(data.message || data.error || "ทำรายการไม่สำเร็จ"); error.code = data.code || "REQUEST_FAILED"; error.status = response.status; error.requestId = data.request_id || response.headers.get("x-request-id") || ""; throw error; }
   return data;
 }
 
@@ -238,9 +210,21 @@ function setAccount(user, csrf = "") {
   link.href = "#question-title";
   action.textContent = "ออกจากระบบ";
   action.href = "#question-title";
-  $("#account-title").textContent = user.ai_enabled ? `พร้อมอ่านไพ่ให้ ${user.name || user.username}` : "บัญชีนี้ยังรอสิทธิ์ AI";
-  $("#account-message").textContent = user.ai_enabled ? "พิมพ์คำถาม แล้วกดส่งให้ AI เชื่อมคำบนไพ่กับเรื่องของคุณ" : "บัญชีเข้าใช้งานแล้ว แต่ผู้ดูแลยังไม่ได้เปิดสิทธิ์ AI ให้บัญชีนี้";
-  $("#ask-ai-button").disabled = !user.ai_enabled || !state.drawn.length || !$("#ai-question").value.trim();
+  $("#account-title").textContent = user.must_change_password ? "กรุณาเปลี่ยนรหัสผ่านก่อน" : user.ai_enabled ? `พร้อมอ่านไพ่ให้ ${user.name || user.username}` : "บัญชีนี้ยังรอสิทธิ์ AI";
+  $("#account-message").textContent = user.must_change_password ? "รหัสผ่านชั่วคราวต้องเปลี่ยนที่หน้าเข้าใช้งานก่อน จึงจะใช้ AI ได้" : user.ai_enabled ? "พิมพ์คำถาม แล้วกดส่งให้ AI เชื่อมคำบนไพ่กับเรื่องของคุณ" : "บัญชีเข้าใช้งานแล้ว แต่ผู้ดูแลยังไม่ได้เปิดสิทธิ์ AI ให้บัญชีนี้";
+  $("#ask-ai-button").disabled = !user.ai_enabled || Boolean(user.must_change_password) || !state.drawn.length || !$("#ai-question").value.trim();
+}
+
+async function loadServerReadingForSpread() {
+  if (!state.user?.ai_enabled || !state.drawn.length) return;
+  const data = await api("/api/ai/readings");
+  const match = (data.readings || []).find((reading) => JSON.stringify(reading.cards) === JSON.stringify(state.drawn) && reading.status === "active");
+  if (!match) return;
+  const detail = await api(`/api/ai/readings/${encodeURIComponent(match.id)}`);
+  state.readingId = detail.reading?.id || "";
+  state.memory = detail.reading || null;
+  renderMemory();
+  restoreSavedMemoryAnswer();
 }
 
 async function loadSession() {
@@ -250,12 +234,7 @@ async function loadSession() {
     const authenticated = Boolean(data.authenticated && data.user);
     setAccount(authenticated ? data.user : null, data.csrf_token || "");
     if (authenticated) {
-      const identity = userIdentity(data.user);
-      if (state.memory && state.memoryOwner && state.memoryOwner !== identity) clearPrivateMemory();
-      if (state.memory && !state.memoryOwner) state.memoryOwner = identity;
-      restorePendingMemoryForUser(data.user);
-      renderMemory();
-      restoreSavedMemoryAnswer();
+      try { await loadServerReadingForSpread(); } catch { /* the draw and question UI must still work if history is temporarily unavailable */ }
     } else clearPrivateMemory();
   } catch { state.backend = false; setAccount(null); clearPrivateMemory(); }
   syncQuestion();
@@ -264,9 +243,10 @@ async function loadSession() {
 function syncQuestion() {
   const hasQuestion = $("#ai-question").value.trim().length > 0;
   const button = $("#ask-ai-button");
-  button.disabled = state.busy || !state.user?.ai_enabled || !state.drawn.length || !hasQuestion;
+  button.disabled = state.busy || !state.user?.ai_enabled || Boolean(state.user?.must_change_password) || !state.drawn.length || !hasQuestion;
   if (!state.drawn.length) $("#request-status").textContent = "เปิดไพ่ก่อน แล้วพิมพ์คำถามได้เลย";
   else if (!state.user) $("#request-status").textContent = "เปิดไพ่แล้ว พิมพ์คำถามได้เลย — เข้าใช้งานเมื่ออยากให้ AI ตอบ";
+  else if (state.user.must_change_password) $("#request-status").textContent = "เปลี่ยนรหัสผ่านก่อนจึงจะถาม AI ได้";
   else if (!state.user.ai_enabled) $("#request-status").textContent = "บัญชีนี้ยังไม่ได้รับสิทธิ์ AI จากผู้ดูแล";
   else if (!state.busy && !$("#ai-answer").childElementCount) $("#request-status").textContent = hasQuestion ? "พร้อมเชื่อมคำบนไพ่กับคำถามของคุณ" : "พิมพ์คำถาม แล้วกดถาม AI Tarot Reader";
 }
@@ -277,28 +257,37 @@ function renderAnswer(answer) {
   String(answer).split(/\n{2,}|\n/).map((line) => line.trim()).filter(Boolean).forEach((line, index) => { const paragraph = document.createElement("p"); paragraph.className = "answer-line"; paragraph.style.setProperty("--answer-delay", `${index * 110}ms`); paragraph.textContent = line; box.append(paragraph); });
 }
 
+async function ensureReading() {
+  if (state.readingId) return;
+  const data = await api("/api/ai/readings", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ cards: state.drawn, title: "คำถามจากชุดไพ่" }) });
+  state.readingId = data.reading?.id || "";
+  state.memory = data.reading || null;
+  if (!state.readingId) throw new Error("สร้างชุดไพ่สำหรับ Memory ไม่สำเร็จ");
+}
+
 async function askAi() {
-  if (!state.user?.ai_enabled || !state.drawn.length) return syncQuestion();
-  const question = $("#ai-question").value.trim();
-  if (!question) return syncQuestion();
+  if (!state.user?.ai_enabled || state.user.must_change_password || !state.drawn.length) return syncQuestion();
+  const question = $("#ai-question").value.trim() || state.failedQuestion;
+  if (!question || state.busy) return syncQuestion();
   const version = ++state.requestVersion;
   state.busy = true;
   $("#ask-ai-button").disabled = true;
   $("#request-status").textContent = "กำลังอ่านคำบนไพ่และเชื่อมโยงกับคำถาม...";
   try {
-    const data = await api("/api/ai/tarot-chat", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ question, cards: state.drawn, conversation: conversationForSpread(state.memory, state.drawn) }) });
+    await ensureReading();
+    const data = await api(`/api/ai/readings/${encodeURIComponent(state.readingId)}/messages`, { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ question }) });
     if (version !== state.requestVersion) return;
-    const answer = String(data.answer || data.output_text || "").trim();
-    if (!answer) throw new Error("AI ไม่ได้ส่งคำตอบกลับมา ลองถามอีกครั้ง");
-    state.memory = appendReadingTurn(state.memory || createReadingMemory(state.drawn), question, answer);
-    state.memoryOwner = userIdentity(state.user);
-    saveState();
-    renderAnswer(answer);
+    state.memory = data.reading || state.memory;
+    renderAnswer(String(data.answer || "").trim());
     renderMemory();
+    $("#ai-question").value = "";
+    state.failedQuestion = "";
+    $("#retry-ai-button").hidden = true;
+    $("#ai-answer-title")?.focus?.({ preventScroll: false });
     $("#request-status").textContent = "คำตอบนี้เป็นแนวทางสะท้อนความคิด คุณเป็นคนตัดสินใจเองเสมอ";
   } catch (error) {
     if (error.status === 401 || error.code === "ACCOUNT_AUTH_REQUIRED") { setAccount(null); clearPrivateMemory(); $("#request-status").textContent = "เซสชันหมดอายุ กรุณาเข้าใช้งานใหม่"; }
-    else $("#request-status").textContent = error.message || "ระบบยังตอบไม่ได้ ลองใหม่อีกครั้ง";
+    else { state.failedQuestion = question; $("#retry-ai-button").hidden = !["AI_TIMEOUT", "AI_UPSTREAM_ERROR", "EMPTY_AI_RESPONSE", "OFFLINE"].includes(error.code); $("#request-status").textContent = messageForError(error.code, error.requestId); }
   } finally { if (version === state.requestVersion) { state.busy = false; syncQuestion(); } }
 }
 
@@ -308,6 +297,7 @@ $("#new-reading-button").addEventListener("click", resetCards);
 choiceButtons.forEach((button) => button.addEventListener("click", () => setCount(Number(button.dataset.count))));
 $("#ai-question").addEventListener("input", syncQuestion);
 $("#ask-ai-button").addEventListener("click", askAi);
+$("#retry-ai-button").addEventListener("click", () => askAi());
 $("#account-action").addEventListener("click", async (event) => {
   if (!state.user) return;
   event.preventDefault();

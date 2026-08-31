@@ -32,14 +32,14 @@ test("auth session reports missing Vercel database instead of pretending to be l
 });
 
 test("AI card validation rejects fake and duplicate cards", async () => {
-  const { validCardFiles } = await import("../api/ai/tarot-chat.mjs");
+  const { validCardFiles } = await import("../lib/vercel/routes/ai.mjs");
   assert.deepEqual(validCardFiles(["card-001.webp", "card-078.webp"]), ["card-001.webp", "card-078.webp"]);
   assert.throws(() => validCardFiles(["card-999.webp"]), /ไม่อนุญาต/);
   assert.throws(() => validCardFiles(["card-001.webp", "card-001.webp"]), /ไม่ซ้ำ/);
 });
 
 test("AI input contains the exact selected card words and not arbitrary labels", async () => {
-  const { buildInput } = await import("../api/ai/tarot-chat.mjs");
+  const { buildTarotInput: buildInput } = await import("../lib/vercel/routes/ai.mjs");
   const input = buildInput("งานที่ทำอยู่ควรไปต่อไหม", [
     { file: "card-078.webp", name: "Worry", keywords: ["worry"] },
   ], []);
@@ -49,7 +49,7 @@ test("AI input contains the exact selected card words and not arbitrary labels",
 });
 
 test("AI input keeps the original reading context alongside the latest follow-up", async () => {
-  const { buildInput } = await import("../api/ai/tarot-chat.mjs");
+  const { buildTarotInput: buildInput } = await import("../lib/vercel/routes/ai.mjs");
   const conversation = [
     { role: "user", content: "คำถามตั้งต้น" },
     { role: "assistant", content: "คำตอบตั้งต้น" },
