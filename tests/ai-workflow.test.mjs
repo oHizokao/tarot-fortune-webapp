@@ -35,4 +35,6 @@ test("AI reader presents and enforces question → draw → answer workflow", as
   assert.match(script, /if \(!question\)[\s\S]*พิมพ์คำถามก่อน/);
   assert.match(script, /askAi\(question\)/);
   assert.match(script, /\/api\/ai\/tarot-chat\?reading_id=/);
+  assert.match(script, /\$\("#ask-ai-button"\)\.addEventListener\("click", \(\) => askAi\(\)\)/);
+  assert.doesNotMatch(script, /\$\("#ask-ai-button"\)\.addEventListener\("click", askAi\)/);
 });

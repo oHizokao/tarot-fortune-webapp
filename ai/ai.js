@@ -353,7 +353,7 @@ $("#reset-button").addEventListener("click", resetCards);
 $("#new-reading-button").addEventListener("click", resetCards);
 choiceButtons.forEach((button) => button.addEventListener("click", () => setCount(Number(button.dataset.count))));
 $("#ai-question").addEventListener("input", syncQuestion);
-$("#ask-ai-button").addEventListener("click", askAi);
+$("#ask-ai-button").addEventListener("click", () => askAi());
 $("#retry-ai-button").addEventListener("click", () => askAi());
 $("#account-action").addEventListener("click", async (event) => {
   if (!state.user) return;
