@@ -35,3 +35,10 @@ test("admin logout clears credentials and sensitive setup fields from the page",
   assert.match(source, /bootstrap-password.*value\s*=\s*["']{2}/s);
   assert.match(source, /openai-api-key.*value\s*=\s*["']{2}/s);
 });
+
+test("admin AI diagnostics explain a provider rate limit", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const source = await readFile("admin/admin.js", "utf8");
+  assert.match(source, /AI_RATE_LIMITED/);
+  assert.match(source, /โควตา|เครดิต/);
+});

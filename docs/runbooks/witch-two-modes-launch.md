@@ -41,6 +41,8 @@ npm run test:e2e
 
 `/api/health` ต้องรายงาน readiness ของ environment ที่ตั้งใจใช้งานจริงก่อนเปิด AI ให้สมาชิก
 
+จากนั้นเข้า `/admin/` กด `ทดสอบการเชื่อมต่อ AI` ให้ผ่านจริงด้วย ถ้าได้ `AI_RATE_LIMITED` แม้ API key จะแสดงว่า “พร้อมใช้งาน” ให้ตรวจ Billing/Usage ของ OpenAI project เพราะ readiness ตรวจได้เพียงว่ามี key และ model ไม่ได้ยืนยันเครดิตของ upstream
+
 ห้ามใส่ API key, password, session secret หรือ connection string ใน repository, screenshot หรือข้อความ commit
 
 ## Smoke test production

@@ -371,7 +371,7 @@ async function askAi(questionOverride = "") {
     $("#request-status").textContent = "คำตอบนี้เป็นแนวทางสะท้อนความคิด คุณเป็นคนตัดสินใจเองเสมอ";
   } catch (error) {
     if (error.status === 401 || error.code === "ACCOUNT_AUTH_REQUIRED") { setAccount(null); clearPrivateMemory(); $("#request-status").textContent = "เซสชันหมดอายุ กรุณาเข้าใช้งานใหม่"; }
-    else { state.failedQuestion = question; $("#retry-ai-button").hidden = !["AI_TIMEOUT", "AI_UPSTREAM_ERROR", "EMPTY_AI_RESPONSE", "OFFLINE"].includes(error.code); $("#request-status").textContent = messageForError(error.code, error.requestId); setWitchStatus("ยังอ่านคำตอบไม่ได้ · กดลองอีกครั้ง"); }
+    else { state.failedQuestion = question; $("#retry-ai-button").hidden = !["AI_TIMEOUT", "AI_UPSTREAM_ERROR", "AI_RATE_LIMITED", "EMPTY_AI_RESPONSE", "OFFLINE"].includes(error.code); $("#request-status").textContent = messageForError(error.code, error.requestId); setWitchStatus("ยังอ่านคำตอบไม่ได้ · กดลองอีกครั้ง"); }
   } finally { if (version === state.requestVersion) { state.busy = false; renderMemory(); syncQuestion(); } }
 }
 

@@ -171,6 +171,12 @@ async function refreshAll() {
   } catch (error) { showStatus($("#users-status"), error.message, true); showStatus($("#diagnostics-status"), "ตรวจระบบไม่สำเร็จ ลองอีกครั้ง", true); }
 }
 
+function aiCheckFailureMessage(code) {
+  if (code === "AI_RATE_LIMITED") return "เชื่อมต่อไม่สำเร็จ — โควตา/เครดิต OpenAI ยังไม่พร้อม ตรวจ Billing หรือ Usage แล้วลองใหม่";
+  if (code === "MODEL_UNAVAILABLE") return "เชื่อมต่อไม่สำเร็จ — โมเดลที่ตั้งค่าไว้ยังไม่พร้อม ตรวจชื่อ model แล้วลองใหม่";
+  return `เชื่อมต่อไม่สำเร็จ (${code || "UNKNOWN"})`;
+}
+
 $("#admin-login-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const status = $("#admin-login-status");
@@ -202,7 +208,7 @@ $("#ai-check-button").addEventListener("click", async () => {
   button.disabled = true;
   try {
     const data = await api("/api/admin/ai-check", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: "{}" });
-    showStatus($("#settings-status"), data.connection_ok ? `เชื่อมต่อสำเร็จ · ${data.model} · ${data.latency_ms} ms` : `เชื่อมต่อไม่สำเร็จ (${data.code || "UNKNOWN"})`, !data.connection_ok);
+    showStatus($("#settings-status"), data.connection_ok ? `เชื่อมต่อสำเร็จ · ${data.model} · ${data.latency_ms} ms` : aiCheckFailureMessage(data.code), !data.connection_ok);
   } catch (error) { showStatus($("#settings-status"), error.message, true); }
   finally { button.disabled = false; }
 });

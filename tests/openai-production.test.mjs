@@ -19,6 +19,19 @@ test("connection test is bounded to a short response", async () => {
   assert.equal(body.store, false);
 });
 
+test("OpenAI 429 responses become an actionable rate-limit error", async () => {
+  const { requestOpenAi } = await import("../lib/vercel/openai.mjs");
+  await assert.rejects(
+    requestOpenAi({
+      settings: { apiKey: "test-key", model: "gpt-5.6-luna", prompt: "safe" },
+      input: "ping",
+      userId: 7,
+      fetchImpl: async () => new Response(JSON.stringify({ error: { message: "quota" } }), { status: 429 }),
+    }),
+    (error) => error.code === "AI_RATE_LIMITED" && error.status === 429,
+  );
+});
+
 test("tarot input contains only the selected card words", async () => {
   const { buildTarotInput } = await import("../lib/vercel/openai.mjs");
   const input = buildTarotInput("งานนี้ควรไปต่อไหม", [{ file: "card-078.webp", name: "Worry", keywords: ["worry"] }], []);
