@@ -38,3 +38,637 @@ a { color: inherit; }
 .flow-step.is-complete > span { color: #0a2c2a; border-color: rgba(129,228,189,.55); background: var(--green); }
 .flow-step.is-complete strong { color: #d8f5e9; }
 @media (max-width: 650px) { .flow-steps { grid-template-columns: 1fr; gap: 4px; margin-bottom: 22px; padding: 7px; }.flow-step { padding: 8px 9px; }.flow-step small { display: inline; margin-left: 5px; } }
+
+/* Guided witch reading experience */
+.ai-hero--witch {
+  min-height: 0;
+  padding-top: 68px;
+  padding-bottom: 52px;
+}
+
+.ai-hero-copy {
+  max-width: 760px;
+}
+
+.ai-hero--witch h1 {
+  max-width: 720px;
+  font-size: clamp(44px, 6vw, 70px);
+}
+
+.ai-hero--witch p:not(.eyebrow) {
+  max-width: 690px;
+  margin-top: 19px;
+}
+
+.ai-reading-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.ai-reading-stage > .flow-steps {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+}
+
+.flow-step {
+  min-height: 56px;
+}
+
+.ai-question-stage,
+.ai-spread-stage,
+.ai-reveal-stage,
+.ai-answer-stage {
+  min-width: 0;
+  padding: 23px;
+}
+
+.ai-question-stage,
+.ai-spread-stage {
+  align-self: stretch;
+}
+
+.ai-question-stage {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.ai-spread-stage {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.ai-reveal-stage {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+  overflow: hidden;
+  background: linear-gradient(160deg, rgba(36, 37, 102, .85), rgba(13, 17, 51, .91));
+}
+
+.ai-answer-stage {
+  grid-column: 1 / -1;
+  grid-row: 4;
+  background: linear-gradient(150deg, rgba(41, 35, 103, .82), rgba(12, 17, 49, .9));
+}
+
+.stage-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.stage-heading h2 {
+  margin-top: 3px;
+  font-size: 25px;
+}
+
+.stage-heading p:last-child {
+  max-width: 540px;
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.stage-heading--compact h2 {
+  font-size: 22px;
+}
+
+.stage-number,
+.answer-orbit {
+  display: grid;
+  width: 43px;
+  height: 43px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--gold);
+  font: 500 15px "Kanit", sans-serif;
+  border: 1px solid rgba(255, 224, 165, .28);
+  border-radius: 50%;
+  background: rgba(255, 224, 165, .06);
+}
+
+.answer-orbit {
+  font-size: 21px;
+  animation: answerOrbit 3.6s ease-in-out infinite;
+}
+
+.account-callout {
+  margin-top: 19px;
+}
+
+.question-label {
+  margin-top: 22px;
+  color: #eeeaff;
+  font-family: "Kanit", sans-serif;
+  font-size: 13px;
+}
+
+.question-panel textarea {
+  min-height: 132px;
+  margin-top: 8px;
+  padding: 15px;
+  border-color: rgba(169, 145, 255, .29);
+  background: rgba(7, 11, 38, .58);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .035);
+}
+
+.question-panel textarea::placeholder {
+  color: #7484a9;
+}
+
+.question-hint {
+  margin: 9px 0 0;
+  color: #7f91b8;
+  font-size: 10px;
+  line-height: 1.65;
+}
+
+.ai-spread-stage .choice-row {
+  margin-top: 22px;
+}
+
+.ai-spread-stage .choice-button {
+  min-height: 89px;
+  padding: 11px 10px;
+  text-align: left;
+}
+
+.ai-spread-stage .choice-button b {
+  font-size: 23px;
+}
+
+.ai-spread-stage .choice-button span,
+.ai-spread-stage .choice-button small {
+  display: block;
+}
+
+.ai-spread-stage .choice-button span {
+  color: #d9d3fb;
+  font: 500 11px "Kanit", sans-serif;
+}
+
+.ai-spread-stage .choice-button small {
+  margin-top: 4px;
+  color: #8192b5;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.ai-spread-stage .choice-button.is-selected small {
+  color: #c4e3ff;
+}
+
+.spread-actions {
+  margin-top: 20px;
+}
+
+.spread-actions .draw-button {
+  margin-top: 0;
+}
+
+.spread-actions .reset-button {
+  margin-top: 9px;
+}
+
+.witch-scene {
+  position: relative;
+  display: grid;
+  min-height: 345px;
+  margin: 17px -7px 0;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(194, 169, 255, .16);
+  border-radius: 19px;
+  background:
+    radial-gradient(circle at 50% 60%, rgba(122, 78, 224, .3), transparent 35%),
+    linear-gradient(160deg, rgba(31, 27, 91, .84), rgba(8, 13, 41, .72));
+}
+
+.witch-scene::before,
+.witch-scene::after {
+  position: absolute;
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.witch-scene::before {
+  width: 230px;
+  height: 230px;
+  background: rgba(107, 78, 238, .2);
+  filter: blur(35px);
+}
+
+.witch-scene::after {
+  right: 10%;
+  bottom: 0;
+  left: 10%;
+  height: 48px;
+  background: rgba(3, 6, 23, .7);
+  filter: blur(15px);
+}
+
+.witch-art {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: min(100%, 390px);
+  height: 345px;
+  object-fit: contain;
+  filter: drop-shadow(0 25px 24px rgba(1, 2, 14, .46));
+  animation: witchBreathe 6s ease-in-out infinite;
+}
+
+.witch-moon {
+  position: absolute;
+  top: 22px;
+  right: 29px;
+  width: 72px;
+  height: 72px;
+  border: 1px solid rgba(255, 224, 165, .38);
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #ffeab3, #b9a3ff 46%, rgba(132, 88, 233, .18) 70%, transparent 71%);
+  box-shadow: 0 0 28px rgba(255, 219, 151, .28);
+  opacity: .7;
+}
+
+.witch-orbit {
+  position: absolute;
+  z-index: 0;
+  border: 1px solid rgba(128, 184, 255, .24);
+  border-radius: 50%;
+  transform: rotate(-16deg);
+}
+
+.witch-orbit--one {
+  width: 230px;
+  height: 150px;
+  animation: witchOrbit 17s linear infinite;
+}
+
+.witch-orbit--two {
+  width: 300px;
+  height: 210px;
+  border-style: dashed;
+  border-color: rgba(221, 180, 255, .18);
+  animation: witchOrbit 23s linear reverse infinite;
+}
+
+.witch-crystal {
+  position: absolute;
+  right: 17%;
+  bottom: 35px;
+  z-index: 2;
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  color: #ffe1a5;
+  border: 1px solid rgba(206, 185, 255, .44);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(192, 147, 255, .72), rgba(72, 49, 161, .44) 58%, rgba(14, 17, 53, .25) 59%);
+  box-shadow: 0 0 28px rgba(161, 115, 255, .54);
+  animation: crystalPulse 2.8s ease-in-out infinite;
+}
+
+.witch-spark {
+  position: absolute;
+  z-index: 2;
+  color: var(--gold);
+  font-size: 19px;
+  text-shadow: 0 0 16px rgba(255, 215, 128, .8);
+  animation: sparkFloat 3s ease-in-out infinite;
+}
+
+.witch-spark--one {
+  top: 79px;
+  left: 16%;
+}
+
+.witch-spark--two {
+  right: 15%;
+  bottom: 109px;
+  color: #9fddff;
+  animation-delay: 1.2s;
+}
+
+.witch-status {
+  position: absolute;
+  bottom: 13px;
+  z-index: 3;
+  padding: 7px 11px;
+  color: #c6d5f1;
+  font: 500 10px "Kanit", sans-serif;
+  border: 1px solid rgba(176, 162, 255, .25);
+  border-radius: 999px;
+  background: rgba(7, 11, 37, .62);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .18);
+  transition: 180ms ease;
+}
+
+.witch-status.is-reading {
+  color: #ffe6ae;
+  border-color: rgba(255, 224, 165, .44);
+  box-shadow: 0 0 20px rgba(255, 194, 109, .16);
+}
+
+.witch-status.is-ready {
+  color: #b7f1db;
+  border-color: rgba(129, 228, 189, .4);
+}
+
+.ai-reveal-stage .cards-grid {
+  min-height: 140px;
+  margin-top: 15px;
+}
+
+.ai-reveal-stage .empty-card {
+  min-height: 130px;
+  border-color: rgba(184, 166, 255, .2);
+  background: rgba(3, 7, 30, .25);
+}
+
+.ai-reveal-stage .empty-card span {
+  width: 51px;
+  height: 76px;
+  font-size: 23px;
+}
+
+.ai-reveal-stage .empty-card p {
+  margin-top: 10px;
+  font-size: 10px;
+}
+
+.ai-reveal-stage .cards-grid:not(.is-empty) {
+  min-height: 0;
+}
+
+.ai-reveal-stage .tarot-card-card {
+  background: linear-gradient(155deg, rgba(54, 39, 127, .82), rgba(14, 17, 52, .84));
+}
+
+.reading-note {
+  margin-top: 13px;
+}
+
+.ai-answer-stage .memory-status {
+  margin-top: 18px;
+}
+
+.answer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.answer-actions .request-status {
+  flex: 1;
+  min-height: 20px;
+  margin: 0;
+}
+
+.answer-actions .ask-button {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 205px;
+}
+
+.answer-actions .retry-button {
+  flex: 0 0 auto;
+}
+
+.ai-answer-stage .answer-box {
+  min-height: 45px;
+  margin-top: 16px;
+}
+
+.ai-answer-stage .answer-box:empty::before {
+  display: block;
+  padding: 15px;
+  color: #7385ab;
+  font-size: 11px;
+  content: "เมื่อคำตอบพร้อม จะปรากฏตรงนี้";
+  border: 1px dashed rgba(159, 175, 243, .16);
+  border-radius: 12px;
+  background: rgba(5, 9, 31, .2);
+}
+
+@keyframes witchBreathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-5px) scale(1.012); }
+}
+
+@keyframes witchOrbit {
+  to { transform: rotate(344deg); }
+}
+
+@keyframes crystalPulse {
+  0%, 100% { transform: scale(.94); box-shadow: 0 0 22px rgba(161, 115, 255, .38); }
+  50% { transform: scale(1.08); box-shadow: 0 0 34px rgba(188, 135, 255, .7); }
+}
+
+@keyframes sparkFloat {
+  0%, 100% { opacity: .48; transform: translateY(3px) scale(.88); }
+  50% { opacity: 1; transform: translateY(-5px) scale(1.12); }
+}
+
+@keyframes answerOrbit {
+  0%, 100% { transform: rotate(-8deg) scale(1); }
+  50% { transform: rotate(8deg) scale(1.07); }
+}
+
+@media (max-width: 900px) {
+  .ai-reading-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-reading-stage > .flow-steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .ai-question-stage,
+  .ai-spread-stage,
+  .ai-reveal-stage,
+  .ai-answer-stage {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .ai-reveal-stage {
+    display: grid;
+    grid-template-columns: minmax(180px, .82fr) minmax(0, 1.18fr);
+    column-gap: 16px;
+  }
+
+  .ai-reveal-stage .stage-heading,
+  .ai-reveal-stage .witch-scene,
+  .ai-reveal-stage .reading-note {
+    grid-column: 1 / -1;
+  }
+
+  .ai-reveal-stage .cards-grid {
+    align-self: center;
+    margin-top: 15px;
+  }
+
+  .ai-reveal-stage .witch-scene {
+    margin-bottom: 0;
+  }
+}
+
+@media (max-width: 650px) {
+  .ai-shell {
+    width: min(100% - 22px, 520px);
+  }
+
+  .ai-hero--witch {
+    padding-top: 39px;
+    padding-bottom: 31px;
+  }
+
+  .ai-hero--witch h1 {
+    font-size: clamp(39px, 11vw, 53px);
+  }
+
+  .ai-reading-stage > .flow-steps {
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+
+  .flow-step {
+    min-height: 52px;
+  }
+
+  .ai-question-stage,
+  .ai-spread-stage,
+  .ai-reveal-stage,
+  .ai-answer-stage {
+    padding: 17px 14px;
+    border-radius: 17px;
+  }
+
+  .stage-heading h2 {
+    font-size: 21px;
+  }
+
+  .stage-heading p:last-child {
+    font-size: 10px;
+  }
+
+  .stage-number,
+  .answer-orbit {
+    width: 36px;
+    height: 36px;
+  }
+
+  .account-callout {
+    align-items: flex-start;
+  }
+
+  .ai-spread-stage .choice-row {
+    gap: 6px;
+  }
+
+  .ai-spread-stage .choice-button {
+    min-height: 93px;
+    padding: 9px 7px;
+  }
+
+  .ai-spread-stage .choice-button b {
+    font-size: 19px;
+  }
+
+  .ai-spread-stage .choice-button span {
+    font-size: 10px;
+  }
+
+  .ai-spread-stage .choice-button small {
+    font-size: 8px;
+  }
+
+  .ai-reveal-stage {
+    display: block;
+  }
+
+  .witch-scene {
+    min-height: 285px;
+    margin-right: -2px;
+    margin-left: -2px;
+  }
+
+  .witch-art {
+    width: min(100%, 330px);
+    height: 285px;
+  }
+
+  .witch-moon {
+    top: 14px;
+    right: 17px;
+    width: 57px;
+    height: 57px;
+  }
+
+  .witch-orbit--one {
+    width: 205px;
+    height: 133px;
+  }
+
+  .witch-orbit--two {
+    width: 265px;
+    height: 184px;
+  }
+
+  .witch-crystal {
+    right: 12%;
+    bottom: 34px;
+    width: 38px;
+    height: 38px;
+  }
+
+  .witch-status {
+    max-width: calc(100% - 26px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .answer-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .answer-actions .ask-button,
+  .answer-actions .retry-button {
+    width: 100%;
+  }
+
+  .answer-actions .ask-button {
+    justify-content: center;
+  }
+
+  .ai-answer-stage .memory-status {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .ai-answer-stage .memory-action {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .answer-orbit,
+  .witch-art,
+  .witch-orbit,
+  .witch-crystal,
+  .witch-spark {
+    animation: none;
+  }
+}

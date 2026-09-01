@@ -34,7 +34,8 @@
           </span>
         </a>
         <div class="topbar-actions">
-          <a class="topbar-link" href="./ai/">ถาม AI Tarot</a>
+          <a class="topbar-link" href="#manual-reader">เปิดไพ่ด้วยตัวเอง</a>
+          <a class="topbar-link" href="./ai/">ถามแม่มด AI</a>
           <a class="topbar-login-button" href="./login/" aria-label="เข้าใช้งานหรือสมัครสมาชิก">
             <span class="topbar-login-icon" aria-hidden="true">✦</span>
             <span>เข้าใช้งาน</span>
@@ -46,25 +47,48 @@
         </div>
       </header>
 
-      <section class="hero" aria-labelledby="page-title">
-        <div class="hero-copy">
-          <p class="eyebrow"><span aria-hidden="true">✦</span> DAILY FORTUNE</p>
-          <h1 id="page-title">วันนี้ดวงของคุณ<br /><span>กำลังบอกอะไร?</span></h1>
-          <p class="hero-description">
-            ตั้งจิตให้สงบ แล้วเลือกจำนวนไพ่ที่อยากเปิด<br class="desktop-only" />
-            ไพ่ที่ได้อาจเป็นข้อความเล็ก ๆ สำหรับวันนี้
-          </p>
+      <section class="mode-foyer" id="mode-foyer" aria-labelledby="mode-title">
+        <div class="mode-foyer-copy">
+          <p class="eyebrow"><span aria-hidden="true">✦</span> CHOOSE YOUR READING</p>
+          <h1 id="mode-title">วันนี้อยากให้ไพ่<br /><span>ช่วยคุณแบบไหน?</span></h1>
+          <p class="mode-lead">เลือกวิธีที่เข้ากับคุณ แล้วเริ่มอ่านสัญญาณจากสำรับ 78 ใบในจังหวะของตัวเอง</p>
+          <div class="mode-choices" aria-label="เลือกโหมดการอ่านไพ่">
+            <a id="manual-mode-link" class="mode-card mode-card--manual" href="#manual-reader">
+              <span class="mode-card-icon" aria-hidden="true">✦</span>
+              <span class="mode-card-copy"><strong>เปิดไพ่ด้วยตัวเอง</strong><small>ไม่ต้องล็อกอิน · อ่านความหมายด้วยตัวคุณ</small></span>
+              <span class="mode-card-arrow" aria-hidden="true">↘</span>
+            </a>
+            <a id="ai-mode-link" class="mode-card mode-card--ai" href="./ai/">
+              <span class="mode-card-icon" aria-hidden="true">☽</span>
+              <span class="mode-card-copy"><strong>ถามแม่มด AI</strong><small>เข้าสู่ระบบ · ให้ AI เชื่อมคำบนไพ่กับคำถาม</small></span>
+              <span class="mode-card-arrow" aria-hidden="true">↘</span>
+            </a>
+          </div>
         </div>
-        <div class="hero-orb" aria-hidden="true">
-          <div class="orb-ring orb-ring--one"></div>
-          <div class="orb-ring orb-ring--two"></div>
-          <span class="orb-spark orb-spark--one">✦</span>
-          <span class="orb-spark orb-spark--two">✧</span>
-          <div class="orb-card">?</div>
+        <div class="foyer-scene" aria-hidden="true">
+          <div class="foyer-moon"></div>
+          <div class="foyer-orbit foyer-orbit--one"></div>
+          <div class="foyer-orbit foyer-orbit--two"></div>
+          <span class="foyer-spark foyer-spark--one">✦</span>
+          <span class="foyer-spark foyer-spark--two">✧</span>
+          <div class="foyer-deck">
+            <span class="foyer-card foyer-card--back">✦</span>
+            <span class="foyer-card foyer-card--front">?</span>
+          </div>
+          <div class="foyer-scene-label"><span>78</span> ใบ · หนึ่งคำถามที่ชัดขึ้น</div>
         </div>
       </section>
 
-      <section class="workspace" aria-label="เครื่องมือเปิดไพ่ทำนาย">
+      <section class="manual-reader-heading" aria-labelledby="manual-reader-title">
+        <div>
+          <p class="panel-kicker">FREE MODE / NO LOGIN</p>
+          <h2 id="manual-reader-title">เปิดไพ่ด้วยตัวเอง</h2>
+          <p>เลือก 1, 2 หรือ 3 ใบ แล้วอ่านคำบนไพ่ด้วยสัญชาตญาณของคุณ</p>
+        </div>
+        <a class="back-to-modes" href="#mode-foyer">เปลี่ยนโหมด <span aria-hidden="true">↑</span></a>
+      </section>
+
+      <section class="workspace" id="manual-reader" aria-labelledby="manual-reader-title">
         <aside class="control-panel panel">
           <div class="panel-heading">
             <div class="heading-icon" aria-hidden="true">♢</div>
@@ -171,57 +195,14 @@
         </section>
       </section>
 
-      <section class="ai-panel panel" id="ai-reader" aria-labelledby="ai-reader-title">
-        <div class="ai-heading">
-          <div>
-            <p class="panel-kicker">BETA AI READER</p>
-            <h2 id="ai-reader-title">ถามคำถามกับชุดไพ่</h2>
-            <p class="ai-description">
-              เปิดไพ่ฟรีได้โดยไม่ต้องล็อกอิน ส่วนห้องถาม AI แยกสำหรับสมาชิกที่เข้าใช้งาน และจะอ่านจากคำบนไพ่ที่เปิดจริงเท่านั้น
-            </p>
-          </div>
-          <span class="ai-orbit-mark" aria-hidden="true">✦</span>
+      <section class="mode-bridge panel" aria-labelledby="mode-bridge-title">
+        <div class="mode-bridge-icon" aria-hidden="true">☽</div>
+        <div>
+          <p class="panel-kicker">WANT A GENTLE REFLECTION?</p>
+          <h2 id="mode-bridge-title">ให้แม่มด AI ช่วยเชื่อมคำบนไพ่กับคำถามของคุณ</h2>
+          <p>โหมดถาม AI แยกเป็นห้องของสมาชิก เพื่อให้ถามต่อและจำบริบทของชุดไพ่เดิมได้</p>
         </div>
-
-        <div class="ai-guest-panel" id="ai-guest-panel">
-          <div class="ai-login-copy">
-            <span class="ai-lock" aria-hidden="true">◈</span>
-            <div>
-              <strong>อยากคุยกับไพ่แบบเจาะจง?</strong>
-              <p>เข้าใช้งานหรือสมัครสมาชิก แล้วไปห้องถาม AI เพื่อพิมพ์คำถามของคุณได้เลย</p>
-            </div>
-          </div>
-          <div class="ai-locked-question">
-            <label class="ai-question-label" for="ai-question-preview">ช่องถามไพ่ของคุณ</label>
-            <textarea id="ai-question-preview" rows="3" disabled placeholder="เข้าใช้งานก่อน แล้วพิมพ์คำถามที่อยากถามไพ่ได้ตรงนี้"></textarea>
-            <p class="ai-locked-note">ช่องนี้จะแสดงคำตอบจาก AI หลังเข้าใช้งานและเปิดไพ่แล้ว</p>
-          </div>
-          <div class="ai-login-row">
-            <a class="ai-button" href="./ai/">เปิดห้องถาม AI</a>
-            <a class="ai-text-link" href="./login/?next=/ai/">เข้าใช้งาน / สมัครสมาชิก</a>
-          </div>
-          <form class="ai-login-row legacy-beta-form" id="beta-login-form">
-            <label class="sr-only" for="beta-code">Beta Access Code</label>
-            <input id="beta-code" type="password" autocomplete="one-time-code" placeholder="กรอก Beta Access Code" />
-            <button class="ai-button" id="beta-login-button" type="submit">เข้าสู่ Beta</button>
-          </form>
-          <p class="ai-status" id="beta-auth-status" role="status" aria-live="polite"></p>
-          <button class="ai-text-link" id="beta-focus-button" type="button">มี Beta Code เดิม? ใช้เข้าห้องนี้ได้</button>
-        </div>
-
-        <div class="ai-member-panel" id="ai-member-panel" hidden>
-          <div class="ai-member-topline">
-            <p class="ai-user-status" id="ai-user-status"></p>
-            <button class="ai-logout-button" id="beta-logout-button" type="button">ออกจากระบบ</button>
-          </div>
-          <label class="ai-question-label" for="ai-question">คำถามของคุณ</label>
-          <textarea id="ai-question" rows="4" maxlength="2000" placeholder="เช่น งานที่กำลังลังเลอยู่ ควรเริ่มจากตรงไหนดี?"></textarea>
-          <div class="ai-question-actions">
-            <p class="ai-status" id="ai-request-status" role="status" aria-live="polite">เปิดไพ่ก่อน แล้วพิมพ์คำถามได้เลย</p>
-            <button class="ai-button" id="ask-ai-button" type="button" disabled>ถาม AI Tarot Reader</button>
-          </div>
-          <div class="ai-answer" id="ai-answer" aria-live="polite" aria-label="คำตอบจาก AI"></div>
-        </div>
+        <a class="mode-bridge-button" href="./ai/">ไปห้องถาม AI <span aria-hidden="true">→</span></a>
       </section>
 
       <section class="history-panel panel" aria-labelledby="history-title">

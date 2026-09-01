@@ -44,13 +44,23 @@ function hasQuestion() { return $("#ai-question").value.trim().length > 0; }
 
 function hasAnswer() { return Boolean($("#ai-answer")?.childElementCount); }
 
+function setWitchStatus(message, mode = "") {
+  const element = $("#witch-status");
+  if (!element) return;
+  element.textContent = message;
+  element.classList.toggle("is-reading", mode === "reading");
+  element.classList.toggle("is-ready", mode === "ready");
+}
+
 function renderFlow() {
   const hasSpread = state.drawn.length > 0;
-  const current = !hasSpread ? (hasQuestion() ? "draw" : "question") : "answer";
+  const answered = hasAnswer();
+  const current = !hasQuestion() ? "question" : !hasSpread ? "spread" : answered ? "answer" : "draw";
   const steps = [
     ["question", hasQuestion()],
+    ["spread", hasSpread],
     ["draw", hasSpread],
-    ["answer", hasAnswer()],
+    ["answer", answered],
   ];
   steps.forEach(([step, complete]) => {
     const element = $(`#flow-step-${step}`);
@@ -81,8 +91,14 @@ function renderProgress() {
     : hasSpread
       ? `เปิดแล้ว ${opened} ใบ · ถามต่อจากชุดนี้ได้ หรือกดล้างไพ่เพื่อเริ่มเรื่องใหม่`
       : questionReady
-        ? `คำถามพร้อมแล้ว · กดจับไพ่เพื่อเริ่มอ่าน (เหลือ ${state.remaining.length} ใบ)`
-        : "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงจับไพ่";
+      ? `คำถามพร้อมแล้ว · กดจับไพ่เพื่อเริ่มอ่าน (เหลือ ${state.remaining.length} ใบ)`
+      : "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงจับไพ่";
+  if (empty) setWitchStatus("เปิดครบทั้งสำรับแล้ว · เริ่มใหม่ได้เลย");
+  else if (hasSpread && state.busy) setWitchStatus("แม่มดกำลังอ่านไพ่...", "reading");
+  else if (hasSpread && hasAnswer()) setWitchStatus("คำตอบพร้อมแล้ว · ถามต่อได้", "ready");
+  else if (hasSpread) setWitchStatus("ไพ่เปิดแล้ว · รอคำถามต่อ");
+  else if (questionReady) setWitchStatus("คำถามพร้อมแล้ว · กดเปิดไพ่");
+  else setWitchStatus("รอคำถามของคุณ");
   renderFlow();
 }
 
@@ -95,6 +111,7 @@ function renderCards() {
     grid.innerHTML = '<div class="empty-card"><span>?</span><p>พิมพ์คำถามให้ชัดเจนก่อน<br />แล้วจึงกดจับไพ่</p></div>';
     $("#spread-count").textContent = "ยังไม่ได้เปิด";
     $("#reading-note").textContent = "คำตอบจาก AI จะอ้างอิงเฉพาะคำที่อยู่บนไพ่ชุดนี้";
+    setWitchStatus("รอคำถามของคุณ");
     renderMemory();
     syncQuestion();
     return;
@@ -116,6 +133,7 @@ function renderCards() {
   }));
   $("#spread-count").textContent = `${state.drawn.length} ใบที่เปิดได้`;
   $("#reading-note").textContent = "ไพ่ชุดนี้พร้อมให้คุณพิมพ์คำถาม แล้วให้ AI เชื่อมคำบนไพ่กับเรื่องของคุณ";
+  setWitchStatus(state.busy ? "แม่มดกำลังอ่านไพ่..." : "ไพ่เปิดแล้ว · รอคำตอบ", state.busy ? "reading" : "");
   renderMemory();
   syncQuestion();
 }
@@ -175,6 +193,7 @@ function drawCards() {
   state.activeQuestion = question;
   state.failedQuestion = "";
   state.busy = true;
+  setWitchStatus("แม่มดกำลังสับไพ่...", "reading");
   renderProgress();
   $("#draw-button").classList.add("is-busy");
   drawTimer = window.setTimeout(() => {
@@ -191,8 +210,13 @@ function drawCards() {
     renderCards();
     $("#draw-button").classList.remove("is-busy");
     drawTimer = null;
-    if (state.user?.ai_enabled && !state.user.must_change_password) void askAi(question);
-    else syncQuestion();
+    if (state.user?.ai_enabled && !state.user.must_change_password) {
+      setWitchStatus("แม่มดกำลังอ่านไพ่...", "reading");
+      void askAi(question);
+    } else {
+      setWitchStatus("ไพ่เปิดแล้ว · อ่านคำบนไพ่ได้เลย");
+      syncQuestion();
+    }
   }, 420);
 }
 
@@ -223,6 +247,7 @@ function resetCards() {
   renderProgress();
   renderCards();
   $("#request-status").textContent = "เริ่มสำรับใหม่แล้ว ไพ่ทั้ง 78 ใบพร้อมให้เปิด · Memory เดิมถูกปิดแล้ว";
+  setWitchStatus("สำรับใหม่พร้อมแล้ว");
   renderMemory();
 }
 
@@ -311,6 +336,7 @@ function renderAnswer(answer) {
   const box = $("#ai-answer");
   box.replaceChildren();
   String(answer).split(/\n{2,}|\n/).map((line) => line.trim()).filter(Boolean).forEach((line, index) => { const paragraph = document.createElement("p"); paragraph.className = "answer-line"; paragraph.style.setProperty("--answer-delay", `${index * 110}ms`); paragraph.textContent = line; box.append(paragraph); });
+  setWitchStatus("คำตอบพร้อมแล้ว · ถามต่อจากชุดเดิมได้", "ready");
 }
 
 async function ensureReading() {
@@ -327,6 +353,7 @@ async function askAi(questionOverride = "") {
   if (!question || state.busy) return syncQuestion();
   const version = ++state.requestVersion;
   state.busy = true;
+  setWitchStatus("แม่มดกำลังอ่านคำบนไพ่...", "reading");
   $("#ask-ai-button").disabled = true;
   $("#request-status").textContent = "กำลังอ่านคำบนไพ่และเชื่อมโยงกับคำถาม...";
   try {
@@ -344,7 +371,7 @@ async function askAi(questionOverride = "") {
     $("#request-status").textContent = "คำตอบนี้เป็นแนวทางสะท้อนความคิด คุณเป็นคนตัดสินใจเองเสมอ";
   } catch (error) {
     if (error.status === 401 || error.code === "ACCOUNT_AUTH_REQUIRED") { setAccount(null); clearPrivateMemory(); $("#request-status").textContent = "เซสชันหมดอายุ กรุณาเข้าใช้งานใหม่"; }
-    else { state.failedQuestion = question; $("#retry-ai-button").hidden = !["AI_TIMEOUT", "AI_UPSTREAM_ERROR", "EMPTY_AI_RESPONSE", "OFFLINE"].includes(error.code); $("#request-status").textContent = messageForError(error.code, error.requestId); }
+    else { state.failedQuestion = question; $("#retry-ai-button").hidden = !["AI_TIMEOUT", "AI_UPSTREAM_ERROR", "EMPTY_AI_RESPONSE", "OFFLINE"].includes(error.code); $("#request-status").textContent = messageForError(error.code, error.requestId); setWitchStatus("ยังอ่านคำตอบไม่ได้ · กดลองอีกครั้ง"); }
   } finally { if (version === state.requestVersion) { state.busy = false; renderMemory(); syncQuestion(); } }
 }
 

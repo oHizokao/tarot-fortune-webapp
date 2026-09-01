@@ -507,6 +507,10 @@ function clearAiAnswer() {
 }
 
 function renderAiAnswer(answer) {
+  if (!aiAnswer) {
+    return;
+  }
+
   aiAnswer.replaceChildren();
   const paragraphs = String(answer)
     .split(/\n{2,}|\n/)
@@ -539,6 +543,10 @@ function syncAiControls() {
 }
 
 function setAiLoggedOut(message = "เข้าใช้งานเพื่อใช้ AI Tarot Reader", isError = false) {
+  if (!aiGuestPanel) {
+    return;
+  }
+
   state.aiRequestVersion += 1;
   state.aiBusy = false;
   clearAiAnswer();
@@ -556,6 +564,10 @@ function setAiLoggedOut(message = "เข้าใช้งานเพื่อ
 }
 
 function setAiLoggedIn(user, csrfToken = "") {
+  if (!aiGuestPanel || !aiMemberPanel) {
+    return;
+  }
+
   state.aiUser = user;
   state.aiCsrfToken = csrfToken;
   aiGuestPanel.hidden = true;
@@ -584,6 +596,10 @@ function resetAiReaderState() {
 }
 
 async function loadBetaSession() {
+  if (!aiGuestPanel) {
+    return;
+  }
+
   try {
     const data = await fetchApiJson("/api/auth/me");
     if (data.backend_configured === false) {
@@ -602,7 +618,9 @@ async function loadBetaSession() {
   } catch (error) {
     const setupError = ["DATABASE_NOT_CONFIGURED", "SERVER_CONFIG_MISSING", "INVALID_JSON"].includes(error.code) || error.status === 404;
     state.aiBackendAvailable = !setupError;
-    betaLoginButton.disabled = false;
+    if (betaLoginButton) {
+      betaLoginButton.disabled = false;
+    }
     setAiStatus(
       betaAuthStatus,
       setupError
@@ -837,17 +855,27 @@ resetButton.addEventListener("click", resetCards);
 copyButtons.forEach((button) => button.addEventListener("click", copyResultImage));
 historySearch.addEventListener("input", renderHistory);
 clearHistoryButton.addEventListener("click", clearHistory);
-betaLoginForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  loginBeta();
-});
-betaLogoutButton.addEventListener("click", logoutBeta);
-aiQuestion.addEventListener("input", syncAiControls);
-askAiButton.addEventListener("click", askAi);
-betaFocusButton.addEventListener("click", () => {
-  betaCodeInput.focus();
-  betaCodeInput.scrollIntoView({ behavior: "smooth", block: "center" });
-});
+if (betaLoginForm) {
+  betaLoginForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    loginBeta();
+  });
+}
+if (betaLogoutButton) {
+  betaLogoutButton.addEventListener("click", logoutBeta);
+}
+if (aiQuestion) {
+  aiQuestion.addEventListener("input", syncAiControls);
+}
+if (askAiButton) {
+  askAiButton.addEventListener("click", askAi);
+}
+if (betaFocusButton) {
+  betaFocusButton.addEventListener("click", () => {
+    betaCodeInput.focus();
+    betaCodeInput.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+}
 
 const savedState = loadSavedState();
 state.remaining = savedState?.remaining ?? shuffle(DECK);
@@ -863,4 +891,6 @@ markBrowserSessionActive();
 updateProgress();
 renderResult();
 renderHistory();
-loadBetaSession();
+if (aiGuestPanel) {
+  loadBetaSession();
+}

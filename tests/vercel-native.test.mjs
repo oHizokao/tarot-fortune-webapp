@@ -7,11 +7,14 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (relativePath) => fs.readFile(path.join(root, relativePath), "utf8");
 
-test("frontend exposes a guest chat preview and uses Vercel endpoint paths", async () => {
+test("frontend exposes the two-mode foyer and uses Vercel endpoint paths", async () => {
   const html = await read("index.html");
   const app = await read("app.js");
 
-  assert.match(html, /id="ai-question-preview"/);
+  assert.match(html, /id="mode-foyer"/);
+  assert.match(html, /id="manual-mode-link"/);
+  assert.match(html, /id="ai-mode-link"/);
+  assert.doesNotMatch(html, /id="ai-question-preview"/);
   assert.match(html, /class="topbar-login-button"/);
   assert.doesNotMatch(html, /href="\.\/admin\/"/);
   assert.match(app, /\/api\/auth\/me/);
