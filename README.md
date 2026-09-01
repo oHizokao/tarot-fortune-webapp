@@ -1,6 +1,6 @@
 # Tarot Fortune Web App
 
-เว็บเปิดไพ่ดูดวงจากภาพสำรับ 78 ใบ เลือกเปิด 1, 2 หรือ 3 ใบ ไพ่ไม่ซ้ำจนกว่าจะครบสำรับ มีประวัติ ค้นหา Copy PNG และ Motion เปิดไพ่ทีละใบ
+เว็บเปิดไพ่ดูดวงจากภาพสำรับ 78 ใบ แยกเป็น 2 โหมดชัดเจน: เปิดไพ่เองสำหรับ Guest และถามแม่มด AI สำหรับสมาชิก เลือกเปิด 1, 2 หรือ 3 ใบ ไพ่ไม่ซ้ำจนกว่าจะครบสำรับ มีประวัติ ค้นหา Copy PNG และ Motion เปิดไพ่ทีละใบ
 
 ระบบทำงานบน Vercel:
 
@@ -108,6 +108,6 @@ npm run check
 npm run test:e2e
 ```
 
-รายละเอียดขั้นตอนปล่อยจริงและ rollback ดูที่ [`docs/runbooks/production-launch.md`](docs/runbooks/production-launch.md)
+รายละเอียดขั้นตอนปล่อยจริงและ rollback ดูที่ [`docs/runbooks/production-launch.md`](docs/runbooks/production-launch.md) และ checklist UX สองโหมดที่ [`docs/runbooks/witch-two-modes-launch.md`](docs/runbooks/witch-two-modes-launch.md)
 
 ใช้เพื่อความบันเทิงและการทบทวนตัวเอง ผู้ใช้เป็นคนตัดสินใจชีวิตของตัวเองเสมอ

@@ -1,7 +1,10 @@
 import { test, expect } from "@playwright/test";
 
-test("guest draws without login", async ({ page }) => {
+test("guest sees both modes and opens manual cards from the foyer", async ({ page }) => {
   await page.goto("/");
+  await expect(page.locator("#manual-mode-link")).toContainText("เปิดไพ่ด้วยตัวเอง");
+  await expect(page.locator("#ai-mode-link")).toContainText("ถามแม่มด AI");
+  await page.locator("#manual-mode-link").click();
   await page.getByRole("button", { name: /เปิดไพ่/ }).click();
   await expect(page.locator(".result-card")).toHaveCount(1);
 });
@@ -12,6 +15,16 @@ test("guest can draw three cards without horizontal overflow", async ({ page }) 
   await page.getByRole("button", { name: /เปิดไพ่/ }).click();
   await expect(page.locator(".result-card")).toHaveCount(3);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("guest can reset the manual deck back to 78 cards", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: /สามใบ/ }).click();
+  await page.getByRole("button", { name: /เปิดไพ่/ }).click();
+  await expect(page.locator("#remaining-count")).toHaveText("75");
+  await page.getByRole("button", { name: "ล้างคำทำนาย" }).click();
+  await expect(page.locator("#remaining-count")).toHaveText("78");
+  await expect(page.locator(".result-card")).toHaveCount(0);
 });
 
 test("AI reader requires a question before drawing", async ({ page }) => {

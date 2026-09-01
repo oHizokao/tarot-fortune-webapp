@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -22,4 +22,10 @@ test("AI page puts the question stage before the spread stage", () => {
 test("AI page includes the witch scene anchor", () => {
   assert.match(aiHtml, /class="witch-scene"/);
   assert.match(aiHtml, /witch-reader\.webp/);
+  assert.ok(existsSync(path.join(root, "assets", "witch", "witch-reader.webp")));
+});
+
+test("AI question field keeps the accessible customer-facing label", () => {
+  assert.match(aiHtml, /<label class="question-label" for="ai-question">คำถามของคุณ<\/label>/);
+  assert.match(aiHtml, /<section class="ai-question-stage panel question-panel" aria-label="ขั้นที่ 1 พิมพ์คำถาม">/);
 });
