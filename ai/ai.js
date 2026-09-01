@@ -1,4 +1,5 @@
 import { messageForError } from "../lib/client/error-copy.js";
+import { groupReadingHistory } from "./reading-sets.mjs";
 
 const DECK = Array.from({ length: 78 }, (_, index) => `card-${String(index + 1).padStart(3, "0")}.webp`);
 const STORAGE_KEY = "tarot-daily-ai-reading-v2";
@@ -33,7 +34,10 @@ function loadState() {
     const openedCards = isValidCards(saved.openedCards)
       ? saved.openedCards.filter((card) => !saved.remaining.includes(card))
       : deriveOpenedCards(saved.remaining);
-    return { remaining: saved.remaining, drawn, openedCards, history: Array.isArray(saved.history) ? saved.history.slice(0, MAX_HISTORY) : [] };
+    const history = groupReadingHistory(saved.history)
+      .slice(0, MAX_HISTORY)
+      .map(({ setNumber, cardCount, ...entry }) => entry);
+    return { remaining: saved.remaining, drawn, openedCards, history };
   } catch { return emptySavedState(); }
 }
 
@@ -173,7 +177,7 @@ function renderProgress() {
 
 function getNumber(file) { return file.match(/card-(\d{3})/)?.[1] || "—"; }
 
-function createCardElement(file, index, animatedFrom) {
+function createCardElement(file, index, animatedFrom, imageIndex = index) {
   const card = document.createElement("article");
   card.className = "tarot-card-card";
   card.dataset.cardFile = file;
@@ -181,7 +185,7 @@ function createCardElement(file, index, animatedFrom) {
   const image = document.createElement("img");
   image.src = `../tarot-cards/${file}`;
   image.alt = `ไพ่ทำนายใบที่ ${index + 1}`;
-  image.loading = index < 6 ? "eager" : "lazy";
+  image.loading = imageIndex < 6 ? "eager" : "lazy";
   image.decoding = "async";
   const meta = document.createElement("div");
   meta.className = "card-meta";
@@ -190,13 +194,66 @@ function createCardElement(file, index, animatedFrom) {
   return card;
 }
 
+function formatReadingSetTime(timestamp) {
+  if (!timestamp) return "เวลาไม่ระบุ";
+  try {
+    return new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(timestamp));
+  } catch { return "เวลาไม่ระบุ"; }
+}
+
+function createReadingSetElement(entry, setIndex, cardOffset) {
+  const readingSet = document.createElement("section");
+  readingSet.className = "reading-set";
+  readingSet.dataset.setId = entry.id;
+  readingSet.setAttribute("data-set-id", entry.id);
+  readingSet.dataset.cardCount = String(entry.cardCount);
+  readingSet.classList.toggle("is-current", setIndex === 0);
+  readingSet.setAttribute("aria-label", `ชุดที่ ${entry.setNumber} จำนวน ${entry.cardCount} ใบ`);
+
+  const heading = document.createElement("div");
+  heading.className = "reading-set-heading";
+
+  const title = document.createElement("div");
+  title.className = "reading-set-title";
+  const titleLabel = document.createElement("strong");
+  titleLabel.textContent = `ชุดที่ ${entry.setNumber}`;
+  const titleState = document.createElement("span");
+  titleState.textContent = setIndex === 0 ? "ชุดล่าสุด" : "เปิดก่อนหน้านี้";
+  title.append(titleLabel, titleState);
+
+  const details = document.createElement("div");
+  details.className = "reading-set-details";
+  const amount = document.createElement("span");
+  amount.textContent = `เปิด ${entry.cardCount} ใบ`;
+  const time = document.createElement("time");
+  time.dateTime = entry.createdAt ? new Date(entry.createdAt).toISOString() : "";
+  time.textContent = formatReadingSetTime(entry.createdAt);
+  details.append(amount, time);
+  heading.append(title, details);
+
+  const cardsGrid = document.createElement("div");
+  cardsGrid.className = "cards-grid";
+  cardsGrid.dataset.cardCount = String(entry.cardCount);
+  const animatedFrom = setIndex === 0 ? Math.max(0, entry.cardCount - state.count) : entry.cardCount;
+  entry.cards.forEach((file, cardIndex) => cardsGrid.append(createCardElement(file, cardIndex, animatedFrom, cardOffset + cardIndex)));
+
+  const setHint = document.createElement("p");
+  setHint.className = "reading-set-hint";
+  setHint.textContent = setIndex === 0 && hasAiAccess()
+    ? "คำตอบ AI จะอ่านจากไพ่ชุดล่าสุดนี้"
+    : `ชุดนี้มีไพ่ ${entry.cardCount} ใบ · ไพ่ไม่ซ้ำกับชุดอื่นในรอบสำรับ`;
+
+  readingSet.append(heading, cardsGrid, setHint);
+  return readingSet;
+}
+
 function renderCards() {
-  const grid = $("#cards-grid");
-  const visibleCards = activeCards();
-  if (!visibleCards.length) {
-    grid.dataset.cardCount = "0";
-    grid.classList.add("is-empty");
-    grid.innerHTML = hasAiAccess()
+  const setsContainer = $("#reading-sets");
+  const readingSets = groupReadingHistory(state.history);
+  if (!readingSets.length) {
+    setsContainer.dataset.setCount = "0";
+    setsContainer.classList.add("is-empty");
+    setsContainer.innerHTML = hasAiAccess()
       ? '<div class="empty-card"><span>?</span><p>พิมพ์คำถามให้ชัดเจนก่อน<br />แล้วจึงกดจับไพ่</p></div>'
       : '<div class="empty-card"><span>?</span><p>เลือกจำนวนไพ่<br />แล้วกดเปิดไพ่</p></div>';
     $("#spread-count").textContent = "ยังไม่ได้เปิด";
@@ -206,21 +263,20 @@ function renderCards() {
     syncQuestion();
     return;
   }
-  grid.dataset.cardCount = String(visibleCards.length);
-  grid.classList.remove("is-empty");
-  const animatedFrom = Math.max(0, visibleCards.length - state.count);
-  const existingCards = [...grid.querySelectorAll(".tarot-card-card")];
-  const existingFiles = existingCards.map((card) => card.dataset.cardFile);
-  const samePrefix = existingFiles.length > 0 && existingFiles.every((file, index) => file === visibleCards[index]);
-  if (samePrefix && visibleCards.length > existingFiles.length) {
-    const additions = document.createDocumentFragment();
-    visibleCards.slice(existingFiles.length).forEach((file, index) => additions.append(createCardElement(file, existingFiles.length + index, animatedFrom)));
-    grid.append(additions);
-  } else if (!samePrefix || existingFiles.length !== visibleCards.length) {
-    grid.replaceChildren(...visibleCards.map((file, index) => createCardElement(file, index, animatedFrom)));
-  }
-  $("#spread-count").textContent = isMemberMode() ? `${state.drawn.length} ใบที่เปิดได้` : `${state.openedCards.length} ใบที่เปิดแล้ว`;
-  $("#reading-note").textContent = hasAiAccess() ? "ไพ่ชุดนี้พร้อมให้คุณพิมพ์คำถาม แล้วให้ AI เชื่อมคำบนไพ่กับเรื่องของคุณ" : "ไพ่ชุดนี้เปิดแล้ว · อ่านภาพและคำบนไพ่ด้วยตัวเองได้เลย";
+  setsContainer.dataset.setCount = String(readingSets.length);
+  setsContainer.classList.remove("is-empty");
+  let cardOffset = 0;
+  const setElements = readingSets.map((entry, index) => {
+    const element = createReadingSetElement(entry, index, cardOffset);
+    cardOffset += entry.cardCount;
+    return element;
+  });
+  setsContainer.replaceChildren(...setElements);
+  const totalCards = readingSets.reduce((sum, entry) => sum + entry.cardCount, 0);
+  $("#spread-count").textContent = isMemberMode() ? `ชุดล่าสุด · ${readingSets[0].cardCount} ใบ` : `${readingSets.length} ชุด · ${totalCards} ใบ`;
+  $("#reading-note").textContent = hasAiAccess()
+    ? "แต่ละชุดแสดงแยกกัน · คำตอบ AI จะอ้างอิงเฉพาะชุดล่าสุด"
+    : `เปิดแล้ว ${readingSets.length} ชุด · อ่านภาพและคำบนไพ่ของแต่ละชุดได้เลย`;
   setWitchStatus(state.busy ? "แม่มดกำลังอ่านไพ่..." : hasAiAccess() ? "ไพ่เปิดแล้ว · รอคำตอบ" : "ไพ่เปิดแล้ว · อ่านได้เลย", state.busy ? "reading" : "");
   renderMemory();
   syncQuestion();

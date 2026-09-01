@@ -1958,3 +1958,156 @@ body {
     width: min(calc(100% - 24px), 520px);
   }
 }
+
+/* v10 reading sets: every draw stays visibly separate from the next one. */
+.ai-reading-stage.ai-reading-stage--sequential .reading-sets {
+  display: grid;
+  width: min(100%, 1080px);
+  gap: 24px;
+  margin: 24px auto 0;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-sets.is-empty {
+  display: block;
+  min-height: 0;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set {
+  padding: clamp(14px, 2vw, 22px) clamp(12px, 2.2vw, 24px) 18px;
+  border: 1px solid rgba(195, 175, 255, .23);
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(28, 28, 75, .58), rgba(8, 13, 40, .56));
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set.is-current {
+  border-color: rgba(189, 165, 255, .52);
+  background: linear-gradient(145deg, rgba(52, 42, 122, .54), rgba(11, 21, 57, .64));
+  box-shadow: 0 16px 38px rgba(5, 5, 30, .2), inset 0 1px 0 rgba(255, 255, 255, .045);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set-title,
+.ai-reading-stage.ai-reading-stage--sequential .reading-set-details {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set-title strong {
+  color: #f3ecff;
+  font: 500 18px "Kanit", sans-serif;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set-title span,
+.ai-reading-stage.ai-reading-stage--sequential .reading-set-details {
+  color: #9ba9cf;
+  font-size: 10px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set-details {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set-details span {
+  color: #d8caff;
+  font: 500 12px "Kanit", sans-serif;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set .cards-grid {
+  width: 100%;
+  min-height: 0;
+  margin: 18px auto 0;
+  grid-template-columns: repeat(3, minmax(0, 280px));
+  gap: clamp(14px, 2.4vw, 28px);
+  align-items: start;
+  justify-content: center;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set[data-card-count="1"] .cards-grid {
+  grid-template-columns: minmax(0, 280px);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set[data-card-count="2"] .cards-grid {
+  grid-template-columns: repeat(2, minmax(0, 280px));
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set .tarot-card-card {
+  width: 100%;
+  max-width: 280px;
+  justify-self: center;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set .tarot-card-card img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 448 / 800;
+  object-fit: contain;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set-hint {
+  margin: 14px 0 0;
+  color: #8492b8;
+  font-size: 10px;
+  line-height: 1.6;
+  text-align: right;
+}
+
+@media (max-width: 650px) {
+  .ai-reading-stage.ai-reading-stage--sequential .reading-sets {
+    gap: 16px;
+    margin-top: 17px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .reading-set {
+    padding: 14px 10px 16px;
+    border-radius: 18px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .reading-set-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .reading-set-title,
+  .ai-reading-stage.ai-reading-stage--sequential .reading-set-details {
+    gap: 7px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .reading-set-title strong {
+    font-size: 16px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .reading-set-details {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .reading-set .cards-grid,
+  .ai-reading-stage.ai-reading-stage--sequential .reading-set[data-card-count="2"] .cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .reading-set[data-card-count="1"] .cards-grid {
+    grid-template-columns: minmax(0, 260px);
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .reading-set .tarot-card-card {
+    max-width: none;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .reading-set-hint {
+    margin-top: 11px;
+    text-align: left;
+  }
+}

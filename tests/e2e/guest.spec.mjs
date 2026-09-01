@@ -164,30 +164,39 @@ test("AI reader shows a guest card at its complete source ratio", async ({ page 
   expect(Math.abs(metrics.ratio - (448 / 800))).toBeLessThan(0.08);
 });
 
-test("guest keeps existing card elements when opening another round", async ({ page }) => {
+test("guest keeps each opening in its own reading set", async ({ page }) => {
   await page.goto("/ai/");
   await page.evaluate(() => localStorage.clear());
   await page.reload();
 
-  await page.locator('.choice-button[data-count="1"]').click();
+  await page.locator('.choice-button[data-count="3"]').click();
   await page.locator("#draw-button").click();
-  const firstCard = await page.locator(".tarot-card-card").first().elementHandle();
-  expect(firstCard).not.toBeNull();
-  await firstCard.evaluate((element) => { element.dataset.preservedNode = "true"; });
+  await expect(page.locator(".reading-set")).toHaveCount(1);
+  await expect(page.locator('.reading-set[data-card-count="3"] .tarot-card-card')).toHaveCount(3);
 
   await page.locator('.choice-button[data-count="2"]').click();
   await page.locator("#draw-button").click();
 
-  await expect(page.locator(".tarot-card-card")).toHaveCount(3);
-  expect(await firstCard.evaluate((element) => ({ connected: element.isConnected, sameAsFirst: element === document.querySelector(".tarot-card-card"), preserved: element.dataset.preservedNode }))).toEqual({ connected: true, sameAsFirst: true, preserved: "true" });
+  await expect(page.locator(".tarot-card-card")).toHaveCount(5);
+  await expect(page.locator(".reading-set")).toHaveCount(2);
+  const sets = await page.locator(".reading-set").evaluateAll((elements) => elements.map((element) => ({
+    setNumber: element.querySelector(".reading-set-title strong")?.textContent,
+    cardCount: element.dataset.cardCount,
+    cards: element.querySelectorAll(".tarot-card-card").length,
+  })));
+  expect(sets).toEqual([
+    { setNumber: "ชุดที่ 2", cardCount: "2", cards: 2 },
+    { setNumber: "ชุดที่ 1", cardCount: "3", cards: 3 },
+  ]);
 
   await page.locator('.choice-button[data-count="3"]').click();
   await page.locator("#draw-button").click();
   await page.locator("#draw-button").click();
-  await expect(page.locator(".tarot-card-card")).toHaveCount(9);
+  await expect(page.locator(".tarot-card-card")).toHaveCount(11);
+  await expect(page.locator(".reading-set")).toHaveCount(4);
   const loadingModes = await page.locator(".tarot-card-card img").evaluateAll((images) => images.map((image) => image.loading));
   expect(loadingModes.slice(0, 6)).toEqual(["eager", "eager", "eager", "eager", "eager", "eager"]);
-  expect(loadingModes.slice(6)).toEqual(["lazy", "lazy", "lazy"]);
+  expect(loadingModes.slice(6)).toEqual(["lazy", "lazy", "lazy", "lazy", "lazy"]);
 });
 
 test("mobile member reader keeps each stage in its own lane", async ({ page }) => {
