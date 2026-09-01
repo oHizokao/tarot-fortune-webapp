@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./ai.css?v=20260901-witch-two-modes-v8" />
+    <link rel="stylesheet" href="./ai.css?v=20260901-witch-two-modes-v9" />
   </head>
   <body>
     <div class="ai-bg ai-bg--one" aria-hidden="true"></div>
@@ -48,7 +48,7 @@
         <a class="guest-mode-banner__action" href="../login/?next=/ai/">เข้าใช้งานเพื่อถาม AI <span aria-hidden="true">→</span></a>
       </section>
 
-      <section class="ai-reading-stage" aria-label="ขั้นตอนถามแม่มด AI">
+      <section class="ai-reading-stage ai-reading-stage--sequential" data-reader-order="question spread reveal answer" aria-label="ขั้นตอนถามแม่มด AI">
         <div class="flow-steps" aria-label="ขั้นตอนการอ่านไพ่">
           <div class="flow-step member-only" id="flow-step-question" data-step="question" hidden><span id="flow-number-question">01</span><div><strong>พิมพ์คำถาม</strong><small>เริ่มจากเรื่องที่อยากสะท้อน</small></div></div>
           <div class="flow-step" id="flow-step-spread" data-step="spread"><span id="flow-number-spread">01</span><div><strong>เลือกจำนวนไพ่</strong><small>เลือก 1, 2 หรือ 3 ใบ</small></div></div>
@@ -124,6 +124,6 @@
 
       <footer class="ai-footer"><span>✦ TAROT DAILY</span><span>คำทำนายเป็นแนวทาง ไม่ใช่คำตัดสินชีวิต</span><a href="../privacy/">ความเป็นส่วนตัว</a><a href="../terms/">ข้อกำหนด</a><a href="../admin/">สำหรับผู้ดูแล</a></footer>
     </main>
-    <script type="module" src="./ai.js?v=20260901-witch-two-modes-v8" defer></script>
+    <script type="module" src="./ai.js?v=20260901-witch-two-modes-v9" defer></script>
   </body>
 </html>

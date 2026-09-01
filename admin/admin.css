@@ -13,3 +13,22 @@ button, input, select { font: inherit; } button, a { -webkit-tap-highlight-color
 @media (max-width: 520px) { .admin-shell { width: min(100% - 24px, 460px); padding-top: 13px; }.home-link { font-size: 0; }.home-link b { font-size: 19px; }.landing-hero { align-items: flex-start; padding-top: 45px; padding-bottom: 42px; }.landing-hero h1 { font-size: 43px; }.landing-hero p:not(.eyebrow) { font-size: 12px; }.landing-emblem { width: 88px; height: 88px; }.emblem-card { width: 43px; height: 59px; border-radius: 5px; }.emblem-card span { font-size: 12px; }.emblem-card b { font-size: 6px; }.emblem-card small { font-size: 5px; }.feature-row { gap: 8px; }.feature-row article { padding: 14px; }.admin-card { padding: 18px; }.admin-header { align-items: flex-start; flex-direction: column; }.header-actions { width: 100%; justify-content: space-between; }.prompt-tools { align-items: stretch; flex-direction: column; }.prompt-tools .ghost-button { width: 100%; }.stats-grid { gap: 8px; }.stats-grid article { padding: 13px; }.admin-dashboard { padding-top: 14px; } }
 .full-width { width: 100%; margin-top: 4px; }.audit-card { margin-top: 17px; }.audit-list { display: grid; gap: 8px; margin-top: 15px; }.audit-row { display: grid; grid-template-columns: minmax(150px, .7fr) 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(143,163,230,.12); font-size: 10px; }.audit-row strong { color: #d8cdfd; }.audit-row span, .audit-row time { color: var(--muted); }
 @media (max-width: 760px) { .audit-row { grid-template-columns: 1fr; gap: 3px; } }
+
+/* Shared page rhythm and compact sign-in choices. */
+.admin-shell {
+  width: min(1180px, calc(100% - 40px));
+}
+
+.admin-auth-grid {
+  align-items: start;
+}
+
+.login-card {
+  height: fit-content;
+}
+
+@media (max-width: 650px) {
+  .admin-shell {
+    width: min(calc(100% - 24px), 520px);
+  }
+}

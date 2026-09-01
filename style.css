@@ -2378,3 +2378,14 @@ h2 {
     animation: none;
   }
 }
+
+/* Shared page rhythm: keep the foyer aligned with the reader and auth pages. */
+.app-shell {
+  width: min(1180px, calc(100% - 40px));
+}
+
+@media (max-width: 650px) {
+  .app-shell {
+    width: min(calc(100% - 24px), 520px);
+  }
+}

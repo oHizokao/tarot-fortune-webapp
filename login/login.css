@@ -48,3 +48,14 @@ a { color: inherit; }
 .auth-footer a { color: #cdbdfb; text-decoration: none; }
 @media (max-width: 800px) { .auth-layout { grid-template-columns: 1fr; gap: 34px; min-height: 0; padding: 58px 0 54px; } .auth-intro { max-width: 650px; } .intro-points { grid-template-columns: repeat(3, 1fr); gap: 10px; } .intro-points > div { display: block; } .intro-points span { display: block; margin-bottom: 7px; } .intro-points strong { display: block; font-size: 13px; } .intro-points small { display: block; margin-top: 2px; } }
 @media (max-width: 520px) { .auth-shell { width: min(100% - 24px, 460px); padding-top: 13px; } .back-link { font-size: 0; } .back-link span { font-size: 20px; } .auth-layout { padding-top: 44px; } .auth-intro h1 { font-size: 42px; } .intro-points { grid-template-columns: 1fr; gap: 11px; margin-top: 28px; } .intro-points > div { display: grid; } .intro-points span { margin: 0; } .auth-card { border-radius: 19px; padding: 21px 18px; } .auth-footer { flex-wrap: wrap; justify-content: center; } }
+
+/* Shared page rhythm: keep the customer entry aligned with the reader. */
+.auth-shell {
+  width: min(1180px, calc(100% - 40px));
+}
+
+@media (max-width: 650px) {
+  .auth-shell {
+    width: min(calc(100% - 24px), 520px);
+  }
+}

@@ -99,24 +99,20 @@ test("reader stages share a smooth surface instead of separate boxed panels", as
   }
 });
 
-test("desktop reader uses a compact control rail beside the reveal canvas", async ({ page }) => {
+test("desktop reader follows one sequential guest reading rail", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/ai/");
 
   const layout = await page.evaluate(() => {
     const stage = getComputedStyle(document.querySelector(".ai-reading-stage"));
-    const spread = getComputedStyle(document.querySelector(".ai-spread-stage"));
-    const reveal = getComputedStyle(document.querySelector(".ai-reveal-stage"));
     return {
       areas: stage.gridTemplateAreas,
-      spreadArea: spread.gridArea,
-      revealArea: reveal.gridArea,
+      columns: stage.gridTemplateColumns,
     };
   });
 
-  expect(layout.areas).toBe('"flow flow" "spread reveal"');
-  expect(layout.spreadArea).toBe("spread");
-  expect(layout.revealArea).toBe("reveal");
+  expect(layout.areas).toBe('"flow" "spread" "reveal"');
+  expect(layout.columns.split(" ")).toHaveLength(1);
 });
 
 test("mobile reader follows one clear vertical path", async ({ page }) => {
@@ -137,7 +133,7 @@ test("mobile reader follows one clear vertical path", async ({ page }) => {
   expect(layout.boxes[1].bottom).toBeLessThanOrEqual(layout.boxes[2].top);
 });
 
-test("desktop gives the controls room and keeps the waiting reveal compact", async ({ page }) => {
+test("desktop gives the card reveal room and keeps the waiting art compact", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/ai/");
 
@@ -147,9 +143,25 @@ test("desktop gives the controls room and keeps the waiting reveal compact", asy
     emptyHeight: document.querySelector(".empty-card").getBoundingClientRect().height,
   }));
 
-  expect(metrics.spreadWidth).toBeGreaterThanOrEqual(440);
-  expect(metrics.witchHeight).toBeLessThanOrEqual(260);
+  expect(metrics.spreadWidth).toBeGreaterThanOrEqual(900);
+  expect(metrics.witchHeight).toBeLessThanOrEqual(230);
   expect(metrics.emptyHeight).toBeLessThanOrEqual(240);
+});
+
+test("AI reader shows a guest card at its complete source ratio", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/ai/");
+  await page.locator("#draw-button").click();
+  const image = page.locator(".tarot-card-card img").first();
+  await expect(image).toHaveJSProperty("naturalWidth", 448);
+  await expect(image).toHaveJSProperty("naturalHeight", 800);
+  await page.waitForTimeout(950);
+  const metrics = await image.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return { objectFit: getComputedStyle(element).objectFit, ratio: rect.width / rect.height };
+  });
+  expect(metrics.objectFit).toBe("contain");
+  expect(Math.abs(metrics.ratio - (448 / 800))).toBeLessThan(0.08);
 });
 
 test("guest keeps existing card elements when opening another round", async ({ page }) => {
