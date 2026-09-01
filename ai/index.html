@@ -11,16 +11,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./ai.css?v=20260901-witch-two-modes" />
+    <link rel="stylesheet" href="./ai.css?v=20260901-witch-two-modes-v3" />
   </head>
   <body>
     <div class="ai-bg ai-bg--one" aria-hidden="true"></div>
     <div class="ai-bg ai-bg--two" aria-hidden="true"></div>
-    <main class="ai-shell" id="ai-reader-app">
+    <main class="ai-shell" id="ai-reader-app" data-reader-mode="guest">
       <header class="ai-topbar">
         <a class="brand" href="../" aria-label="กลับหน้าเลือกโหมด Tarot Daily">
           <span class="brand-mark" aria-hidden="true">✦</span>
-          <span><strong>TAROT DAILY</strong><small>WITCH AI READER</small></span>
+          <span><strong>TAROT DAILY</strong><small id="brand-mode-label">FREE CARD READER</small></span>
         </a>
         <nav class="top-actions" aria-label="เมนูหลัก">
           <a href="../#manual-reader">เปิดไพ่ด้วยตัวเอง</a>
@@ -31,22 +31,32 @@
 
       <section class="ai-hero ai-hero--witch" aria-labelledby="ai-page-title">
         <div class="ai-hero-copy">
-          <p class="eyebrow">A QUESTION · A SPREAD · A KINDER NEXT STEP</p>
-          <h1 id="ai-page-title">ให้แม่มดช่วยอ่าน<br /><span>สิ่งที่ไพ่อยากบอก</span></h1>
-          <p>พิมพ์เรื่องที่อยู่ในใจ เลือกจำนวนไพ่ แล้วดูการเปิดไพ่ทีละใบ ก่อนรับคำสะท้อนที่เชื่อมจากคำบนไพ่กับคำถามของคุณ</p>
+          <p class="eyebrow" id="hero-eyebrow">FREE READING · NO LOGIN</p>
+          <h1 id="ai-page-title"><span id="hero-title-primary">เปิดไพ่ด้วยตัวเอง</span><br /><span id="hero-title-secondary">ให้ไพ่เล่าเรื่องของคุณ</span></h1>
+          <p id="hero-description">เลือกจำนวนไพ่ เปิดทีละใบ แล้วอ่านภาพและคำบนไพ่ด้วยสัญชาตญาณของคุณเอง ไม่ต้องสมัครสมาชิก</p>
         </div>
-        <div class="hero-seal" aria-hidden="true"><span>✦</span><small>ASK<br />GENTLY</small></div>
+        <div class="hero-seal" aria-hidden="true"><span>✦</span><small id="hero-seal-label">FREE<br />READING</small></div>
+      </section>
+
+      <section class="guest-mode-banner" id="guest-mode-banner" aria-label="โหมดเปิดไพ่ฟรี">
+        <span class="guest-mode-banner__icon" aria-hidden="true">✦</span>
+        <div>
+          <p class="panel-kicker">FREE MODE / NO LOGIN</p>
+          <h2>เปิดไพ่ได้เลย</h2>
+          <p>โหมดนี้ให้คุณเปิดไพ่และอ่านความหมายด้วยตัวเอง หากอยากพิมพ์คำถามให้ AI ช่วยเชื่อมคำบนไพ่ ให้เข้าใช้งานก่อน</p>
+        </div>
+        <a class="guest-mode-banner__action" href="../login/?next=/ai/">เข้าใช้งานเพื่อถาม AI <span aria-hidden="true">→</span></a>
       </section>
 
       <section class="ai-reading-stage" aria-label="ขั้นตอนถามแม่มด AI">
         <div class="flow-steps" aria-label="ขั้นตอนการอ่านไพ่">
-          <div class="flow-step is-current" id="flow-step-question" data-step="question" aria-current="step"><span>01</span><div><strong>พิมพ์คำถาม</strong><small>เริ่มจากเรื่องที่อยากสะท้อน</small></div></div>
+          <div class="flow-step member-only" id="flow-step-question" data-step="question" hidden><span>01</span><div><strong>พิมพ์คำถาม</strong><small>เริ่มจากเรื่องที่อยากสะท้อน</small></div></div>
           <div class="flow-step" id="flow-step-spread" data-step="spread"><span>02</span><div><strong>เลือกจำนวนไพ่</strong><small>เลือก 1, 2 หรือ 3 ใบ</small></div></div>
           <div class="flow-step" id="flow-step-draw" data-step="draw"><span>03</span><div><strong>เปิดไพ่</strong><small>ไพ่จะไม่ซ้ำในรอบนี้</small></div></div>
-          <div class="flow-step" id="flow-step-answer" data-step="answer"><span>04</span><div><strong>รับคำตอบ</strong><small>AI อ่านจากคำบนไพ่</small></div></div>
+          <div class="flow-step member-only" id="flow-step-answer" data-step="answer" hidden><span>04</span><div><strong>รับคำตอบ</strong><small>AI อ่านจากคำบนไพ่</small></div></div>
         </div>
 
-        <section class="ai-question-stage panel question-panel" aria-label="ขั้นที่ 1 พิมพ์คำถาม">
+        <section class="ai-question-stage panel question-panel member-only" id="question-stage" aria-label="ขั้นที่ 1 พิมพ์คำถาม" hidden>
           <div class="stage-heading">
             <div><p class="panel-kicker">01 / YOUR QUESTION</p><h2 id="question-title">เริ่มจากคำถามของคุณ</h2><p>พิมพ์ให้เป็นภาษาของคุณเอง ยิ่งชัดเจนยิ่งช่วยให้การสะท้อนตรงกับสิ่งที่กำลังคิด</p></div>
             <span class="stage-number" aria-hidden="true">01</span>
@@ -63,7 +73,7 @@
 
         <section class="ai-spread-stage panel" aria-labelledby="spread-title">
           <div class="stage-heading">
-            <div><p class="panel-kicker">02 / YOUR SPREAD</p><h2 id="spread-title">เลือกจำนวนไพ่</h2><p>เลือกตามความรู้สึกในตอนนี้ แล้วแม่มดจะเปิดไพ่ให้ทีละใบ</p></div>
+            <div><p class="panel-kicker">02 / YOUR SPREAD</p><h2 id="spread-title">เลือกจำนวนไพ่</h2><p id="spread-description">เลือก 1, 2 หรือ 3 ใบ แล้วเปิดไพ่เพื่ออ่านด้วยตัวเอง</p></div>
             <span class="deck-status"><i></i><strong id="remaining-count">78</strong> ใบเหลือ</span>
           </div>
           <div class="choice-row" role="group" aria-label="จำนวนไพ่ที่ต้องการเปิด">
@@ -77,14 +87,14 @@
             <p id="deck-message">ไพ่จะไม่ซ้ำกันจนกว่าจะครบทั้งสำรับ</p>
           </div>
           <div class="spread-actions">
-            <button class="draw-button" id="draw-button" type="button" disabled><span>✦</span><b id="draw-label">พิมพ์คำถามก่อน</b><span>→</span></button>
+            <button class="draw-button" id="draw-button" type="button"><span>✦</span><b id="draw-label">เปิดไพ่</b><span>→</span></button>
             <button class="reset-button" id="reset-button" type="button">ล้างไพ่ · เริ่มเรื่องใหม่</button>
           </div>
         </section>
 
         <section class="ai-reveal-stage panel" aria-labelledby="cards-title">
           <div class="stage-heading stage-heading--compact">
-            <div><p class="panel-kicker">03 / THE REVEAL</p><h2 id="cards-title">แม่มดกำลังเปิดไพ่</h2></div>
+            <div><p class="panel-kicker">03 / THE REVEAL</p><h2 id="cards-title">ไพ่ของคุณ</h2></div>
             <span class="spread-count" id="spread-count">ยังไม่ได้เปิด</span>
           </div>
           <div class="witch-scene" aria-hidden="true">
@@ -97,11 +107,11 @@
             <span class="witch-spark witch-spark--two">✧</span>
             <span class="witch-status" id="witch-status">รอคำถามของคุณ</span>
           </div>
-          <div class="cards-grid is-empty" id="cards-grid"><div class="empty-card"><span>?</span><p>พิมพ์คำถามด้านบน<br />แล้วกดเปิดไพ่</p></div></div>
-          <p class="reading-note" id="reading-note">คำตอบจาก AI จะอ้างอิงเฉพาะคำที่อยู่บนไพ่ชุดนี้</p>
+          <div class="cards-grid is-empty" id="cards-grid"><div class="empty-card"><span>?</span><p>เลือกจำนวนไพ่<br />แล้วกดเปิดไพ่</p></div></div>
+          <p class="reading-note" id="reading-note">เปิดไพ่แล้วอ่านภาพและคำบนไพ่ด้วยตัวเองได้เลย</p>
         </section>
 
-        <section class="ai-answer-stage panel" aria-labelledby="ai-answer-title">
+        <section class="ai-answer-stage panel member-only" id="ai-answer-stage" aria-labelledby="ai-answer-title" hidden>
           <div class="stage-heading stage-heading--compact">
             <div><p class="panel-kicker">04 / A GENTLE READING</p><h2 id="ai-answer-title" tabindex="-1">คำตอบจากแม่มด AI</h2><p>คำตอบนี้เป็นแนวทางชวนสะท้อน ไม่ใช่คำตัดสินชีวิตของคุณ</p></div>
             <span class="answer-orbit" aria-hidden="true">✧</span>
@@ -114,6 +124,6 @@
 
       <footer class="ai-footer"><span>✦ TAROT DAILY</span><span>คำทำนายเป็นแนวทาง ไม่ใช่คำตัดสินชีวิต</span><a href="../privacy/">ความเป็นส่วนตัว</a><a href="../terms/">ข้อกำหนด</a><a href="../admin/">สำหรับผู้ดูแล</a></footer>
     </main>
-    <script type="module" src="./ai.js?v=20260901-witch-two-modes-v2" defer></script>
+    <script type="module" src="./ai.js?v=20260901-witch-two-modes-v3" defer></script>
   </body>
 </html>

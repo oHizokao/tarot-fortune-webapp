@@ -12,7 +12,15 @@ test("root exposes distinct guest and AI mode actions", () => {
   assert.match(homeHtml, /id="mode-foyer"/);
   assert.match(homeHtml, /id="manual-mode-link"/);
   assert.match(homeHtml, /id="ai-mode-link"/);
-  assert.match(homeHtml, /href="\.\/ai\//);
+  assert.match(homeHtml, /href="\.\/login\/\?next=\/ai\//);
+});
+
+test("AI page keeps card reading public and gates only the question feature", () => {
+  assert.match(aiHtml, /id="guest-mode-banner"/);
+  assert.match(aiHtml, /class="[^"]*member-only[^"]*"[^>]*id="question-stage"/);
+  assert.match(aiHtml, /class="[^"]*member-only[^"]*"[^>]*id="ai-answer-stage"/);
+  assert.match(aiHtml, /id="draw-button"[^>]*>/);
+  assert.match(aiHtml, /โหมดเปิดไพ่ฟรี/);
 });
 
 test("AI page puts the question stage before the spread stage", () => {
@@ -27,12 +35,12 @@ test("AI page includes the witch scene anchor", () => {
 
 test("AI question field keeps the accessible customer-facing label", () => {
   assert.match(aiHtml, /<label class="question-label" for="ai-question">คำถามของคุณ<\/label>/);
-  assert.match(aiHtml, /<section class="ai-question-stage panel question-panel" aria-label="ขั้นที่ 1 พิมพ์คำถาม">/);
+  assert.match(aiHtml, /<section class="ai-question-stage panel question-panel member-only" id="question-stage"[^>]*aria-label="ขั้นที่ 1 พิมพ์คำถาม"[^>]*hidden>/);
 });
 
 test("customer pages version their JavaScript and CSS assets", () => {
   assert.match(homeHtml, /style\.css\?v=20260901-witch-two-modes/);
   assert.match(homeHtml, /app\.js\?v=20260901-witch-two-modes/);
   assert.match(aiHtml, /ai\.css\?v=20260901-witch-two-modes/);
-  assert.match(aiHtml, /ai\.js\?v=20260901-witch-two-modes-v2/);
+  assert.match(aiHtml, /ai\.js\?v=20260901-witch-two-modes-v3/);
 });

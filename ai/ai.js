@@ -44,6 +44,46 @@ function hasQuestion() { return $("#ai-question").value.trim().length > 0; }
 
 function hasAnswer() { return Boolean($("#ai-answer")?.childElementCount); }
 
+function hasAiAccess() { return Boolean(state.user?.ai_enabled && !state.user?.must_change_password); }
+
+function setReaderMode(user) {
+  const member = Boolean(user);
+  const app = $("#ai-reader-app");
+  if (app) app.dataset.readerMode = member ? "member" : "guest";
+  document.querySelectorAll(".member-only").forEach((element) => { element.hidden = !member; });
+  const guestBanner = $("#guest-mode-banner");
+  if (guestBanner) guestBanner.hidden = member;
+  const copy = member
+    ? {
+      brand: "WITCH AI READER",
+      eyebrow: "A QUESTION · A SPREAD · A KINDER NEXT STEP",
+      primary: "ให้แม่มดช่วยอ่าน",
+      secondary: "สิ่งที่ไพ่อยากบอก",
+      description: "พิมพ์เรื่องที่อยู่ในใจ เลือกจำนวนไพ่ แล้วดูการเปิดไพ่ทีละใบ ก่อนรับคำสะท้อนที่เชื่อมจากคำบนไพ่กับคำถามของคุณ",
+      spread: "เลือกตามความรู้สึกในตอนนี้ แล้วแม่มดจะเปิดไพ่ให้ทีละใบ",
+      cards: "แม่มดกำลังเปิดไพ่",
+      seal: "ASK\nGENTLY",
+    }
+    : {
+      brand: "FREE CARD READER",
+      eyebrow: "FREE READING · NO LOGIN",
+      primary: "เปิดไพ่ด้วยตัวเอง",
+      secondary: "ให้ไพ่เล่าเรื่องของคุณ",
+      description: "เลือกจำนวนไพ่ เปิดทีละใบ แล้วอ่านภาพและคำบนไพ่ด้วยสัญชาตญาณของคุณเอง ไม่ต้องสมัครสมาชิก",
+      spread: "เลือก 1, 2 หรือ 3 ใบ แล้วเปิดไพ่เพื่ออ่านด้วยตัวเอง",
+      cards: "ไพ่ของคุณ",
+      seal: "FREE\nREADING",
+    };
+  $("#brand-mode-label")?.replaceChildren(document.createTextNode(copy.brand));
+  $("#hero-eyebrow")?.replaceChildren(document.createTextNode(copy.eyebrow));
+  $("#hero-title-primary")?.replaceChildren(document.createTextNode(copy.primary));
+  $("#hero-title-secondary")?.replaceChildren(document.createTextNode(copy.secondary));
+  $("#hero-description")?.replaceChildren(document.createTextNode(copy.description));
+  $("#spread-description")?.replaceChildren(document.createTextNode(copy.spread));
+  $("#cards-title")?.replaceChildren(document.createTextNode(copy.cards));
+  $("#hero-seal-label")?.replaceChildren(document.createTextNode(copy.seal));
+}
+
 function setWitchStatus(message, mode = "") {
   const element = $("#witch-status");
   if (!element) return;
@@ -55,12 +95,15 @@ function setWitchStatus(message, mode = "") {
 function renderFlow() {
   const hasSpread = state.drawn.length > 0;
   const answered = hasAnswer();
-  const current = !hasQuestion() ? "question" : !hasSpread ? "spread" : answered ? "answer" : "draw";
+  const aiMode = hasAiAccess();
+  const current = aiMode
+    ? !hasQuestion() ? "question" : !hasSpread ? "spread" : answered ? "answer" : "draw"
+    : !hasSpread ? "spread" : "draw";
   const steps = [
-    ["question", hasQuestion()],
+    ["question", aiMode && hasQuestion()],
     ["spread", hasSpread],
     ["draw", hasSpread],
-    ["answer", answered],
+    ["answer", aiMode && answered],
   ];
   steps.forEach(([step, complete]) => {
     const element = $(`#flow-step-${step}`);
@@ -81,24 +124,28 @@ function renderProgress() {
   $(".progress-track").setAttribute("aria-valuenow", String(opened));
   const empty = state.remaining.length === 0;
   const hasSpread = state.drawn.length > 0;
-  const questionReady = hasQuestion();
+  const aiMode = hasAiAccess();
+  const questionReady = !aiMode || hasQuestion();
   $("#draw-button").disabled = empty || state.busy || hasSpread || !questionReady;
   $("#reset-button").disabled = state.busy;
   choiceButtons.forEach((button) => { button.disabled = state.busy || hasSpread; });
-  $("#draw-label").textContent = empty ? "สำรับหมดแล้ว" : hasSpread ? "ชุดนี้เปิดแล้ว" : questionReady ? "จับไพ่ให้ฉัน" : "พิมพ์คำถามก่อน";
+  $("#draw-label").textContent = empty ? "สำรับหมดแล้ว" : hasSpread ? "ชุดนี้เปิดแล้ว" : aiMode ? questionReady ? "จับไพ่ให้ฉัน" : "พิมพ์คำถามก่อน" : "เปิดไพ่ให้ฉัน";
   $("#deck-message").textContent = empty
     ? "เปิดครบทั้ง 78 ใบแล้ว กดล้างไพ่เพื่อเริ่มรอบใหม่"
     : hasSpread
-      ? `เปิดแล้ว ${opened} ใบ · ถามต่อจากชุดนี้ได้ หรือกดล้างไพ่เพื่อเริ่มเรื่องใหม่`
-      : questionReady
-      ? `คำถามพร้อมแล้ว · กดจับไพ่เพื่อเริ่มอ่าน (เหลือ ${state.remaining.length} ใบ)`
-      : "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงจับไพ่";
+      ? aiMode ? `เปิดแล้ว ${opened} ใบ · ถามต่อจากชุดนี้ได้ หรือกดล้างไพ่เพื่อเริ่มเรื่องใหม่` : `เปิดแล้ว ${opened} ใบ · อ่านความหมายจากไพ่ชุดนี้ได้เลย`
+      : aiMode
+        ? questionReady
+          ? `คำถามพร้อมแล้ว · กดจับไพ่เพื่อเริ่มอ่าน (เหลือ ${state.remaining.length} ใบ)`
+          : "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงจับไพ่"
+        : `พร้อมเปิดไพ่ · เหลือ ${state.remaining.length} ใบในสำรับนี้`;
   if (empty) setWitchStatus("เปิดครบทั้งสำรับแล้ว · เริ่มใหม่ได้เลย");
   else if (hasSpread && state.busy) setWitchStatus("แม่มดกำลังอ่านไพ่...", "reading");
   else if (hasSpread && hasAnswer()) setWitchStatus("คำตอบพร้อมแล้ว · ถามต่อได้", "ready");
-  else if (hasSpread) setWitchStatus("ไพ่เปิดแล้ว · รอคำถามต่อ");
-  else if (questionReady) setWitchStatus("คำถามพร้อมแล้ว · กดเปิดไพ่");
-  else setWitchStatus("รอคำถามของคุณ");
+  else if (hasSpread) setWitchStatus(aiMode ? "ไพ่เปิดแล้ว · รอคำตอบ" : "ไพ่เปิดแล้ว · อ่านได้เลย");
+  else if (aiMode && questionReady) setWitchStatus("คำถามพร้อมแล้ว · กดเปิดไพ่");
+  else if (aiMode) setWitchStatus("รอคำถามของคุณ");
+  else setWitchStatus("พร้อมเปิดไพ่");
   renderFlow();
 }
 
@@ -108,10 +155,12 @@ function renderCards() {
   const grid = $("#cards-grid");
   if (!state.drawn.length) {
     grid.classList.add("is-empty");
-    grid.innerHTML = '<div class="empty-card"><span>?</span><p>พิมพ์คำถามให้ชัดเจนก่อน<br />แล้วจึงกดจับไพ่</p></div>';
+    grid.innerHTML = hasAiAccess()
+      ? '<div class="empty-card"><span>?</span><p>พิมพ์คำถามให้ชัดเจนก่อน<br />แล้วจึงกดจับไพ่</p></div>'
+      : '<div class="empty-card"><span>?</span><p>เลือกจำนวนไพ่<br />แล้วกดเปิดไพ่</p></div>';
     $("#spread-count").textContent = "ยังไม่ได้เปิด";
-    $("#reading-note").textContent = "คำตอบจาก AI จะอ้างอิงเฉพาะคำที่อยู่บนไพ่ชุดนี้";
-    setWitchStatus("รอคำถามของคุณ");
+    $("#reading-note").textContent = hasAiAccess() ? "คำตอบจาก AI จะอ้างอิงเฉพาะคำที่อยู่บนไพ่ชุดนี้" : "เปิดไพ่แล้วอ่านภาพและคำบนไพ่ด้วยตัวเองได้เลย";
+    setWitchStatus(hasAiAccess() ? "รอคำถามของคุณ" : "พร้อมเปิดไพ่");
     renderMemory();
     syncQuestion();
     return;
@@ -132,8 +181,8 @@ function renderCards() {
     return card;
   }));
   $("#spread-count").textContent = `${state.drawn.length} ใบที่เปิดได้`;
-  $("#reading-note").textContent = "ไพ่ชุดนี้พร้อมให้คุณพิมพ์คำถาม แล้วให้ AI เชื่อมคำบนไพ่กับเรื่องของคุณ";
-  setWitchStatus(state.busy ? "แม่มดกำลังอ่านไพ่..." : "ไพ่เปิดแล้ว · รอคำตอบ", state.busy ? "reading" : "");
+  $("#reading-note").textContent = hasAiAccess() ? "ไพ่ชุดนี้พร้อมให้คุณพิมพ์คำถาม แล้วให้ AI เชื่อมคำบนไพ่กับเรื่องของคุณ" : "ไพ่ชุดนี้เปิดแล้ว · อ่านภาพและคำบนไพ่ด้วยตัวเองได้เลย";
+  setWitchStatus(state.busy ? "แม่มดกำลังอ่านไพ่..." : hasAiAccess() ? "ไพ่เปิดแล้ว · รอคำตอบ" : "ไพ่เปิดแล้ว · อ่านได้เลย", state.busy ? "reading" : "");
   renderMemory();
   syncQuestion();
 }
@@ -185,7 +234,7 @@ function clearPrivateMemory() {
 
 function drawCards() {
   const question = $("#ai-question").value.trim();
-  if (!question) {
+  if (hasAiAccess() && !question) {
     $("#request-status").textContent = "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงกดจับไพ่";
     $("#ai-question").focus();
     renderFlow();
@@ -214,11 +263,11 @@ function drawCards() {
     renderCards();
     $("#draw-button").classList.remove("is-busy");
     drawTimer = null;
-    if (state.user?.ai_enabled && !state.user.must_change_password) {
+    if (hasAiAccess() && question) {
       setWitchStatus("แม่มดกำลังอ่านไพ่...", "reading");
       void askAi(question);
     } else {
-      setWitchStatus("ไพ่เปิดแล้ว · อ่านคำบนไพ่ได้เลย");
+      setWitchStatus("ไพ่เปิดแล้ว · อ่านคำบนไพ่ได้เลย", "ready");
       syncQuestion();
     }
   }, 420);
@@ -272,6 +321,7 @@ async function api(url, options = {}) {
 function setAccount(user, csrf = "") {
   state.user = user;
   state.csrf = csrf;
+  setReaderMode(user);
   const link = $("#account-link");
   const action = $("#account-action");
   if (!user) {
@@ -282,6 +332,7 @@ function setAccount(user, csrf = "") {
     $("#account-title").textContent = "เข้าใช้งานเพื่อส่งคำถามให้ AI";
     $("#account-message").textContent = state.backend ? "พิมพ์คำถามก่อน แล้วกดจับไพ่ได้ฟรี เมื่ออยากรับคำตอบจาก AI ให้เข้าใช้งาน" : "โหมดเปิดไพ่ฟรีพร้อมใช้งาน แต่ยังไม่ได้เชื่อมต่อระบบสมาชิก";
     $("#ask-ai-button").disabled = true;
+    renderProgress();
     return;
   }
   link.textContent = user.name || user.username || "บัญชีของฉัน";
@@ -290,7 +341,7 @@ function setAccount(user, csrf = "") {
   action.href = "#question-title";
   $("#account-title").textContent = user.must_change_password ? "กรุณาเปลี่ยนรหัสผ่านก่อน" : user.ai_enabled ? `พร้อมอ่านไพ่ให้ ${user.name || user.username}` : "บัญชีนี้ยังรอสิทธิ์ AI";
   $("#account-message").textContent = user.must_change_password ? "รหัสผ่านชั่วคราวต้องเปลี่ยนที่หน้าเข้าใช้งานก่อน จึงจะใช้ AI ได้" : user.ai_enabled ? "พิมพ์คำถามก่อน แล้วกดจับไพ่ ระบบจะอ่านคำตอบให้โดยอัตโนมัติ และจำบริบทไว้ถามต่อ" : "บัญชีเข้าใช้งานแล้ว แต่ผู้ดูแลยังไม่ได้เปิดสิทธิ์ AI ให้บัญชีนี้";
-  syncQuestion();
+  renderProgress();
 }
 
 async function loadServerReadingForSpread() {
@@ -324,10 +375,15 @@ function syncQuestion() {
   const questionReady = hasQuestion();
   const spreadReady = state.drawn.length > 0;
   const answered = hasAnswer();
+  const aiMode = hasAiAccess();
   const button = $("#ask-ai-button");
-  button.disabled = state.busy || !state.user?.ai_enabled || Boolean(state.user?.must_change_password) || !spreadReady || !questionReady;
+  button.disabled = state.busy || !aiMode || !spreadReady || !questionReady;
   button.querySelector("span")?.replaceChildren(document.createTextNode(answered ? "ถามต่อจากชุดเดิม" : "รับคำตอบจาก AI"));
-  if (!questionReady && answered) $("#request-status").textContent = "คำตอบพร้อมแล้ว · พิมพ์คำถามต่อเพื่ออ้างอิงไพ่ชุดเดิม";
+  if (!aiMode) {
+    if (state.user && !state.user.ai_enabled) $("#request-status").textContent = "บัญชีนี้ยังไม่ได้รับสิทธิ์ AI จากผู้ดูแล · เปิดไพ่ดูเองได้เลย";
+    else if (state.user?.must_change_password) $("#request-status").textContent = "เปลี่ยนรหัสผ่านก่อนจึงจะถาม AI ได้ · เปิดไพ่ดูเองได้เลย";
+    else $("#request-status").textContent = "โหมดเปิดไพ่ฟรี · เข้าใช้งานเพื่อพิมพ์คำถามถาม AI";
+  } else if (!questionReady && answered) $("#request-status").textContent = "คำตอบพร้อมแล้ว · พิมพ์คำถามต่อเพื่ออ้างอิงไพ่ชุดเดิม";
   else if (!questionReady && !spreadReady) $("#request-status").textContent = "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงกดจับไพ่";
   else if (!spreadReady) $("#request-status").textContent = "คำถามพร้อมแล้ว · กดจับไพ่เพื่อเริ่มอ่าน";
   else if (!state.user) $("#request-status").textContent = "จับไพ่แล้ว · เข้าใช้งานเพื่อรับคำตอบจาก AI";

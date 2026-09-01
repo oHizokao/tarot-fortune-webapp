@@ -10,6 +10,8 @@ test("approved member asks a follow-up in the same reading", async ({ page }) =>
     page.getByRole("button", { name: "เข้าใช้งาน" }).click(),
   ]);
   await expect(page.locator("#account-link")).toContainText("oHizokao", { timeout: 10_000 });
+  await expect(page.locator("#question-stage")).toBeVisible();
+  await expect(page.locator("#ai-answer-stage")).toBeVisible();
   await page.getByLabel("คำถามของคุณ").fill("วันนี้ควรเริ่มดูแลตัวเองจากตรงไหน?");
   await expect(page.locator("#draw-button")).toBeEnabled();
   await page.locator("#draw-button").click();

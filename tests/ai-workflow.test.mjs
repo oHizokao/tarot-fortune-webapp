@@ -32,7 +32,10 @@ test("AI reader presents and enforces question → draw → answer workflow", as
   assert.match(html, /id="flow-step-answer"/);
   assert.match(html, /พิมพ์คำถามก่อน/);
   assert.match(script, /function hasQuestion\(\)\s*\{\s*return \$\("#ai-question"\)\.value\.trim\(\)\.length > 0/);
-  assert.match(script, /if \(!question\)[\s\S]*พิมพ์คำถามก่อน/);
+  assert.match(script, /function hasAiAccess\(\)/);
+  assert.match(script, /if \(hasAiAccess\(\) && !question\)/);
+  assert.match(script, /if \(hasAiAccess\(\) && question\)/);
+  assert.match(script, /if \(hasAiAccess\(\) && !question\)[\s\S]*พิมพ์คำถามก่อน/);
   assert.match(script, /askAi\(question\)/);
   assert.match(script, /\/api\/ai\/tarot-chat\?reading_id=/);
   assert.match(script, /\$\("#ask-ai-button"\)\.addEventListener\("click", \(\) => askAi\(\)\)/);

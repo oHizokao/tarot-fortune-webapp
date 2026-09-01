@@ -27,13 +27,14 @@ test("guest can reset the manual deck back to 78 cards", async ({ page }) => {
   await expect(page.locator(".result-card")).toHaveCount(0);
 });
 
-test("AI reader requires a question before drawing", async ({ page }) => {
+test("guest can open cards on the AI reader without a question", async ({ page }) => {
   await page.goto("/ai/");
+  await expect(page.locator("#guest-mode-banner")).toBeVisible();
+  await expect(page.locator("#question-stage")).toBeHidden();
+  await expect(page.locator("#ai-answer-stage")).toBeHidden();
   const drawButton = page.locator("#draw-button");
-  await expect(drawButton).toBeDisabled();
-  await expect(page.locator("#request-status")).toContainText("พิมพ์คำถามก่อน");
-  await page.getByLabel("คำถามของคุณ").fill("วันนี้ควรเริ่มดูแลตัวเองจากตรงไหน?");
   await expect(drawButton).toBeEnabled();
   await drawButton.click();
   await expect(page.locator(".tarot-card-card")).toHaveCount(1);
+  await expect(page.locator("#reading-note")).toContainText("อ่านภาพและคำบนไพ่");
 });
