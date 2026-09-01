@@ -37,7 +37,8 @@ test("guest can open cards on the AI reader without a question", async ({ page }
   await expect(page.locator("#spread-kicker")).toHaveText("01 / CHOOSE CARDS");
   await expect(page.locator("#reveal-kicker")).toHaveText("02 / YOUR REVEAL");
   const witchBeforeDraw = await page.locator(".witch-art").boundingBox();
-  expect(witchBeforeDraw?.height || 0).toBeLessThan(340);
+  const minimumWitchHeight = (page.viewportSize()?.width || 0) <= 650 ? 230 : 320;
+  expect(witchBeforeDraw?.height || 0).toBeGreaterThanOrEqual(minimumWitchHeight);
   const drawButton = page.locator("#draw-button");
   await expect(drawButton).toBeEnabled();
   await drawButton.click();
@@ -133,7 +134,7 @@ test("mobile reader follows one clear vertical path", async ({ page }) => {
   expect(layout.boxes[1].bottom).toBeLessThanOrEqual(layout.boxes[2].top);
 });
 
-test("desktop gives the card reveal room and keeps the waiting art compact", async ({ page }) => {
+test("desktop gives the card reveal room and keeps the waiting art visible", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/ai/");
 
@@ -144,7 +145,7 @@ test("desktop gives the card reveal room and keeps the waiting art compact", asy
   }));
 
   expect(metrics.spreadWidth).toBeGreaterThanOrEqual(900);
-  expect(metrics.witchHeight).toBeLessThanOrEqual(230);
+  expect(metrics.witchHeight).toBeGreaterThanOrEqual(320);
   expect(metrics.emptyHeight).toBeLessThanOrEqual(240);
 });
 

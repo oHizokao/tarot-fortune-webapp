@@ -173,6 +173,7 @@ async function refreshAll() {
 
 function aiCheckFailureMessage(code) {
   if (code === "AI_RATE_LIMITED") return "เชื่อมต่อไม่สำเร็จ — โควตา/เครดิต OpenAI ยังไม่พร้อม ตรวจ Billing หรือ Usage แล้วลองใหม่";
+  if (code === "OPENAI_AUTH_FAILED") return "เชื่อมต่อไม่สำเร็จ — API key ใช้งานไม่ได้หรือไม่มีสิทธิ์ ตรวจคีย์และ Project แล้วบันทึกใหม่";
   if (code === "MODEL_UNAVAILABLE") return "เชื่อมต่อไม่สำเร็จ — โมเดลที่ตั้งค่าไว้ยังไม่พร้อม ตรวจชื่อ model แล้วลองใหม่";
   return `เชื่อมต่อไม่สำเร็จ (${code || "UNKNOWN"})`;
 }

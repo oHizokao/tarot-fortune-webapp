@@ -8,6 +8,9 @@ export default defineConfig({
   expect: {
     timeout: 10_000,
   },
+  // The static server and visual card flows are intentionally exercised in a
+  // small number of browsers so local and CI runs remain deterministic.
+  workers: 2,
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   reporter: process.env.CI ? [["line"]] : "list",

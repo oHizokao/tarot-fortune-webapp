@@ -664,6 +664,93 @@ a { color: inherit; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ai-bg--one,
+  .ai-bg--two,
+  .hero-seal,
+  .witch-scene::before,
+  .witch-scene::after,
+  .witch-art,
+  .witch-moon,
+  .witch-orbit,
+  .witch-crystal,
+  .witch-crystal::before,
+  .witch-spark {
+    animation: none !important;
+  }
+}
+
+/* v11 ambient motion tokens. */
+.ai-bg--one,
+.ai-bg--two {
+  animation: witchAmbientDrift 24s ease-in-out infinite;
+  will-change: transform;
+}
+
+.ai-bg--two {
+  animation-delay: -8s;
+  animation-direction: reverse;
+}
+
+.hero-seal {
+  animation: witchSealFloat 9s ease-in-out infinite;
+  will-change: transform, box-shadow;
+}
+
+@keyframes witchAmbientDrift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(34px, -26px, 0) scale(1.12); }
+}
+
+@keyframes witchSealFloat {
+  0%, 100% { transform: translateY(0) rotate(-2deg); box-shadow: 0 0 0 13px rgba(126, 98, 231, .05), 0 0 55px rgba(118, 87, 226, .22); }
+  50% { transform: translateY(-8px) rotate(2deg); box-shadow: 0 0 0 18px rgba(126, 98, 231, .07), 0 0 72px rgba(150, 111, 245, .32); }
+}
+
+@keyframes witchAuraBreathe {
+  0%, 100% { opacity: .62; transform: scale(.91); }
+  50% { opacity: .98; transform: scale(1.08); }
+}
+
+@keyframes witchFloorGlow {
+  0%, 100% { opacity: .5; transform: scaleX(.86); }
+  50% { opacity: .9; transform: scaleX(1.06); }
+}
+
+@keyframes witchCharacterFloat {
+  0%, 100% { transform: translate3d(0, 5px, 0) scale(1); }
+  50% { transform: translate3d(0, -7px, 0) scale(1.018); }
+}
+
+@keyframes witchMoonGlow {
+  0%, 100% { opacity: .62; transform: translateY(2px) rotate(0deg); box-shadow: 0 0 24px rgba(255, 219, 151, .2); }
+  50% { opacity: .92; transform: translateY(-4px) rotate(8deg); box-shadow: 0 0 42px rgba(255, 219, 151, .42); }
+}
+
+@keyframes witchOrbitSpin {
+  0% { transform: translate(-50%, -50%) rotate(-16deg); }
+  100% { transform: translate(-50%, -50%) rotate(344deg); }
+}
+
+@keyframes witchOrbitSpinReverse {
+  0% { transform: translate(-50%, -50%) rotate(16deg); }
+  100% { transform: translate(-50%, -50%) rotate(-344deg); }
+}
+
+@keyframes witchCrystalFloat {
+  0%, 100% { transform: translateY(3px) scale(.96); box-shadow: 0 0 24px rgba(161, 115, 255, .4); }
+  50% { transform: translateY(-6px) scale(1.08); box-shadow: 0 0 38px rgba(188, 135, 255, .72); }
+}
+
+@keyframes witchCrystalRing {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes witchSparkTwinkle {
+  0%, 100% { opacity: .38; transform: translateY(4px) rotate(-12deg) scale(.84); }
+  50% { opacity: 1; transform: translateY(-7px) rotate(12deg) scale(1.16); }
+}
+
+@media (prefers-reduced-motion: reduce) {
   .answer-orbit,
   .witch-art,
   .witch-orbit,
@@ -2109,5 +2196,160 @@ body {
   .ai-reading-stage.ai-reading-stage--sequential .reading-set-hint {
     margin-top: 11px;
     text-align: left;
+  }
+}
+
+/* v11 final cascade: keep the ambient stage above the historical layout rules. */
+.ai-reading-stage.ai-reading-stage--sequential .witch-scene {
+  min-height: 340px;
+  height: 340px;
+  overflow: hidden;
+  border: 1px solid rgba(210, 187, 255, .2);
+  background:
+    radial-gradient(ellipse at 50% 82%, rgba(255, 207, 132, .12), transparent 18%),
+    radial-gradient(ellipse at 50% 52%, rgba(139, 93, 240, .38), transparent 45%),
+    linear-gradient(145deg, rgba(28, 22, 83, .8), rgba(7, 12, 39, .76));
+  box-shadow: inset 0 1px rgba(255, 255, 255, .08), inset 0 -35px 60px rgba(3, 5, 25, .3);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .witch-scene::before {
+  inset: 10% 29% 15%;
+  width: auto;
+  height: auto;
+  background: radial-gradient(ellipse, rgba(192, 139, 255, .46), rgba(117, 88, 232, .16) 44%, transparent 72%);
+  filter: blur(22px);
+  opacity: .86;
+  animation: witchAuraBreathe 8s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .witch-scene::after {
+  right: 13%;
+  bottom: 6%;
+  left: 13%;
+  height: 30px;
+  background: radial-gradient(ellipse, rgba(3, 5, 21, .76), transparent 70%);
+  filter: blur(9px);
+  animation: witchFloorGlow 7s ease-in-out infinite;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .witch-art {
+  z-index: 2;
+  width: min(100%, 420px);
+  height: 330px;
+  filter: drop-shadow(0 25px 22px rgba(3, 2, 19, .56)) drop-shadow(0 0 22px rgba(143, 91, 238, .2));
+  transform-origin: 50% 91%;
+  animation: witchCharacterFloat 7s ease-in-out infinite;
+  will-change: transform, filter;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .witch-moon {
+  z-index: 1;
+  animation: witchMoonGlow 9s ease-in-out infinite;
+  will-change: transform, opacity, box-shadow;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .witch-orbit {
+  top: 50%;
+  left: 50%;
+  margin: 0;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .witch-orbit--one {
+  width: 305px;
+  height: 192px;
+  animation: witchOrbitSpin 22s linear infinite;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .witch-orbit--two {
+  width: 475px;
+  height: 278px;
+  animation: witchOrbitSpinReverse 31s linear infinite;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .witch-crystal {
+  animation: witchCrystalFloat 5.6s ease-in-out infinite;
+  will-change: transform, box-shadow;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .witch-crystal::before {
+  position: absolute;
+  inset: -7px;
+  border: 1px dashed rgba(220, 190, 255, .36);
+  border-radius: 50%;
+  content: "";
+  animation: witchCrystalRing 11s linear infinite;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .witch-spark {
+  animation: witchSparkTwinkle 3.6s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@media (max-width: 650px) {
+  .ai-reading-stage.ai-reading-stage--sequential .witch-scene {
+    min-height: 250px;
+    height: 250px;
+    border-radius: 20px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .witch-scene::before {
+    inset: 8% 23% 12%;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .witch-art {
+    width: min(100%, 285px);
+    height: 246px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .witch-orbit--one {
+    width: 225px;
+    height: 142px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .witch-orbit--two {
+    width: 340px;
+    height: 205px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-bg--one,
+  .ai-bg--two,
+  .hero-seal,
+  .witch-scene::before,
+  .witch-scene::after,
+  .witch-art,
+  .witch-moon,
+  .witch-orbit,
+  .witch-crystal,
+  .witch-crystal::before,
+  .witch-spark {
+    animation: none !important;
+  }
+}
+
+/* Guest-mode final specificity: do not let the legacy 190px rule collapse the hero. */
+#ai-reader-app[data-reader-mode] .ai-reading-stage.ai-reading-stage--sequential .witch-scene {
+  min-height: 340px;
+  height: 340px;
+}
+
+#ai-reader-app[data-reader-mode] .ai-reading-stage.ai-reading-stage--sequential .witch-art {
+  width: min(100%, 420px);
+  height: 330px;
+}
+
+@media (max-width: 650px) {
+  #ai-reader-app[data-reader-mode] .ai-reading-stage.ai-reading-stage--sequential .witch-scene {
+    min-height: 250px;
+    height: 250px;
+  }
+
+  #ai-reader-app[data-reader-mode] .ai-reading-stage.ai-reading-stage--sequential .witch-art {
+    width: min(100%, 285px);
+    height: 246px;
   }
 }
