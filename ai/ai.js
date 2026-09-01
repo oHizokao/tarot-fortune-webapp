@@ -3,7 +3,7 @@ import { messageForError } from "../lib/client/error-copy.js";
 const DECK = Array.from({ length: 78 }, (_, index) => `card-${String(index + 1).padStart(3, "0")}.webp`);
 const STORAGE_KEY = "tarot-daily-ai-reading-v2";
 const MAX_HISTORY = 60;
-const state = { count: 1, drawn: [], remaining: [], history: [], memory: null, readingId: "", user: null, csrf: "", backend: true, busy: false, requestVersion: 0, failedQuestion: "", failedErrorCode: "", failedRequestId: "", activeQuestion: "" };
+const state = { count: 1, drawn: [], openedCards: [], remaining: [], history: [], memory: null, readingId: "", user: null, csrf: "", backend: true, busy: false, requestVersion: 0, failedQuestion: "", failedErrorCode: "", failedRequestId: "", activeQuestion: "" };
 const $ = (selector) => document.querySelector(selector);
 const choiceButtons = [...document.querySelectorAll(".choice-button")];
 let drawTimer = null;
@@ -21,18 +21,24 @@ function isValidCards(cards) {
   return Array.isArray(cards) && cards.length <= DECK.length && new Set(cards).size === cards.length && cards.every((card) => DECK.includes(card));
 }
 
-function emptySavedState() { return { remaining: shuffle(DECK), drawn: [], history: [] }; }
+function emptySavedState() { return { remaining: shuffle(DECK), drawn: [], openedCards: [], history: [] }; }
+
+function deriveOpenedCards(remaining) { return DECK.filter((card) => !remaining.includes(card)); }
 
 function loadState() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!saved || !isValidCards(saved.remaining)) return emptySavedState();
-    return { remaining: saved.remaining, drawn: isValidCards(saved.drawn) ? saved.drawn.slice(0, 3) : [], history: Array.isArray(saved.history) ? saved.history.slice(0, MAX_HISTORY) : [] };
+    const drawn = isValidCards(saved.drawn) ? saved.drawn.slice(0, 3) : [];
+    const openedCards = isValidCards(saved.openedCards)
+      ? saved.openedCards.filter((card) => !saved.remaining.includes(card))
+      : deriveOpenedCards(saved.remaining);
+    return { remaining: saved.remaining, drawn, openedCards, history: Array.isArray(saved.history) ? saved.history.slice(0, MAX_HISTORY) : [] };
   } catch { return emptySavedState(); }
 }
 
 function saveState() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ remaining: state.remaining, drawn: state.drawn, history: state.history })); } catch { /* private browsing can disable storage */ }
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ remaining: state.remaining, drawn: state.drawn, openedCards: state.openedCards, history: state.history })); } catch { /* private browsing can disable storage */ }
 }
 
 function setCount(count) {
@@ -45,6 +51,10 @@ function hasQuestion() { return $("#ai-question").value.trim().length > 0; }
 function hasAnswer() { return Boolean($("#ai-answer")?.childElementCount); }
 
 function hasAiAccess() { return Boolean(state.user?.ai_enabled && !state.user?.must_change_password); }
+
+function isMemberMode() { return Boolean(state.user); }
+
+function activeCards() { return isMemberMode() ? state.drawn : state.openedCards; }
 
 function setReaderMode(user) {
   const member = Boolean(user);
@@ -82,6 +92,8 @@ function setReaderMode(user) {
   $("#spread-description")?.replaceChildren(document.createTextNode(copy.spread));
   $("#cards-title")?.replaceChildren(document.createTextNode(copy.cards));
   $("#hero-seal-label")?.replaceChildren(document.createTextNode(copy.seal));
+  $("#spread-kicker")?.replaceChildren(document.createTextNode(member ? "02 / YOUR SPREAD" : "01 / CHOOSE CARDS"));
+  $("#reveal-kicker")?.replaceChildren(document.createTextNode(member ? "03 / THE REVEAL" : "02 / YOUR REVEAL"));
   const stepNumbers = member ? { question: "01", spread: "02", draw: "03", answer: "04" } : { spread: "01", draw: "02" };
   Object.entries(stepNumbers).forEach(([step, number]) => { $(`#flow-number-${step}`)?.replaceChildren(document.createTextNode(number)); });
 }
@@ -95,7 +107,7 @@ function setWitchStatus(message, mode = "") {
 }
 
 function renderFlow() {
-  const hasSpread = state.drawn.length > 0;
+  const hasSpread = activeCards().length > 0;
   const answered = hasAnswer();
   const aiMode = hasAiAccess();
   const current = aiMode
@@ -125,17 +137,25 @@ function renderProgress() {
   $("#progress-bar").style.width = `${percent}%`;
   $(".progress-track").setAttribute("aria-valuenow", String(opened));
   const empty = state.remaining.length === 0;
-  const hasSpread = state.drawn.length > 0;
+  const hasSpread = activeCards().length > 0;
   const aiMode = hasAiAccess();
+  const locksSpread = isMemberMode() && hasSpread;
   const questionReady = !aiMode || hasQuestion();
-  $("#draw-button").disabled = empty || state.busy || hasSpread || !questionReady;
+  $("#draw-button").disabled = empty || state.busy || locksSpread || !questionReady;
   $("#reset-button").disabled = state.busy;
-  choiceButtons.forEach((button) => { button.disabled = state.busy || hasSpread; });
-  $("#draw-label").textContent = empty ? "สำรับหมดแล้ว" : hasSpread ? "ชุดนี้เปิดแล้ว" : aiMode ? questionReady ? "จับไพ่ให้ฉัน" : "พิมพ์คำถามก่อน" : "เปิดไพ่ให้ฉัน";
+  choiceButtons.forEach((button) => { button.disabled = state.busy || locksSpread; });
+  const nextCount = Math.min(state.count, state.remaining.length);
+  $("#draw-label").textContent = empty
+    ? "สำรับหมดแล้ว"
+    : locksSpread
+      ? "ชุดนี้เปิดแล้ว"
+      : !isMemberMode() && hasSpread
+        ? `เปิดเพิ่ม ${nextCount} ใบ`
+        : aiMode ? questionReady ? "จับไพ่ให้ฉัน" : "พิมพ์คำถามก่อน" : "เปิดไพ่ให้ฉัน";
   $("#deck-message").textContent = empty
     ? "เปิดครบทั้ง 78 ใบแล้ว กดล้างไพ่เพื่อเริ่มรอบใหม่"
     : hasSpread
-      ? aiMode ? `เปิดแล้ว ${opened} ใบ · ถามต่อจากชุดนี้ได้ หรือกดล้างไพ่เพื่อเริ่มเรื่องใหม่` : `เปิดแล้ว ${opened} ใบ · อ่านความหมายจากไพ่ชุดนี้ได้เลย`
+      ? isMemberMode() ? aiMode ? `เปิดแล้ว ${opened} ใบ · ถามต่อจากชุดนี้ได้ หรือกดล้างไพ่เพื่อเริ่มเรื่องใหม่` : `เปิดแล้ว ${opened} ใบ · อ่านความหมายจากไพ่ชุดนี้ได้เลย` : `เปิดแล้ว ${opened} ใบ · กดเปิดเพิ่มได้เลย ไพ่จะไม่ซ้ำกัน`
       : aiMode
         ? questionReady
           ? `คำถามพร้อมแล้ว · กดจับไพ่เพื่อเริ่มอ่าน (เหลือ ${state.remaining.length} ใบ)`
@@ -144,7 +164,7 @@ function renderProgress() {
   if (empty) setWitchStatus("เปิดครบทั้งสำรับแล้ว · เริ่มใหม่ได้เลย");
   else if (hasSpread && state.busy) setWitchStatus("แม่มดกำลังอ่านไพ่...", "reading");
   else if (hasSpread && hasAnswer()) setWitchStatus("คำตอบพร้อมแล้ว · ถามต่อได้", "ready");
-  else if (hasSpread) setWitchStatus(aiMode ? "ไพ่เปิดแล้ว · รอคำตอบ" : "ไพ่เปิดแล้ว · อ่านได้เลย");
+  else if (hasSpread) setWitchStatus(isMemberMode() && aiMode ? "ไพ่เปิดแล้ว · รอคำตอบ" : !isMemberMode() ? "ไพ่เปิดแล้ว · เปิดเพิ่มได้เลย" : "ไพ่เปิดแล้ว · อ่านได้เลย");
   else if (aiMode && questionReady) setWitchStatus("คำถามพร้อมแล้ว · กดเปิดไพ่");
   else if (aiMode) setWitchStatus("รอคำถามของคุณ");
   else setWitchStatus("พร้อมเปิดไพ่");
@@ -155,7 +175,8 @@ function getNumber(file) { return file.match(/card-(\d{3})/)?.[1] || "—"; }
 
 function renderCards() {
   const grid = $("#cards-grid");
-  if (!state.drawn.length) {
+  const visibleCards = activeCards();
+  if (!visibleCards.length) {
     grid.dataset.cardCount = "0";
     grid.classList.add("is-empty");
     grid.innerHTML = hasAiAccess()
@@ -168,12 +189,13 @@ function renderCards() {
     syncQuestion();
     return;
   }
-  grid.dataset.cardCount = String(state.drawn.length);
+  grid.dataset.cardCount = String(visibleCards.length);
   grid.classList.remove("is-empty");
-  grid.replaceChildren(...state.drawn.map((file, index) => {
+  const animatedFrom = Math.max(0, visibleCards.length - state.count);
+  grid.replaceChildren(...visibleCards.map((file, index) => {
     const card = document.createElement("article");
     card.className = "tarot-card-card";
-    card.style.setProperty("--card-delay", `${index * 180}ms`);
+    card.style.setProperty("--card-delay", `${Math.min(2, Math.max(0, index - animatedFrom)) * 180}ms`);
     const image = document.createElement("img");
     image.src = `../tarot-cards/${file}`;
     image.alt = `ไพ่ทำนายใบที่ ${index + 1}`;
@@ -184,7 +206,7 @@ function renderCards() {
     card.append(image, meta);
     return card;
   }));
-  $("#spread-count").textContent = `${state.drawn.length} ใบที่เปิดได้`;
+  $("#spread-count").textContent = isMemberMode() ? `${state.drawn.length} ใบที่เปิดได้` : `${state.openedCards.length} ใบที่เปิดแล้ว`;
   $("#reading-note").textContent = hasAiAccess() ? "ไพ่ชุดนี้พร้อมให้คุณพิมพ์คำถาม แล้วให้ AI เชื่อมคำบนไพ่กับเรื่องของคุณ" : "ไพ่ชุดนี้เปิดแล้ว · อ่านภาพและคำบนไพ่ด้วยตัวเองได้เลย";
   setWitchStatus(state.busy ? "แม่มดกำลังอ่านไพ่..." : hasAiAccess() ? "ไพ่เปิดแล้ว · รอคำตอบ" : "ไพ่เปิดแล้ว · อ่านได้เลย", state.busy ? "reading" : "");
   renderMemory();
@@ -201,7 +223,7 @@ function renderMemory() {
   if (!title || !message || !action || !status) return;
   const messages = memoryMessages();
   const turns = Math.floor(messages.filter((item) => item.role === "assistant").length);
-  const hasSpread = state.drawn.length > 0;
+  const hasSpread = activeCards().length > 0;
   action.disabled = !hasSpread || state.busy;
   status.classList.toggle("is-active", turns > 0);
   if (!hasSpread) {
@@ -255,10 +277,12 @@ function drawCards() {
   $("#draw-button").classList.add("is-busy");
   drawTimer = window.setTimeout(() => {
     const amount = Math.min(state.count, state.remaining.length);
-    state.drawn = state.remaining.splice(0, amount);
+    const nextCards = state.remaining.splice(0, amount);
+    state.drawn = nextCards;
+    state.openedCards = [...state.openedCards, ...nextCards];
     state.memory = null;
     state.readingId = "";
-    if (amount) state.history.unshift({ id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, createdAt: Date.now(), cards: [...state.drawn] });
+    if (amount) state.history.unshift({ id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, createdAt: Date.now(), cards: [...nextCards] });
     state.history = state.history.slice(0, MAX_HISTORY);
     state.busy = false;
     clearAnswer();
@@ -292,6 +316,7 @@ function resetCards() {
   state.requestVersion += 1;
   state.remaining = shuffle(DECK);
   state.drawn = [];
+  state.openedCards = [];
   state.history = [];
   state.memory = null;
   state.readingId = "";
@@ -337,6 +362,7 @@ function setAccount(user, csrf = "") {
     $("#account-message").textContent = state.backend ? "พิมพ์คำถามก่อน แล้วกดจับไพ่ได้ฟรี เมื่ออยากรับคำตอบจาก AI ให้เข้าใช้งาน" : "โหมดเปิดไพ่ฟรีพร้อมใช้งาน แต่ยังไม่ได้เชื่อมต่อระบบสมาชิก";
     $("#ask-ai-button").disabled = true;
     renderProgress();
+    renderCards();
     return;
   }
   link.textContent = user.name || user.username || "บัญชีของฉัน";
@@ -346,6 +372,7 @@ function setAccount(user, csrf = "") {
   $("#account-title").textContent = user.must_change_password ? "กรุณาเปลี่ยนรหัสผ่านก่อน" : user.ai_enabled ? `พร้อมอ่านไพ่ให้ ${user.name || user.username}` : "บัญชีนี้ยังรอสิทธิ์ AI";
   $("#account-message").textContent = user.must_change_password ? "รหัสผ่านชั่วคราวต้องเปลี่ยนที่หน้าเข้าใช้งานก่อน จึงจะใช้ AI ได้" : user.ai_enabled ? "พิมพ์คำถามก่อน แล้วกดจับไพ่ ระบบจะอ่านคำตอบให้โดยอัตโนมัติ และจำบริบทไว้ถามต่อ" : "บัญชีเข้าใช้งานแล้ว แต่ผู้ดูแลยังไม่ได้เปิดสิทธิ์ AI ให้บัญชีนี้";
   renderProgress();
+  renderCards();
 }
 
 async function loadServerReadingForSpread() {
