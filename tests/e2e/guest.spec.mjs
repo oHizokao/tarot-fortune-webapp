@@ -32,6 +32,10 @@ test("guest can open cards on the AI reader without a question", async ({ page }
   await expect(page.locator("#guest-mode-banner")).toBeVisible();
   await expect(page.locator("#question-stage")).toBeHidden();
   await expect(page.locator("#ai-answer-stage")).toBeHidden();
+  await expect(page.locator("#flow-number-spread")).toHaveText("01");
+  await expect(page.locator("#flow-number-draw")).toHaveText("02");
+  const witchBeforeDraw = await page.locator(".witch-art").boundingBox();
+  expect(witchBeforeDraw?.height || 0).toBeLessThan(340);
   const drawButton = page.locator("#draw-button");
   await expect(drawButton).toBeEnabled();
   await drawButton.click();

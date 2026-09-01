@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const homeHtml = readFileSync(path.join(root, "index.html"), "utf8");
 const aiHtml = readFileSync(path.join(root, "ai", "index.html"), "utf8");
+const aiCss = readFileSync(path.join(root, "ai", "ai.css"), "utf8");
 
 test("root exposes distinct guest and AI mode actions", () => {
   assert.match(homeHtml, /id="mode-foyer"/);
@@ -21,6 +22,13 @@ test("AI page keeps card reading public and gates only the question feature", ()
   assert.match(aiHtml, /class="[^"]*member-only[^"]*"[^>]*id="ai-answer-stage"/);
   assert.match(aiHtml, /id="draw-button"[^>]*>/);
   assert.match(aiHtml, /โหมดเปิดไพ่ฟรี/);
+});
+
+test("AI reader layout gives guest cards priority over the witch illustration", () => {
+  assert.match(aiHtml, /id="flow-number-spread">01<\/span>/);
+  assert.match(aiHtml, /id="flow-number-draw">02<\/span>/);
+  assert.match(aiCss, /#ai-reader-app\[data-reader-mode="guest"\][\s\S]*?\.witch-scene[\s\S]*?min-height:\s*280px/);
+  assert.match(aiCss, /\.ai-reveal-stage \.cards-grid\s*\{[\s\S]*?grid-template-columns:\s*repeat\(auto-fit/);
 });
 
 test("AI page puts the question stage before the spread stage", () => {

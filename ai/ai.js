@@ -82,6 +82,8 @@ function setReaderMode(user) {
   $("#spread-description")?.replaceChildren(document.createTextNode(copy.spread));
   $("#cards-title")?.replaceChildren(document.createTextNode(copy.cards));
   $("#hero-seal-label")?.replaceChildren(document.createTextNode(copy.seal));
+  const stepNumbers = member ? { question: "01", spread: "02", draw: "03", answer: "04" } : { spread: "01", draw: "02" };
+  Object.entries(stepNumbers).forEach(([step, number]) => { $(`#flow-number-${step}`)?.replaceChildren(document.createTextNode(number)); });
 }
 
 function setWitchStatus(message, mode = "") {
@@ -154,6 +156,7 @@ function getNumber(file) { return file.match(/card-(\d{3})/)?.[1] || "—"; }
 function renderCards() {
   const grid = $("#cards-grid");
   if (!state.drawn.length) {
+    grid.dataset.cardCount = "0";
     grid.classList.add("is-empty");
     grid.innerHTML = hasAiAccess()
       ? '<div class="empty-card"><span>?</span><p>พิมพ์คำถามให้ชัดเจนก่อน<br />แล้วจึงกดจับไพ่</p></div>'
@@ -165,6 +168,7 @@ function renderCards() {
     syncQuestion();
     return;
   }
+  grid.dataset.cardCount = String(state.drawn.length);
   grid.classList.remove("is-empty");
   grid.replaceChildren(...state.drawn.map((file, index) => {
     const card = document.createElement("article");

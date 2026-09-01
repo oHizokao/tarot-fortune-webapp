@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./ai.css?v=20260901-witch-two-modes-v3" />
+    <link rel="stylesheet" href="./ai.css?v=20260901-witch-two-modes-v4" />
   </head>
   <body>
     <div class="ai-bg ai-bg--one" aria-hidden="true"></div>
@@ -50,10 +50,10 @@
 
       <section class="ai-reading-stage" aria-label="ขั้นตอนถามแม่มด AI">
         <div class="flow-steps" aria-label="ขั้นตอนการอ่านไพ่">
-          <div class="flow-step member-only" id="flow-step-question" data-step="question" hidden><span>01</span><div><strong>พิมพ์คำถาม</strong><small>เริ่มจากเรื่องที่อยากสะท้อน</small></div></div>
-          <div class="flow-step" id="flow-step-spread" data-step="spread"><span>02</span><div><strong>เลือกจำนวนไพ่</strong><small>เลือก 1, 2 หรือ 3 ใบ</small></div></div>
-          <div class="flow-step" id="flow-step-draw" data-step="draw"><span>03</span><div><strong>เปิดไพ่</strong><small>ไพ่จะไม่ซ้ำในรอบนี้</small></div></div>
-          <div class="flow-step member-only" id="flow-step-answer" data-step="answer" hidden><span>04</span><div><strong>รับคำตอบ</strong><small>AI อ่านจากคำบนไพ่</small></div></div>
+          <div class="flow-step member-only" id="flow-step-question" data-step="question" hidden><span id="flow-number-question">01</span><div><strong>พิมพ์คำถาม</strong><small>เริ่มจากเรื่องที่อยากสะท้อน</small></div></div>
+          <div class="flow-step" id="flow-step-spread" data-step="spread"><span id="flow-number-spread">01</span><div><strong>เลือกจำนวนไพ่</strong><small>เลือก 1, 2 หรือ 3 ใบ</small></div></div>
+          <div class="flow-step" id="flow-step-draw" data-step="draw"><span id="flow-number-draw">02</span><div><strong>เปิดไพ่</strong><small>ไพ่จะไม่ซ้ำในรอบนี้</small></div></div>
+          <div class="flow-step member-only" id="flow-step-answer" data-step="answer" hidden><span id="flow-number-answer">04</span><div><strong>รับคำตอบ</strong><small>AI อ่านจากคำบนไพ่</small></div></div>
         </div>
 
         <section class="ai-question-stage panel question-panel member-only" id="question-stage" aria-label="ขั้นที่ 1 พิมพ์คำถาม" hidden>
