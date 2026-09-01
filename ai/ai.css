@@ -1479,3 +1479,188 @@ body {
     padding-left: 0;
   }
 }
+
+/* Final layout map: keep every reading step in a deliberate visual lane. */
+.ai-reading-stage {
+  grid-template-columns: minmax(280px, .68fr) minmax(0, 1.32fr);
+  grid-template-areas:
+    "flow flow"
+    "question reveal"
+    "spread reveal"
+    "answer answer";
+  column-gap: clamp(28px, 4vw, 58px);
+  row-gap: 0;
+  align-items: start;
+}
+
+.ai-reading-stage > .flow-steps {
+  grid-area: flow;
+  margin-bottom: 0;
+}
+
+.ai-question-stage {
+  grid-area: question;
+  margin-top: 28px;
+}
+
+.ai-spread-stage {
+  grid-area: spread;
+  margin-top: 28px;
+}
+
+.ai-reveal-stage {
+  grid-area: reveal;
+  margin-top: 28px;
+}
+
+.ai-answer-stage {
+  grid-area: answer;
+  margin-top: 28px;
+}
+
+#ai-reader-app[data-reader-mode="guest"] .ai-reading-stage {
+  grid-template-columns: minmax(280px, .68fr) minmax(0, 1.32fr);
+  grid-template-areas:
+    "flow flow"
+    "spread reveal";
+}
+
+#ai-reader-app[data-reader-mode="guest"] .ai-spread-stage,
+#ai-reader-app[data-reader-mode="guest"] .ai-reveal-stage {
+  grid-area: spread;
+  margin-top: 28px;
+}
+
+#ai-reader-app[data-reader-mode="guest"] .ai-reveal-stage {
+  grid-area: reveal;
+}
+
+@media (max-width: 900px) {
+  .ai-reading-stage,
+  #ai-reader-app[data-reader-mode="guest"] .ai-reading-stage {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "flow"
+      "question"
+      "spread"
+      "reveal"
+      "answer";
+    row-gap: 0;
+  }
+
+  #ai-reader-app[data-reader-mode="guest"] .ai-reading-stage {
+    grid-template-areas:
+      "flow"
+      "spread"
+      "reveal";
+  }
+
+  .ai-question-stage {
+    grid-area: question;
+    margin-top: 22px;
+  }
+
+  .ai-spread-stage {
+    grid-area: spread;
+    margin-top: 22px;
+  }
+
+  .ai-reveal-stage {
+    grid-area: reveal;
+    margin-top: 22px;
+  }
+
+  .ai-answer-stage {
+    grid-area: answer;
+    margin-top: 22px;
+  }
+
+  #ai-reader-app[data-reader-mode="guest"] .ai-spread-stage {
+    grid-area: spread;
+  }
+
+  #ai-reader-app[data-reader-mode="guest"] .ai-reveal-stage {
+    grid-area: reveal;
+  }
+}
+
+@media (max-width: 650px) {
+  .ai-question-stage,
+  .ai-spread-stage,
+  .ai-reveal-stage,
+  .ai-answer-stage,
+  #ai-reader-app[data-reader-mode="guest"] .ai-spread-stage,
+  #ai-reader-app[data-reader-mode="guest"] .ai-reveal-stage {
+    margin-top: 17px;
+  }
+}
+
+/* Refined proportions: give the controls a readable rail and keep the empty state light. */
+.ai-reading-stage,
+#ai-reader-app[data-reader-mode="guest"] .ai-reading-stage {
+  grid-template-columns: minmax(330px, .78fr) minmax(0, 1.22fr);
+}
+
+.ai-reveal-stage .witch-scene {
+  min-height: 250px;
+}
+
+.ai-reveal-stage .witch-art {
+  height: 250px;
+}
+
+.ai-reveal-stage .cards-grid {
+  min-height: 220px;
+  margin-top: 12px;
+}
+
+.ai-reveal-stage .empty-card {
+  min-height: 220px;
+}
+
+.ai-reveal-stage .reading-note {
+  margin-top: 12px;
+}
+
+#ai-reader-app[data-reader-mode="guest"] .ai-reveal-stage .witch-scene {
+  min-height: 250px;
+}
+
+#ai-reader-app[data-reader-mode="guest"] .ai-reveal-stage .witch-art {
+  height: 250px;
+}
+
+#ai-reader-app[data-reader-mode="guest"] .ai-reveal-stage .cards-grid {
+  margin-top: 12px;
+}
+
+@media (max-width: 900px) {
+  .ai-reading-stage,
+  #ai-reader-app[data-reader-mode="guest"] .ai-reading-stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 650px) {
+  .ai-reveal-stage .witch-scene,
+  #ai-reader-app[data-reader-mode="guest"] .ai-reveal-stage .witch-scene {
+    min-height: 220px;
+    margin-top: 12px;
+  }
+
+  .ai-reveal-stage .witch-art,
+  #ai-reader-app[data-reader-mode="guest"] .ai-reveal-stage .witch-art {
+    height: 220px;
+  }
+
+  .ai-reveal-stage .cards-grid,
+  #ai-reader-app[data-reader-mode="guest"] .ai-reveal-stage .cards-grid {
+    min-height: 180px;
+    margin-top: 10px;
+  }
+
+  .ai-reveal-stage .empty-card,
+  #ai-reader-app[data-reader-mode="guest"] .ai-reveal-stage .empty-card {
+    min-height: 180px;
+  }
+}

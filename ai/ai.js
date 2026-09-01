@@ -173,6 +173,23 @@ function renderProgress() {
 
 function getNumber(file) { return file.match(/card-(\d{3})/)?.[1] || "—"; }
 
+function createCardElement(file, index, animatedFrom) {
+  const card = document.createElement("article");
+  card.className = "tarot-card-card";
+  card.dataset.cardFile = file;
+  card.style.setProperty("--card-delay", `${Math.min(2, Math.max(0, index - animatedFrom)) * 180}ms`);
+  const image = document.createElement("img");
+  image.src = `../tarot-cards/${file}`;
+  image.alt = `ไพ่ทำนายใบที่ ${index + 1}`;
+  image.loading = index < 6 ? "eager" : "lazy";
+  image.decoding = "async";
+  const meta = document.createElement("div");
+  meta.className = "card-meta";
+  meta.textContent = `CARD ${getNumber(file)} · ไพ่ใบที่ ${index + 1}`;
+  card.append(image, meta);
+  return card;
+}
+
 function renderCards() {
   const grid = $("#cards-grid");
   const visibleCards = activeCards();
@@ -192,20 +209,16 @@ function renderCards() {
   grid.dataset.cardCount = String(visibleCards.length);
   grid.classList.remove("is-empty");
   const animatedFrom = Math.max(0, visibleCards.length - state.count);
-  grid.replaceChildren(...visibleCards.map((file, index) => {
-    const card = document.createElement("article");
-    card.className = "tarot-card-card";
-    card.style.setProperty("--card-delay", `${Math.min(2, Math.max(0, index - animatedFrom)) * 180}ms`);
-    const image = document.createElement("img");
-    image.src = `../tarot-cards/${file}`;
-    image.alt = `ไพ่ทำนายใบที่ ${index + 1}`;
-    image.loading = "eager";
-    const meta = document.createElement("div");
-    meta.className = "card-meta";
-    meta.textContent = `CARD ${getNumber(file)} · ไพ่ใบที่ ${index + 1}`;
-    card.append(image, meta);
-    return card;
-  }));
+  const existingCards = [...grid.querySelectorAll(".tarot-card-card")];
+  const existingFiles = existingCards.map((card) => card.dataset.cardFile);
+  const samePrefix = existingFiles.length > 0 && existingFiles.every((file, index) => file === visibleCards[index]);
+  if (samePrefix && visibleCards.length > existingFiles.length) {
+    const additions = document.createDocumentFragment();
+    visibleCards.slice(existingFiles.length).forEach((file, index) => additions.append(createCardElement(file, existingFiles.length + index, animatedFrom)));
+    grid.append(additions);
+  } else if (!samePrefix || existingFiles.length !== visibleCards.length) {
+    grid.replaceChildren(...visibleCards.map((file, index) => createCardElement(file, index, animatedFrom)));
+  }
   $("#spread-count").textContent = isMemberMode() ? `${state.drawn.length} ใบที่เปิดได้` : `${state.openedCards.length} ใบที่เปิดแล้ว`;
   $("#reading-note").textContent = hasAiAccess() ? "ไพ่ชุดนี้พร้อมให้คุณพิมพ์คำถาม แล้วให้ AI เชื่อมคำบนไพ่กับเรื่องของคุณ" : "ไพ่ชุดนี้เปิดแล้ว · อ่านภาพและคำบนไพ่ด้วยตัวเองได้เลย";
   setWitchStatus(state.busy ? "แม่มดกำลังอ่านไพ่..." : hasAiAccess() ? "ไพ่เปิดแล้ว · รอคำตอบ" : "ไพ่เปิดแล้ว · อ่านได้เลย", state.busy ? "reading" : "");

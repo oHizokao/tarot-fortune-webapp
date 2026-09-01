@@ -98,3 +98,94 @@ test("reader stages share a smooth surface instead of separate boxed panels", as
     expect(style.radius).toBe("0px");
   }
 });
+
+test("desktop reader uses a compact control rail beside the reveal canvas", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/ai/");
+
+  const layout = await page.evaluate(() => {
+    const stage = getComputedStyle(document.querySelector(".ai-reading-stage"));
+    const spread = getComputedStyle(document.querySelector(".ai-spread-stage"));
+    const reveal = getComputedStyle(document.querySelector(".ai-reveal-stage"));
+    return {
+      areas: stage.gridTemplateAreas,
+      spreadArea: spread.gridArea,
+      revealArea: reveal.gridArea,
+    };
+  });
+
+  expect(layout.areas).toBe('"flow flow" "spread reveal"');
+  expect(layout.spreadArea).toBe("spread");
+  expect(layout.revealArea).toBe("reveal");
+});
+
+test("mobile reader follows one clear vertical path", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ai/");
+
+  const layout = await page.evaluate(() => {
+    const stage = getComputedStyle(document.querySelector(".ai-reading-stage"));
+    const boxes = [".flow-steps", ".ai-spread-stage", ".ai-reveal-stage"].map((selector) => {
+      const rect = document.querySelector(selector).getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom };
+    });
+    return { areas: stage.gridTemplateAreas, boxes };
+  });
+
+  expect(layout.areas).toBe('"flow" "spread" "reveal"');
+  expect(layout.boxes[0].bottom).toBeLessThanOrEqual(layout.boxes[1].top);
+  expect(layout.boxes[1].bottom).toBeLessThanOrEqual(layout.boxes[2].top);
+});
+
+test("desktop gives the controls room and keeps the waiting reveal compact", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/ai/");
+
+  const metrics = await page.evaluate(() => ({
+    spreadWidth: document.querySelector(".ai-spread-stage").getBoundingClientRect().width,
+    witchHeight: document.querySelector(".witch-scene").getBoundingClientRect().height,
+    emptyHeight: document.querySelector(".empty-card").getBoundingClientRect().height,
+  }));
+
+  expect(metrics.spreadWidth).toBeGreaterThanOrEqual(440);
+  expect(metrics.witchHeight).toBeLessThanOrEqual(260);
+  expect(metrics.emptyHeight).toBeLessThanOrEqual(240);
+});
+
+test("guest keeps existing card elements when opening another round", async ({ page }) => {
+  await page.goto("/ai/");
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+
+  await page.locator('.choice-button[data-count="1"]').click();
+  await page.locator("#draw-button").click();
+  const firstCard = await page.locator(".tarot-card-card").first().elementHandle();
+  expect(firstCard).not.toBeNull();
+  await firstCard.evaluate((element) => { element.dataset.preservedNode = "true"; });
+
+  await page.locator('.choice-button[data-count="2"]').click();
+  await page.locator("#draw-button").click();
+
+  await expect(page.locator(".tarot-card-card")).toHaveCount(3);
+  expect(await firstCard.evaluate((element) => ({ connected: element.isConnected, sameAsFirst: element === document.querySelector(".tarot-card-card"), preserved: element.dataset.preservedNode }))).toEqual({ connected: true, sameAsFirst: true, preserved: "true" });
+
+  await page.locator('.choice-button[data-count="3"]').click();
+  await page.locator("#draw-button").click();
+  await page.locator("#draw-button").click();
+  await expect(page.locator(".tarot-card-card")).toHaveCount(9);
+  const loadingModes = await page.locator(".tarot-card-card img").evaluateAll((images) => images.map((image) => image.loading));
+  expect(loadingModes.slice(0, 6)).toEqual(["eager", "eager", "eager", "eager", "eager", "eager"]);
+  expect(loadingModes.slice(6)).toEqual(["lazy", "lazy", "lazy"]);
+});
+
+test("mobile member reader keeps each stage in its own lane", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ai/");
+
+  const layout = await page.evaluate(() => {
+    document.querySelector("#ai-reader-app").dataset.readerMode = "member";
+    return [".ai-question-stage", ".ai-spread-stage", ".ai-reveal-stage", ".ai-answer-stage"].map((selector) => getComputedStyle(document.querySelector(selector)).gridArea);
+  });
+
+  expect(layout).toEqual(["question", "spread", "reveal", "answer"]);
+});
