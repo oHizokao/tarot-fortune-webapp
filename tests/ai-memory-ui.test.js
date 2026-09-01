@@ -9,7 +9,7 @@ const html = readFileSync(path.join(root, "ai", "index.html"), "utf8");
 const script = readFileSync(path.join(root, "ai", "ai.js"), "utf8");
 
 test("AI reader exposes the active reading Memory and a clear new-reading action", async () => {
-  assert.match(html, /<script type="module" src="\.\/ai\.js" defer><\/script>/);
+  assert.match(html, /<script type="module" src="\.\/ai\.js(?:\?[^" ]+)?" defer><\/script>/);
   assert.match(html, /id="memory-status"/);
   assert.match(html, /id="memory-title"/);
   assert.match(html, /id="new-reading-button"/);

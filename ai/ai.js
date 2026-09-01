@@ -3,7 +3,7 @@ import { messageForError } from "../lib/client/error-copy.js";
 const DECK = Array.from({ length: 78 }, (_, index) => `card-${String(index + 1).padStart(3, "0")}.webp`);
 const STORAGE_KEY = "tarot-daily-ai-reading-v2";
 const MAX_HISTORY = 60;
-const state = { count: 1, drawn: [], remaining: [], history: [], memory: null, readingId: "", user: null, csrf: "", backend: true, busy: false, requestVersion: 0, failedQuestion: "", activeQuestion: "" };
+const state = { count: 1, drawn: [], remaining: [], history: [], memory: null, readingId: "", user: null, csrf: "", backend: true, busy: false, requestVersion: 0, failedQuestion: "", failedErrorCode: "", failedRequestId: "", activeQuestion: "" };
 const $ = (selector) => document.querySelector(selector);
 const choiceButtons = [...document.querySelectorAll(".choice-button")];
 let drawTimer = null;
@@ -177,6 +177,8 @@ function clearPrivateMemory() {
   state.readingId = "";
   state.activeQuestion = "";
   state.failedQuestion = "";
+  state.failedErrorCode = "";
+  state.failedRequestId = "";
   clearAnswer();
   renderMemory();
 }
@@ -192,6 +194,8 @@ function drawCards() {
   if ($("#draw-button").disabled) return;
   state.activeQuestion = question;
   state.failedQuestion = "";
+  state.failedErrorCode = "";
+  state.failedRequestId = "";
   state.busy = true;
   setWitchStatus("แม่มดกำลังสับไพ่...", "reading");
   renderProgress();
@@ -240,6 +244,8 @@ function resetCards() {
   state.readingId = "";
   state.activeQuestion = "";
   state.failedQuestion = "";
+  state.failedErrorCode = "";
+  state.failedRequestId = "";
   state.busy = false;
   $("#ai-question").value = "";
   clearAnswer();
@@ -314,6 +320,7 @@ async function loadSession() {
 }
 
 function syncQuestion() {
+  const question = $("#ai-question").value.trim();
   const questionReady = hasQuestion();
   const spreadReady = state.drawn.length > 0;
   const answered = hasAnswer();
@@ -326,7 +333,12 @@ function syncQuestion() {
   else if (!state.user) $("#request-status").textContent = "จับไพ่แล้ว · เข้าใช้งานเพื่อรับคำตอบจาก AI";
   else if (state.user.must_change_password) $("#request-status").textContent = "เปลี่ยนรหัสผ่านก่อนจึงจะถาม AI ได้";
   else if (!state.user.ai_enabled) $("#request-status").textContent = "บัญชีนี้ยังไม่ได้รับสิทธิ์ AI จากผู้ดูแล";
-  else if (!state.busy && !answered) $("#request-status").textContent = questionReady ? "กำลังเตรียมคำตอบจากคำบนไพ่..." : "พิมพ์คำถามเพื่อรับคำตอบ";
+  else if (!state.busy && !answered) {
+    const failedQuestionIsCurrent = Boolean(state.failedQuestion) && question === state.failedQuestion;
+    $("#request-status").textContent = failedQuestionIsCurrent
+      ? messageForError(state.failedErrorCode, state.failedRequestId)
+      : questionReady ? "กำลังเตรียมคำตอบจากคำบนไพ่..." : "พิมพ์คำถามเพื่อรับคำตอบ";
+  }
   else if (!state.busy && answered && questionReady) $("#request-status").textContent = "คำถามนี้จะเชื่อมกับ Memory ของไพ่ชุดเดิม";
   renderProgress();
   renderFlow();
@@ -366,12 +378,14 @@ async function askAi(questionOverride = "") {
     renderMemory();
     $("#ai-question").value = "";
     state.failedQuestion = "";
+    state.failedErrorCode = "";
+    state.failedRequestId = "";
     $("#retry-ai-button").hidden = true;
     $("#ai-answer-title")?.focus?.({ preventScroll: false });
     $("#request-status").textContent = "คำตอบนี้เป็นแนวทางสะท้อนความคิด คุณเป็นคนตัดสินใจเองเสมอ";
   } catch (error) {
     if (error.status === 401 || error.code === "ACCOUNT_AUTH_REQUIRED") { setAccount(null); clearPrivateMemory(); $("#request-status").textContent = "เซสชันหมดอายุ กรุณาเข้าใช้งานใหม่"; }
-    else { state.failedQuestion = question; $("#retry-ai-button").hidden = !["AI_TIMEOUT", "AI_UPSTREAM_ERROR", "AI_RATE_LIMITED", "EMPTY_AI_RESPONSE", "OFFLINE"].includes(error.code); $("#request-status").textContent = messageForError(error.code, error.requestId); setWitchStatus("ยังอ่านคำตอบไม่ได้ · กดลองอีกครั้ง"); }
+    else { state.failedQuestion = question; state.failedErrorCode = error.code || ""; state.failedRequestId = error.requestId || ""; $("#retry-ai-button").hidden = !["AI_TIMEOUT", "AI_UPSTREAM_ERROR", "AI_RATE_LIMITED", "EMPTY_AI_RESPONSE", "OFFLINE"].includes(error.code); $("#request-status").textContent = messageForError(error.code, error.requestId); setWitchStatus("ยังอ่านคำตอบไม่ได้ · กดลองอีกครั้ง"); }
   } finally { if (version === state.requestVersion) { state.busy = false; renderMemory(); syncQuestion(); } }
 }
 
@@ -379,7 +393,14 @@ $("#draw-button").addEventListener("click", drawCards);
 $("#reset-button").addEventListener("click", resetCards);
 $("#new-reading-button").addEventListener("click", resetCards);
 choiceButtons.forEach((button) => button.addEventListener("click", () => setCount(Number(button.dataset.count))));
-$("#ai-question").addEventListener("input", syncQuestion);
+$("#ai-question").addEventListener("input", () => {
+  if ($("#ai-question").value.trim() !== state.failedQuestion) {
+    state.failedQuestion = "";
+    state.failedErrorCode = "";
+    state.failedRequestId = "";
+  }
+  syncQuestion();
+});
 $("#ask-ai-button").addEventListener("click", () => askAi());
 $("#retry-ai-button").addEventListener("click", () => askAi());
 $("#account-action").addEventListener("click", async (event) => {
