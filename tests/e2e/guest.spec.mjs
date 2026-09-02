@@ -46,6 +46,51 @@ test("guest can open cards on the AI reader without a question", async ({ page }
   await expect(page.locator("#reading-note")).toContainText("อ่านภาพและคำบนไพ่");
 });
 
+test("witch ritual wheel is visible and continuously animates", async ({ page }) => {
+  await page.goto("/ai/");
+  const wheel = page.locator(".witch-motion-wheel");
+  await expect(wheel).toBeVisible();
+  await expect(wheel).toHaveCSS("animation-name", "witchWheelSpin");
+  const before = await wheel.evaluate((element) => getComputedStyle(element).transform);
+  await page.waitForTimeout(650);
+  const after = await wheel.evaluate((element) => getComputedStyle(element).transform);
+  expect(after).not.toBe(before);
+});
+
+test("member AI flow keeps the question, draw, and answer steps obvious", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  await page.route("**/api/auth/me", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ ok: true, authenticated: true, csrf_token: "test-csrf", backend_configured: true, user: { username: "tester", name: "ผู้ใช้งาน", ai_enabled: true, must_change_password: false } }),
+  }));
+  await page.route("**/api/ai/readings", async (route) => {
+    if (route.request().method() === "POST") {
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true, reading: { id: "reading-test-1", cards: ["card-001.webp"], messages: [] } }),
+      });
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, readings: [] }) });
+  });
+  await page.route("**/api/ai/tarot-chat*", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ ok: true, answer: "ไพ่ชวนให้คุณค่อย ๆ จัดลำดับสิ่งที่ควบคุมได้ แล้วเลือกก้าวเล็ก ๆ ที่ทำได้วันนี้", reading: { id: "reading-test-1", cards: ["card-001.webp"], messages: [{ role: "user", content: "วันนี้ควรเริ่มจากตรงไหน?" }, { role: "assistant", content: "ไพ่ชวนให้คุณค่อย ๆ จัดลำดับสิ่งที่ควบคุมได้ แล้วเลือกก้าวเล็ก ๆ ที่ทำได้วันนี้" }] } }),
+  }));
+
+  await page.goto("/ai/");
+  await expect(page.locator("#question-stage")).toBeVisible();
+  await page.getByLabel("คำถามของคุณ").fill("วันนี้ควรเริ่มจากตรงไหน?");
+  await expect(page.locator("#draw-button")).toBeEnabled();
+  await page.locator("#draw-button").click();
+  await expect(page.locator(".tarot-card-card")).toHaveCount(1);
+  await expect(page.locator("#ai-answer")).toContainText("ก้าวเล็ก ๆ", { timeout: 5_000 });
+  await expect(page.locator("#flow-step-answer")).toHaveClass(/is-complete/);
+});
+
 test("guest can keep opening additional rounds until the deck is exhausted", async ({ page }) => {
   test.setTimeout(60_000);
   await page.goto("/ai/");
@@ -57,7 +102,7 @@ test("guest can keep opening additional rounds until the deck is exhausted", asy
   await expect(page.locator(".tarot-card-card")).toHaveCount(3);
   await expect(page.locator("#remaining-count")).toHaveText("75");
   await expect(page.locator("#draw-button")).toBeEnabled();
-  await expect(page.locator("#draw-label")).toContainText("เปิดเพิ่ม");
+  await expect(page.locator("#draw-label")).toHaveText("เปิดไพ่");
   await expect(page.locator('.choice-button[data-count="2"]')).toBeEnabled();
 
   await page.locator('.choice-button[data-count="2"]').click();

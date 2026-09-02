@@ -49,6 +49,6 @@ test("AI question field keeps the accessible customer-facing label", () => {
 test("customer pages version their JavaScript and CSS assets", () => {
   assert.match(homeHtml, /style\.css\?v=20260901-witch-two-modes/);
   assert.match(homeHtml, /app\.js\?v=20260901-witch-two-modes/);
-  assert.match(aiHtml, /ai\.css\?v=20260901-witch-two-modes-v11/);
-  assert.match(aiHtml, /ai\.js\?v=20260901-witch-two-modes-v11/);
+  assert.match(aiHtml, /ai\.css\?v=20260902-witch-two-modes-v12/);
+  assert.match(aiHtml, /ai\.js\?v=20260902-witch-two-modes-v12/);
 });

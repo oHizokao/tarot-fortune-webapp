@@ -750,6 +750,22 @@ a { color: inherit; }
   50% { opacity: 1; transform: translateY(-7px) rotate(12deg) scale(1.16); }
 }
 
+@keyframes witchWheelSpin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes witchWheelInnerSpin {
+  0% { transform: rotate(0deg) scale(.96); }
+  50% { transform: rotate(-180deg) scale(1.04); }
+  100% { transform: rotate(-360deg) scale(.96); }
+}
+
+@keyframes witchWheelSpark {
+  0%, 100% { opacity: .42; transform: scale(.78) rotate(-10deg); }
+  50% { opacity: 1; transform: scale(1.24) rotate(16deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .answer-orbit,
   .witch-art,
@@ -2351,5 +2367,87 @@ body {
   #ai-reader-app[data-reader-mode] .ai-reading-stage.ai-reading-stage--sequential .witch-art {
     width: min(100%, 285px);
     height: 246px;
+  }
+}
+
+/* v12: a visible ritual wheel makes the witch scene feel alive without covering the cards. */
+.ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: 390px;
+  height: 270px;
+  margin: 0;
+  border: 2px solid rgba(185, 164, 255, .22);
+  border-top-color: rgba(255, 224, 165, .98);
+  border-right-color: rgba(104, 189, 255, .9);
+  border-bottom-color: rgba(167, 125, 255, .82);
+  border-left-color: transparent;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, transparent 0 62%, rgba(170, 133, 255, .07) 63%, transparent 66%);
+  box-shadow: 0 0 0 7px rgba(126, 91, 232, .08), 0 0 28px rgba(160, 112, 255, .34), inset 0 0 18px rgba(111, 190, 255, .08);
+  transform: translate(-50%, -50%);
+  animation: witchWheelSpin 9s linear infinite;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel::before {
+  position: absolute;
+  inset: 15px;
+  border: 1px dashed rgba(217, 190, 255, .46);
+  border-radius: 50%;
+  content: "";
+  animation: witchWheelInnerSpin 6s linear infinite;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel::after {
+  position: absolute;
+  top: -9px;
+  left: calc(50% - 8px);
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 246, 211, .86);
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 9px var(--gold), 0 0 25px rgba(255, 197, 101, .78);
+  content: "";
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel__spark {
+  position: absolute;
+  right: 3%;
+  bottom: 12%;
+  z-index: 1;
+  color: var(--gold);
+  font-size: 21px;
+  line-height: 1;
+  text-shadow: 0 0 13px rgba(255, 224, 165, .86);
+  animation: witchWheelSpark 2.4s ease-in-out infinite;
+}
+
+@media (max-width: 650px) {
+  .ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel {
+    width: 292px;
+    height: 206px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel::before {
+    inset: 10px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel__spark {
+    right: 2%;
+    bottom: 10%;
+    font-size: 17px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel,
+  .ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel::before,
+  .ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel__spark {
+    animation: none !important;
   }
 }

@@ -19,6 +19,13 @@ test("witch scene layers continuous ambient motion around the character", () => 
   assert.match(aiHtml, /class="witch-scene"[^>]*data-motion="ambient"/);
 });
 
+test("witch scene exposes a high-visibility rotating motion wheel", () => {
+  assert.match(aiHtml, /class="witch-motion-wheel"[^>]*data-motion-layer="sigil"/);
+  assert.match(aiCss, /\.ai-reading-stage\.ai-reading-stage--sequential\s+\.witch-motion-wheel\s*\{[\s\S]*?animation:\s*witchWheelSpin\s+9s\s+linear\s+infinite/);
+  assert.match(aiCss, /\.ai-reading-stage\.ai-reading-stage--sequential\s+\.witch-motion-wheel::after\s*\{[\s\S]*?background:\s*var\(--gold\)/);
+  assert.match(aiCss, /@keyframes\s+witchWheelSpin/);
+});
+
 test("guest mode keeps the witch scene large enough to read the character", () => {
   assert.match(aiCss, /#ai-reader-app\[data-reader-mode\][\s\S]*?\.witch-scene\s*\{[\s\S]*?height:\s*340px/);
   assert.match(aiCss, /#ai-reader-app\[data-reader-mode\][\s\S]*?\.witch-art\s*\{[\s\S]*?height:\s*330px/);
