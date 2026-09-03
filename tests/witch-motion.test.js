@@ -19,17 +19,17 @@ test("witch scene layers continuous ambient motion around the character", () => 
   assert.match(aiHtml, /class="witch-scene"[^>]*data-motion="ambient"/);
 });
 
-test("witch scene exposes a high-visibility rotating motion wheel", () => {
+test("witch scene exposes a high-visibility motion wheel without a toggle", () => {
   assert.match(aiHtml, /class="witch-motion-wheel"[^>]*data-motion-layer="sigil"/);
-  assert.match(aiHtml, /id="motion-toggle"/);
-  assert.match(aiHtml, /id="motion-status"/);
+  assert.doesNotMatch(aiHtml, /class="motion-control"/);
+  assert.doesNotMatch(aiHtml, /id="motion-toggle"/);
   assert.match(aiCss, /\.ai-reading-stage\.ai-reading-stage--sequential\s+\.witch-motion-wheel\s*\{[\s\S]*?animation:\s*witchWheelSpin\s+9s\s+linear\s+infinite/);
   assert.match(aiCss, /\.ai-reading-stage\.ai-reading-stage--sequential\s+\.witch-motion-wheel::after\s*\{[\s\S]*?background:\s*var\(--gold\)/);
   assert.match(aiCss, /@keyframes\s+witchWheelSpin/);
 });
 
-test("reduced-motion mode has an explicit opt-in override for the ritual wheel", () => {
-  assert.match(aiCss, /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*?#ai-reader-app\.motion-enabled[\s\S]*?\.witch-motion-wheel\s*\{[\s\S]*?animation-name:\s*witchWheelSpin\s*!important[\s\S]*?animation-duration:\s*9s\s*!important[\s\S]*?animation-iteration-count:\s*infinite\s*!important/);
+test("the ritual wheel stays on even when the browser requests reduced motion", () => {
+  assert.match(aiCss, /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*?#ai-reader-app\.motion-always-on[\s\S]*?\.witch-motion-wheel\s*\{[\s\S]*?animation-name:\s*witchWheelSpin\s*!important[\s\S]*?animation-duration:\s*9s\s*!important[\s\S]*?animation-iteration-count:\s*infinite\s*!important/);
 });
 
 test("guest mode keeps the witch scene large enough to read the character", () => {

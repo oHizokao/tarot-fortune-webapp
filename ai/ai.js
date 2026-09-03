@@ -3,7 +3,6 @@ import { groupReadingHistory } from "./reading-sets.mjs";
 
 const DECK = Array.from({ length: 78 }, (_, index) => `card-${String(index + 1).padStart(3, "0")}.webp`);
 const STORAGE_KEY = "tarot-daily-ai-reading-v2";
-const MOTION_STORAGE_KEY = "tarot-daily-motion-enabled";
 const MAX_HISTORY = 60;
 const state = { count: 1, drawn: [], openedCards: [], remaining: [], history: [], memory: null, answerCards: [], readingId: "", user: null, csrf: "", backend: true, busy: false, requestVersion: 0, failedQuestion: "", failedErrorCode: "", failedRequestId: "", activeQuestion: "" };
 const $ = (selector) => document.querySelector(selector);
@@ -51,48 +50,12 @@ function setCount(count) {
   choiceButtons.forEach((button) => { const selected = Number(button.dataset.count) === count; button.classList.toggle("is-selected", selected); button.setAttribute("aria-pressed", String(selected)); });
 }
 
-function prefersReducedMotion() {
-  try { return Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches); } catch { return false; }
-}
-
-function getSavedMotionPreference() {
-  try {
-    const saved = localStorage.getItem(MOTION_STORAGE_KEY);
-    return saved === "on" ? true : saved === "off" ? false : null;
-  } catch { return null; }
-}
-
-function setMotionEnabled(enabled, { persist = true } = {}) {
-  const app = $("#ai-reader-app");
-  const toggle = $("#motion-toggle");
-  const status = $("#motion-status");
-  if (!app) return;
-  const active = Boolean(enabled);
-  app.classList.toggle("motion-enabled", active);
-  app.classList.toggle("motion-disabled", !active);
-  app.dataset.motionEnabled = String(active);
-  if (toggle) {
-    toggle.setAttribute("aria-pressed", String(active));
-    toggle.textContent = active ? "หยุด Motion" : "เปิด Motion";
-  }
-  if (status) status.textContent = active
-    ? "Motion เปิดอยู่ · วงแหวนกำลังหมุน"
-    : prefersReducedMotion() ? "Motion ปิดตามการตั้งค่าเครื่อง" : "Motion ปิดอยู่";
-  if (persist) {
-    try { localStorage.setItem(MOTION_STORAGE_KEY, active ? "on" : "off"); } catch { /* private browsing can disable storage */ }
-  }
-}
-
 function initMotion() {
-  const saved = getSavedMotionPreference();
-  setMotionEnabled(saved ?? !prefersReducedMotion(), { persist: false });
-  $("#motion-toggle")?.addEventListener("click", () => {
-    setMotionEnabled(!$("#ai-reader-app")?.classList.contains("motion-enabled"));
-  });
-  const mediaQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-  mediaQuery?.addEventListener?.("change", () => {
-    if (getSavedMotionPreference() === null) setMotionEnabled(!mediaQuery.matches, { persist: false });
-  });
+  const app = $("#ai-reader-app");
+  if (!app) return;
+  app.classList.add("motion-always-on");
+  app.dataset.motionEnabled = "true";
+  try { localStorage.removeItem("tarot-daily-motion-enabled"); } catch { /* private browsing can disable storage */ }
 }
 
 function hasQuestion() { return $("#ai-question").value.trim().length > 0; }
@@ -566,7 +529,7 @@ function detectAnswerHeading(rawLine) {
   const definitions = [
     { key: "cards", label: "ไพ่ที่เปิดได้", pattern: /^(?:อ่านคำบนไพ่ที่เกี่ยวข้อง|ไพ่ที่เปิดได้|ไพ่ที่เปิดจริง|คำบนไพ่)(?:\s*[:：-]\s*|\s+)?(.*)$/i },
     { key: "meaning", label: "ความหมายของไพ่", pattern: /^(?:ความหมายของไพ่|ความหมาย)(?:\s*[:：-]\s*|\s+)?(.*)$/i },
-    { key: "connection", label: "เชื่อมโยงกับคำถาม", pattern: /^(?:เชื่อมโยงกับคำถาม|เชื่อมกับคำถาม|เชื่อมความหมายกับคำถาม)(?:\s*[:：-]\s*|\s+)?(.*)$/i },
+    { key: "connection", label: "คำทำนาย", pattern: /^(?:คำทำนาย(?!นี้เป็นการอ่าน)|เชื่อมโยงกับคำถาม|เชื่อมกับคำถาม|เชื่อมความหมายกับคำถาม)(?:\s*[:：-]\s*|\s+)?(.*)$/i },
     { key: "summary", label: "สรุปคำตอบ", pattern: /^(?:สรุปคำตอบ|สรุป|ภาพรวม)(?:\s*[:：-]\s*|\s+)?(.*)$/i },
     { key: "next", label: "คำแนะนำถัดไป", pattern: /^(?:คำแนะนำถัดไป|ก้าวเล็ก ๆ ที่ทำได้|ก้าวเล็กๆที่ทำได้|ก้าวถัดไป|คำแนะนำ)(?:\s*[:：-]\s*|\s+)?(.*)$/i },
     { key: "reflection", label: "คำถามชวนทบทวน", pattern: /^(?:คำถามชวนทบทวน|คำถามสำหรับทบทวน)(?:\s*[:：-]\s*|\s+)?(.*)$/i },
@@ -781,7 +744,7 @@ async function askAi(questionOverride = "") {
   state.busy = true;
   setWitchStatus("แม่มดกำลังอ่านคำบนไพ่...", "reading");
   $("#ask-ai-button").disabled = true;
-  $("#request-status").textContent = "กำลังอ่านคำบนไพ่และเชื่อมโยงกับคำถาม...";
+  $("#request-status").textContent = "กำลังอ่านคำบนไพ่และสรุปคำทำนาย...";
   try {
     await ensureReading();
     if (version !== state.requestVersion) return;

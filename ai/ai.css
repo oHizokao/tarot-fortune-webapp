@@ -2427,12 +2427,6 @@ body {
   animation: witchWheelSpark 2.4s ease-in-out infinite;
 }
 
-#ai-reader-app.motion-disabled .ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel,
-#ai-reader-app.motion-disabled .ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel::before,
-#ai-reader-app.motion-disabled .ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel__spark {
-  animation-play-state: paused;
-}
-
 @media (max-width: 650px) {
   .ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel {
     width: 292px;
@@ -2458,83 +2452,9 @@ body {
   }
 }
 
-.ai-reading-stage.ai-reading-stage--sequential .motion-control {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 10px;
-  padding: 0 2px;
-}
-
-.motion-control__copy {
-  display: grid;
-  gap: 1px;
-  min-width: 0;
-  margin-right: auto;
-}
-
-.motion-control__copy strong {
-  overflow: hidden;
-  color: #d8d1fb;
-  font: 500 11px "Kanit", sans-serif;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.motion-control__copy small {
-  color: #7f8db3;
-  font-size: 9px;
-  line-height: 1.4;
-}
-
-.motion-toggle {
-  min-height: 34px;
-  padding: 0 13px;
-  color: #dcd5ff;
-  border: 1px solid rgba(184, 160, 255, .34);
-  border-radius: 10px;
-  background: rgba(79, 60, 166, .24);
-  cursor: pointer;
-  font: 500 10px "Kanit", sans-serif;
-  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
-}
-
-.motion-toggle:hover {
-  border-color: rgba(220, 199, 255, .7);
-  background: rgba(99, 77, 201, .38);
-  transform: translateY(-1px);
-}
-
-.motion-toggle:focus-visible {
-  outline: 2px solid var(--blue);
-  outline-offset: 3px;
-}
-
-.ai-reading-stage.ai-reading-stage--sequential .motion-control + .reading-sets {
-  margin-top: 16px;
-}
-
-@media (max-width: 650px) {
-  .ai-reading-stage.ai-reading-stage--sequential .motion-control {
-    align-items: flex-start;
-    gap: 9px;
-  }
-
-  .motion-control__copy small {
-    font-size: 8px;
-  }
-
-  .motion-toggle {
-    flex: 0 0 auto;
-    min-height: 32px;
-    padding: 0 10px;
-  }
-}
-
-/* Explicit opt-in: users with reduced-motion enabled can still turn on the visible wheel. */
+/* Motion is intentionally always on; keep the visible ritual wheel alive in reduced-motion browsers too. */
 @media (prefers-reduced-motion: reduce) {
-  #ai-reader-app.motion-enabled .ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel {
+  #ai-reader-app.motion-always-on .ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel {
     animation-name: witchWheelSpin !important;
     animation-duration: 9s !important;
     animation-timing-function: linear !important;
@@ -2544,7 +2464,7 @@ body {
     animation-play-state: running !important;
   }
 
-  #ai-reader-app.motion-enabled .ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel::before {
+  #ai-reader-app.motion-always-on .ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel::before {
     animation-name: witchWheelInnerSpin !important;
     animation-duration: 6s !important;
     animation-timing-function: linear !important;
@@ -2554,7 +2474,7 @@ body {
     animation-play-state: running !important;
   }
 
-  #ai-reader-app.motion-enabled .ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel__spark {
+  #ai-reader-app.motion-always-on .ai-reading-stage.ai-reading-stage--sequential .witch-motion-wheel__spark {
     animation-name: witchWheelSpark !important;
     animation-duration: 2.4s !important;
     animation-timing-function: ease-in-out !important;
@@ -2562,6 +2482,127 @@ body {
     animation-direction: normal !important;
     animation-fill-mode: none !important;
     animation-play-state: running !important;
+  }
+}
+
+/* v16: keep the reader calm and continuous instead of stacking card-like UI blocks. */
+.ai-reading-stage.ai-reading-stage--sequential {
+  background: transparent;
+  box-shadow: none;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential > .flow-steps {
+  display: flex;
+  align-items: stretch;
+  gap: clamp(16px, 4vw, 48px);
+  padding: 8px 0 16px;
+  border: 0;
+  border-bottom: 1px solid rgba(198, 178, 255, .14);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .flow-step {
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 8px 0 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .flow-step.is-current {
+  border: 0;
+  background: transparent;
+  box-shadow: inset 0 -2px 0 rgba(169, 145, 255, .78);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .flow-step.is-current > span {
+  border-color: rgba(194, 177, 255, .68);
+  background: linear-gradient(140deg, #7960e6, #4778d6);
+  box-shadow: 0 0 16px rgba(123, 96, 230, .35);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .ai-question-stage,
+.ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage,
+.ai-reading-stage.ai-reading-stage--sequential .ai-reveal-stage,
+.ai-reading-stage.ai-reading-stage--sequential .ai-answer-stage {
+  width: min(100%, 960px);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .stage-heading,
+.ai-reading-stage.ai-reading-stage--sequential .choice-row,
+.ai-reading-stage.ai-reading-stage--sequential .progress-wrap {
+  width: min(100%, 820px);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .choice-row {
+  margin-top: 19px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .account-callout,
+.ai-reading-stage.ai-reading-stage--sequential .memory-status {
+  border: 0;
+  border-left: 2px solid rgba(169, 145, 255, .55);
+  border-radius: 0;
+  background: rgba(73, 60, 162, .08);
+  box-shadow: none;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set {
+  padding: 4px 0 28px 18px;
+  border: 0;
+  border-left: 1px solid rgba(195, 175, 255, .3);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set + .reading-set {
+  padding-top: 28px;
+  border-top: 1px solid rgba(195, 175, 255, .16);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set.is-current {
+  border-left-color: rgba(255, 224, 165, .72);
+  background: transparent;
+  box-shadow: none;
+}
+
+.ai-answer-stage .answer-section--card,
+.ai-answer-stage .answer-section--summary {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ai-answer-stage .answer-section--summary {
+  border-left: 2px solid rgba(129, 228, 189, .7);
+  padding-left: 16px;
+}
+
+@media (max-width: 650px) {
+  .ai-reading-stage.ai-reading-stage--sequential > .flow-steps {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .flow-step {
+    width: 100%;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .reading-set {
+    padding: 4px 0 22px 13px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .reading-set + .reading-set {
+    padding-top: 22px;
   }
 }
 

@@ -44,6 +44,15 @@ test("guest can open cards on the AI reader without a question", async ({ page }
   await drawButton.click();
   await expect(page.locator(".tarot-card-card")).toHaveCount(1);
   await expect(page.locator("#reading-note")).toContainText("อ่านภาพและคำบนไพ่");
+  const readingSetStyle = await page.locator(".reading-set").evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { borderTopStyle: style.borderTopStyle, borderRightStyle: style.borderRightStyle, borderBottomStyle: style.borderBottomStyle, borderRadius: style.borderRadius, boxShadow: style.boxShadow };
+  });
+  expect(readingSetStyle.borderTopStyle).toBe("none");
+  expect(readingSetStyle.borderRightStyle).toBe("none");
+  expect(readingSetStyle.borderBottomStyle).toBe("none");
+  expect(readingSetStyle.borderRadius).toBe("0px");
+  expect(readingSetStyle.boxShadow).toBe("none");
 });
 
 test("witch ritual wheel is visible and continuously animates", async ({ page }) => {
@@ -57,25 +66,19 @@ test("witch ritual wheel is visible and continuously animates", async ({ page })
   expect(after).not.toBe(before);
 });
 
-test("reduced-motion users can explicitly turn on the ritual wheel", async ({ page }) => {
+test("ritual motion is always on without a toggle", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.addInitScript(() => localStorage.removeItem("tarot-daily-motion-enabled"));
+  await page.addInitScript(() => localStorage.setItem("tarot-daily-motion-enabled", "off"));
   await page.goto("/ai/");
   const wheel = page.locator(".witch-motion-wheel");
-  const toggle = page.locator("#motion-toggle");
-  await expect(toggle).toHaveText("เปิด Motion");
-  await expect(wheel).toHaveCSS("animation-name", "none");
-  await toggle.click();
-  await expect(toggle).toHaveText("หยุด Motion");
-  await expect(page.locator("#motion-status")).toContainText("Motion เปิดอยู่");
+  await expect(page.locator("#motion-toggle")).toHaveCount(0);
+  await expect(page.locator(".motion-control")).toHaveCount(0);
+  await expect(page.locator("#ai-reader-app")).toHaveAttribute("data-motion-enabled", "true");
   await expect(wheel).toHaveCSS("animation-name", "witchWheelSpin");
   const before = await wheel.evaluate((element) => getComputedStyle(element).transform);
   await page.waitForTimeout(650);
   const after = await wheel.evaluate((element) => getComputedStyle(element).transform);
   expect(after).not.toBe(before);
-  await toggle.click();
-  await expect(toggle).toHaveText("เปิด Motion");
-  await expect(wheel).toHaveCSS("animation-name", "none");
 });
 
 test("member AI flow keeps the question, draw, and answer steps obvious", async ({ page }) => {
@@ -121,7 +124,8 @@ test("member AI flow keeps the question, draw, and answer steps obvious", async 
   await expect(page.locator("#ai-answer .answer-section--cards")).toHaveCount(1);
   await expect(page.locator("#ai-answer .answer-card")).toHaveCount(1);
   await expect(page.locator("#ai-answer .answer-card")).toContainText("Relaxation");
-  await expect(page.locator("#ai-answer .answer-section[data-answer-key='connection']")).toContainText("เชื่อมโยงกับคำถาม");
+  await expect(page.locator("#ai-answer .answer-section[data-answer-key='connection']")).toContainText("คำทำนาย");
+  await expect(page.locator("#ai-answer .answer-section[data-answer-key='connection']")).not.toContainText("เชื่อมโยงกับคำถาม");
   await expect(page.locator("#ai-answer .answer-section[data-answer-key='summary']")).toContainText("สรุปคำตอบ");
   await expect(page.locator("#ai-answer")).not.toContainText("**");
   await expect(page.locator("#flow-step-answer")).toHaveClass(/is-complete/);
@@ -150,7 +154,7 @@ test("member AI answer separates every card from its interpretation and summary"
         { file: "card-001.webp", name: "Relaxation", keywords: ["relaxation"] },
         { file: "card-002.webp", name: "Acceptance", keywords: ["acceptance"] },
       ],
-      answer: "ไพ่ใบที่ 1 — Relaxation\nความหมายของไพ่: ให้พื้นที่ใจได้พักและคืนสมดุล\nเชื่อมโยงกับคำถาม: เริ่มจากลดสิ่งที่กดดัน แล้วค่อยจัดการเรื่องสำคัญ\nไพ่ใบที่ 2 — Acceptance\nความหมายของไพ่: ยอมรับสิ่งที่เกิดขึ้นโดยไม่ต้องโทษตัวเอง\nเชื่อมโยงกับคำถาม: มองสถานการณ์ตามจริงเพื่อเลือกทางที่เหมาะกับคุณ\nสรุปคำตอบ: คำตอบของไพ่ทั้งสองใบคือพักให้พอ ยอมรับจุดเริ่มต้น และค่อยขยับทีละก้าว\nคำแนะนำถัดไป: เลือกหนึ่งเรื่องที่ทำได้ภายในวันนี้",
+      answer: "ไพ่ใบที่ 1 — Relaxation\nความหมายของไพ่: ให้พื้นที่ใจได้พักและคืนสมดุล\nคำทำนาย: เริ่มจากลดสิ่งที่กดดัน แล้วค่อยจัดการเรื่องสำคัญ\nไพ่ใบที่ 2 — Acceptance\nความหมายของไพ่: ยอมรับสิ่งที่เกิดขึ้นโดยไม่ต้องโทษตัวเอง\nคำทำนาย: มองสถานการณ์ตามจริงเพื่อเลือกทางที่เหมาะกับคุณ\nสรุปคำตอบ: คำตอบของไพ่ทั้งสองใบคือพักให้พอ ยอมรับจุดเริ่มต้น และค่อยขยับทีละก้าว\nคำแนะนำถัดไป: เลือกหนึ่งเรื่องที่ทำได้ภายในวันนี้",
       reading: { id: "reading-test-2", cards: ["card-001.webp", "card-002.webp"], messages: [{ role: "user", content: "ฉันควรเริ่มต้นใหม่อย่างไร?" }] },
     }),
   }));
