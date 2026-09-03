@@ -194,11 +194,7 @@ function renderProgress() {
   $("#reset-button").disabled = state.busy;
   choiceButtons.forEach((button) => { button.disabled = state.busy || locksSpread; });
   const nextCount = Math.min(state.count, state.remaining.length);
-  $("#draw-label").textContent = empty
-    ? "สำรับหมดแล้ว"
-    : locksSpread
-      ? "ชุดนี้เปิดแล้ว"
-      : aiMode ? questionReady ? "เปิดไพ่" : "พิมพ์คำถามก่อน" : "เปิดไพ่";
+  $("#draw-label").textContent = empty ? "สำรับหมดแล้ว" : "เปิดไพ่";
   $("#deck-message").textContent = empty
     ? "เปิดครบทั้ง 78 ใบแล้ว กดล้างไพ่เพื่อเริ่มรอบใหม่"
     : hasSpread

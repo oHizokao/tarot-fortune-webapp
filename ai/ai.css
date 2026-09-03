@@ -1860,7 +1860,7 @@ body {
 
 .ai-reading-stage.ai-reading-stage--sequential .spread-actions {
   width: min(100%, 480px);
-  margin-top: 21px;
+  margin: 21px auto 0;
 }
 
 .ai-reading-stage.ai-reading-stage--sequential .witch-scene {

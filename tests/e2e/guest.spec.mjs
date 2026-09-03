@@ -104,11 +104,20 @@ test("member AI flow keeps the question, draw, and answer steps obvious", async 
 
   await page.goto("/ai/");
   await expect(page.locator("#question-stage")).toBeVisible();
+  await expect(page.locator("#draw-label")).toHaveText("เปิดไพ่");
   await page.getByLabel("คำถามของคุณ").fill("วันนี้ควรเริ่มจากตรงไหน?");
   await expect(page.locator("#draw-button")).toBeEnabled();
+  const drawAlignment = await page.locator("#draw-button").evaluate((button) => {
+    const action = button.closest(".spread-actions");
+    const buttonBox = button.getBoundingClientRect();
+    const actionBox = action.getBoundingClientRect();
+    return Math.abs((buttonBox.left + buttonBox.width / 2) - (actionBox.left + actionBox.width / 2));
+  });
+  expect(drawAlignment).toBeLessThan(2);
   await page.locator("#draw-button").click();
   await expect(page.locator(".tarot-card-card")).toHaveCount(1);
   await expect(page.locator("#ai-answer")).toContainText("สรุปคำตอบ", { timeout: 5_000 });
+  await expect(page.locator("#draw-label")).toHaveText("เปิดไพ่");
   await expect(page.locator("#ai-answer .answer-section--cards")).toHaveCount(1);
   await expect(page.locator("#ai-answer .answer-card")).toHaveCount(1);
   await expect(page.locator("#ai-answer .answer-card")).toContainText("Relaxation");
