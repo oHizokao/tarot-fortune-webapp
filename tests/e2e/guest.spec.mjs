@@ -57,6 +57,27 @@ test("witch ritual wheel is visible and continuously animates", async ({ page })
   expect(after).not.toBe(before);
 });
 
+test("reduced-motion users can explicitly turn on the ritual wheel", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.addInitScript(() => localStorage.removeItem("tarot-daily-motion-enabled"));
+  await page.goto("/ai/");
+  const wheel = page.locator(".witch-motion-wheel");
+  const toggle = page.locator("#motion-toggle");
+  await expect(toggle).toHaveText("เปิด Motion");
+  await expect(wheel).toHaveCSS("animation-name", "none");
+  await toggle.click();
+  await expect(toggle).toHaveText("หยุด Motion");
+  await expect(page.locator("#motion-status")).toContainText("Motion เปิดอยู่");
+  await expect(wheel).toHaveCSS("animation-name", "witchWheelSpin");
+  const before = await wheel.evaluate((element) => getComputedStyle(element).transform);
+  await page.waitForTimeout(650);
+  const after = await wheel.evaluate((element) => getComputedStyle(element).transform);
+  expect(after).not.toBe(before);
+  await toggle.click();
+  await expect(toggle).toHaveText("เปิด Motion");
+  await expect(wheel).toHaveCSS("animation-name", "none");
+});
+
 test("member AI flow keeps the question, draw, and answer steps obvious", async ({ page }) => {
   await page.addInitScript(() => localStorage.clear());
   await page.route("**/api/auth/me", (route) => route.fulfill({

@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./ai.css?v=20260902-witch-two-modes-v12" />
+    <link rel="stylesheet" href="./ai.css?v=20260902-witch-two-modes-v13" />
   </head>
   <body>
     <div class="ai-bg ai-bg--one" aria-hidden="true"></div>
@@ -108,6 +108,13 @@
             <span class="witch-spark witch-spark--two">✧</span>
             <span class="witch-status" id="witch-status">รอคำถามของคุณ</span>
           </div>
+          <div class="motion-control" role="group" aria-label="ตั้งค่า Motion">
+            <div class="motion-control__copy">
+              <strong id="motion-status">กำลังตรวจสอบ Motion</strong>
+              <small>วงแหวนเวทจะหมุนรอบแม่มด</small>
+            </div>
+            <button class="motion-toggle" id="motion-toggle" type="button" aria-pressed="false">เปิด Motion</button>
+          </div>
           <div class="reading-sets is-empty" id="reading-sets" aria-live="polite"><div class="empty-card"><span>?</span><p>เลือกจำนวนไพ่<br />แล้วกดเปิดไพ่</p></div></div>
           <p class="reading-note" id="reading-note">เปิดไพ่แล้วอ่านภาพและคำบนไพ่ด้วยตัวเองได้เลย</p>
         </section>
@@ -125,6 +132,6 @@
 
       <footer class="ai-footer"><span>✦ TAROT DAILY</span><span>คำทำนายเป็นแนวทาง ไม่ใช่คำตัดสินชีวิต</span><a href="../privacy/">ความเป็นส่วนตัว</a><a href="../terms/">ข้อกำหนด</a><a href="../admin/">สำหรับผู้ดูแล</a></footer>
     </main>
-    <script type="module" src="./ai.js?v=20260902-witch-two-modes-v12" defer></script>
+    <script type="module" src="./ai.js?v=20260902-witch-two-modes-v13" defer></script>
   </body>
 </html>

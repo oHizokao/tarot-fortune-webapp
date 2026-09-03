@@ -21,9 +21,15 @@ test("witch scene layers continuous ambient motion around the character", () => 
 
 test("witch scene exposes a high-visibility rotating motion wheel", () => {
   assert.match(aiHtml, /class="witch-motion-wheel"[^>]*data-motion-layer="sigil"/);
+  assert.match(aiHtml, /id="motion-toggle"/);
+  assert.match(aiHtml, /id="motion-status"/);
   assert.match(aiCss, /\.ai-reading-stage\.ai-reading-stage--sequential\s+\.witch-motion-wheel\s*\{[\s\S]*?animation:\s*witchWheelSpin\s+9s\s+linear\s+infinite/);
   assert.match(aiCss, /\.ai-reading-stage\.ai-reading-stage--sequential\s+\.witch-motion-wheel::after\s*\{[\s\S]*?background:\s*var\(--gold\)/);
   assert.match(aiCss, /@keyframes\s+witchWheelSpin/);
+});
+
+test("reduced-motion mode has an explicit opt-in override for the ritual wheel", () => {
+  assert.match(aiCss, /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*?#ai-reader-app\.motion-enabled[\s\S]*?\.witch-motion-wheel\s*\{[\s\S]*?animation-name:\s*witchWheelSpin\s*!important[\s\S]*?animation-duration:\s*9s\s*!important[\s\S]*?animation-iteration-count:\s*infinite\s*!important/);
 });
 
 test("guest mode keeps the witch scene large enough to read the character", () => {

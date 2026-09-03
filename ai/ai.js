@@ -3,6 +3,7 @@ import { groupReadingHistory } from "./reading-sets.mjs";
 
 const DECK = Array.from({ length: 78 }, (_, index) => `card-${String(index + 1).padStart(3, "0")}.webp`);
 const STORAGE_KEY = "tarot-daily-ai-reading-v2";
+const MOTION_STORAGE_KEY = "tarot-daily-motion-enabled";
 const MAX_HISTORY = 60;
 const state = { count: 1, drawn: [], openedCards: [], remaining: [], history: [], memory: null, readingId: "", user: null, csrf: "", backend: true, busy: false, requestVersion: 0, failedQuestion: "", failedErrorCode: "", failedRequestId: "", activeQuestion: "" };
 const $ = (selector) => document.querySelector(selector);
@@ -48,6 +49,50 @@ function saveState() {
 function setCount(count) {
   state.count = count;
   choiceButtons.forEach((button) => { const selected = Number(button.dataset.count) === count; button.classList.toggle("is-selected", selected); button.setAttribute("aria-pressed", String(selected)); });
+}
+
+function prefersReducedMotion() {
+  try { return Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches); } catch { return false; }
+}
+
+function getSavedMotionPreference() {
+  try {
+    const saved = localStorage.getItem(MOTION_STORAGE_KEY);
+    return saved === "on" ? true : saved === "off" ? false : null;
+  } catch { return null; }
+}
+
+function setMotionEnabled(enabled, { persist = true } = {}) {
+  const app = $("#ai-reader-app");
+  const toggle = $("#motion-toggle");
+  const status = $("#motion-status");
+  if (!app) return;
+  const active = Boolean(enabled);
+  app.classList.toggle("motion-enabled", active);
+  app.classList.toggle("motion-disabled", !active);
+  app.dataset.motionEnabled = String(active);
+  if (toggle) {
+    toggle.setAttribute("aria-pressed", String(active));
+    toggle.textContent = active ? "หยุด Motion" : "เปิด Motion";
+  }
+  if (status) status.textContent = active
+    ? "Motion เปิดอยู่ · วงแหวนกำลังหมุน"
+    : prefersReducedMotion() ? "Motion ปิดตามการตั้งค่าเครื่อง" : "Motion ปิดอยู่";
+  if (persist) {
+    try { localStorage.setItem(MOTION_STORAGE_KEY, active ? "on" : "off"); } catch { /* private browsing can disable storage */ }
+  }
+}
+
+function initMotion() {
+  const saved = getSavedMotionPreference();
+  setMotionEnabled(saved ?? !prefersReducedMotion(), { persist: false });
+  $("#motion-toggle")?.addEventListener("click", () => {
+    setMotionEnabled(!$("#ai-reader-app")?.classList.contains("motion-enabled"));
+  });
+  const mediaQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+  mediaQuery?.addEventListener?.("change", () => {
+    if (getSavedMotionPreference() === null) setMotionEnabled(!mediaQuery.matches, { persist: false });
+  });
 }
 
 function hasQuestion() { return $("#ai-question").value.trim().length > 0; }
@@ -568,6 +613,7 @@ $("#account-action").addEventListener("click", async (event) => {
 });
 
 Object.assign(state, loadState());
+initMotion();
 renderProgress();
 renderCards();
 renderMemory();
