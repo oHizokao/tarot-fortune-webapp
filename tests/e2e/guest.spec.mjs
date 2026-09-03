@@ -99,7 +99,7 @@ test("member AI flow keeps the question, draw, and answer steps obvious", async 
   await page.route("**/api/ai/tarot-chat*", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
-    body: JSON.stringify({ ok: true, answer: "ไพ่ชวนให้คุณค่อย ๆ จัดลำดับสิ่งที่ควบคุมได้ แล้วเลือกก้าวเล็ก ๆ ที่ทำได้วันนี้", reading: { id: "reading-test-1", cards: ["card-001.webp"], messages: [{ role: "user", content: "วันนี้ควรเริ่มจากตรงไหน?" }, { role: "assistant", content: "ไพ่ชวนให้คุณค่อย ๆ จัดลำดับสิ่งที่ควบคุมได้ แล้วเลือกก้าวเล็ก ๆ ที่ทำได้วันนี้" }] } }),
+    body: JSON.stringify({ ok: true, cards: [{ file: "card-001.webp", name: "Relaxation", keywords: ["relaxation"] }], answer: "1) **อ่านคำบนไพ่ที่เกี่ยวข้อง**\n- **Relaxation** — พักใจและคืนสมดุล\n\n2) **เชื่อมกับคำถาม**\nคำนี้ชวนให้คุณเริ่มจากการลดสิ่งรบกวน แล้วค่อยเลือกก้าวที่ทำได้จริง\n\n3) **สรุปคำตอบ**\nคำตอบของไพ่คือให้พักอย่างมีสติ ก่อนจัดลำดับสิ่งสำคัญของวันนี้\n\n4) **คำแนะนำถัดไป**\nเลือกเวลาสั้น ๆ เพื่อพักและเริ่มงานทีละอย่าง", reading: { id: "reading-test-1", cards: ["card-001.webp"], messages: [{ role: "user", content: "วันนี้ควรเริ่มจากตรงไหน?" }, { role: "assistant", content: "1) **อ่านคำบนไพ่ที่เกี่ยวข้อง**\n- **Relaxation** — พักใจและคืนสมดุล\n\n2) **เชื่อมกับคำถาม**\nคำนี้ชวนให้คุณเริ่มจากการลดสิ่งรบกวน แล้วค่อยเลือกก้าวที่ทำได้จริง\n\n3) **สรุปคำตอบ**\nคำตอบของไพ่คือให้พักอย่างมีสติ ก่อนจัดลำดับสิ่งสำคัญของวันนี้\n\n4) **คำแนะนำถัดไป**\nเลือกเวลาสั้น ๆ เพื่อพักและเริ่มงานทีละอย่าง" }] } }),
   }));
 
   await page.goto("/ai/");
@@ -108,8 +108,54 @@ test("member AI flow keeps the question, draw, and answer steps obvious", async 
   await expect(page.locator("#draw-button")).toBeEnabled();
   await page.locator("#draw-button").click();
   await expect(page.locator(".tarot-card-card")).toHaveCount(1);
-  await expect(page.locator("#ai-answer")).toContainText("ก้าวเล็ก ๆ", { timeout: 5_000 });
+  await expect(page.locator("#ai-answer")).toContainText("สรุปคำตอบ", { timeout: 5_000 });
+  await expect(page.locator("#ai-answer .answer-section--cards")).toHaveCount(1);
+  await expect(page.locator("#ai-answer .answer-card")).toHaveCount(1);
+  await expect(page.locator("#ai-answer .answer-card")).toContainText("Relaxation");
+  await expect(page.locator("#ai-answer .answer-section[data-answer-key='connection']")).toContainText("เชื่อมโยงกับคำถาม");
+  await expect(page.locator("#ai-answer .answer-section[data-answer-key='summary']")).toContainText("สรุปคำตอบ");
+  await expect(page.locator("#ai-answer")).not.toContainText("**");
   await expect(page.locator("#flow-step-answer")).toHaveClass(/is-complete/);
+});
+
+test("member AI answer separates every card from its interpretation and summary", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  await page.route("**/api/auth/me", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ ok: true, authenticated: true, csrf_token: "test-csrf", backend_configured: true, user: { username: "tester", name: "ผู้ใช้งาน", ai_enabled: true, must_change_password: false } }),
+  }));
+  await page.route("**/api/ai/readings", async (route) => {
+    if (route.request().method() === "POST") {
+      await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true, reading: { id: "reading-test-2", cards: ["card-001.webp", "card-002.webp"], messages: [] } }) });
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, readings: [] }) });
+  });
+  await page.route("**/api/ai/tarot-chat*", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({
+      ok: true,
+      cards: [
+        { file: "card-001.webp", name: "Relaxation", keywords: ["relaxation"] },
+        { file: "card-002.webp", name: "Acceptance", keywords: ["acceptance"] },
+      ],
+      answer: "ไพ่ใบที่ 1 — Relaxation\nความหมายของไพ่: ให้พื้นที่ใจได้พักและคืนสมดุล\nเชื่อมโยงกับคำถาม: เริ่มจากลดสิ่งที่กดดัน แล้วค่อยจัดการเรื่องสำคัญ\nไพ่ใบที่ 2 — Acceptance\nความหมายของไพ่: ยอมรับสิ่งที่เกิดขึ้นโดยไม่ต้องโทษตัวเอง\nเชื่อมโยงกับคำถาม: มองสถานการณ์ตามจริงเพื่อเลือกทางที่เหมาะกับคุณ\nสรุปคำตอบ: คำตอบของไพ่ทั้งสองใบคือพักให้พอ ยอมรับจุดเริ่มต้น และค่อยขยับทีละก้าว\nคำแนะนำถัดไป: เลือกหนึ่งเรื่องที่ทำได้ภายในวันนี้",
+      reading: { id: "reading-test-2", cards: ["card-001.webp", "card-002.webp"], messages: [{ role: "user", content: "ฉันควรเริ่มต้นใหม่อย่างไร?" }] },
+    }),
+  }));
+
+  await page.goto("/ai/");
+  await page.getByLabel("คำถามของคุณ").fill("ฉันควรเริ่มต้นใหม่อย่างไร?");
+  await page.locator('.choice-button[data-count="2"]').click();
+  await page.locator("#draw-button").click();
+  await expect(page.locator("#ai-answer .answer-section--cards .answer-card")).toHaveCount(2, { timeout: 5_000 });
+  await expect(page.locator("#ai-answer .answer-section--card")).toHaveCount(2);
+  await expect(page.locator("#ai-answer .answer-section--card").nth(0)).toContainText("Relaxation");
+  await expect(page.locator("#ai-answer .answer-section--card").nth(1)).toContainText("Acceptance");
+  await expect(page.locator("#ai-answer .answer-section--summary")).toContainText("พักให้พอ");
+  await expect(page.locator("#ai-answer")).not.toContainText("**");
 });
 
 test("guest can keep opening additional rounds until the deck is exhausted", async ({ page }) => {

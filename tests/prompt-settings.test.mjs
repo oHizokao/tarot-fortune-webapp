@@ -41,6 +41,16 @@ test("default tarot prompt explains how to handle follow-up memory", () => {
   assert.match(DEFAULT_TAROT_PROMPT, /ไพ่ชุดเดิม/);
 });
 
+test("tarot instructions require a professional card-by-card answer format", () => {
+  const instructions = composeTarotInstructions("ตอบด้วยน้ำเสียงอบอุ่น");
+
+  assert.match(instructions, /ไพ่ใบที่/);
+  assert.match(instructions, /ความหมายของไพ่/);
+  assert.match(instructions, /เชื่อมโยงกับคำถาม/);
+  assert.match(instructions, /สรุปคำตอบ/);
+  assert.match(instructions, /ห้ามใช้ Markdown/);
+});
+
 test("admin settings can explicitly reset the saved model to the fallback", async () => {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   const source = await fs.readFile(path.join(root, "lib/vercel", "routes", "admin.mjs"), "utf8");

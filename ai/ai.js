@@ -5,7 +5,7 @@ const DECK = Array.from({ length: 78 }, (_, index) => `card-${String(index + 1).
 const STORAGE_KEY = "tarot-daily-ai-reading-v2";
 const MOTION_STORAGE_KEY = "tarot-daily-motion-enabled";
 const MAX_HISTORY = 60;
-const state = { count: 1, drawn: [], openedCards: [], remaining: [], history: [], memory: null, readingId: "", user: null, csrf: "", backend: true, busy: false, requestVersion: 0, failedQuestion: "", failedErrorCode: "", failedRequestId: "", activeQuestion: "" };
+const state = { count: 1, drawn: [], openedCards: [], remaining: [], history: [], memory: null, answerCards: [], readingId: "", user: null, csrf: "", backend: true, busy: false, requestVersion: 0, failedQuestion: "", failedErrorCode: "", failedRequestId: "", activeQuestion: "" };
 const $ = (selector) => document.querySelector(selector);
 const choiceButtons = [...document.querySelectorAll(".choice-button")];
 let drawTimer = null;
@@ -361,6 +361,7 @@ function restoreSavedMemoryAnswer() {
 
 function clearPrivateMemory() {
   state.memory = null;
+  state.answerCards = [];
   state.readingId = "";
   state.activeQuestion = "";
   state.failedQuestion = "";
@@ -393,6 +394,7 @@ function drawCards() {
     state.drawn = nextCards;
     state.openedCards = [...state.openedCards, ...nextCards];
     state.memory = null;
+    state.answerCards = [];
     state.readingId = "";
     if (amount) state.history.unshift({ id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, createdAt: Date.now(), cards: [...nextCards] });
     state.history = state.history.slice(0, MAX_HISTORY);
@@ -431,6 +433,7 @@ function resetCards() {
   state.openedCards = [];
   state.history = [];
   state.memory = null;
+  state.answerCards = [];
   state.readingId = "";
   state.activeQuestion = "";
   state.failedQuestion = "";
@@ -495,6 +498,7 @@ async function loadServerReadingForSpread() {
   const detail = await api(`/api/ai/tarot-chat?reading_id=${encodeURIComponent(match.id)}`);
   state.readingId = detail.reading?.id || "";
   state.memory = detail.reading || null;
+  state.answerCards = normalizeAnswerCards(detail.cards);
   renderMemory();
   restoreSavedMemoryAnswer();
 }
@@ -543,10 +547,225 @@ function syncQuestion() {
   renderFlow();
 }
 
-function renderAnswer(answer) {
+function cleanAnswerLine(value) {
+  return String(value || "")
+    .replace(/\r/g, "")
+    .replace(/^\s*```(?:[a-z]+)?\s*$/i, "")
+    .replace(/^\s{0,3}#{1,6}\s*/, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/__(.*?)__/g, "$1")
+    .replace(/^\s*[-*•>]\s+/, "")
+    .replace(/^\*(.*?)\*$/, "$1")
+    .replace(/\*\*/g, "")
+    .trim();
+}
+
+function withoutAnswerNumber(line) { return line.replace(/^\s*\d+\s*[.)]\s*/, "").trim(); }
+
+function detectAnswerHeading(rawLine) {
+  const line = withoutAnswerNumber(cleanAnswerLine(rawLine));
+  if (!line) return null;
+  const cardMatch = line.match(/^ไพ่\s*(?:ใบที่\s*)?(\d+)\s*[—–:-]\s*(.+)$/i);
+  if (cardMatch) return { key: "card", label: `ไพ่ใบที่ ${cardMatch[1]}`, content: cardMatch[2].trim() };
+  const definitions = [
+    { key: "cards", label: "ไพ่ที่เปิดได้", pattern: /^(?:อ่านคำบนไพ่ที่เกี่ยวข้อง|ไพ่ที่เปิดได้|ไพ่ที่เปิดจริง|คำบนไพ่)(?:\s*[:：-]\s*|\s+)?(.*)$/i },
+    { key: "meaning", label: "ความหมายของไพ่", pattern: /^(?:ความหมายของไพ่|ความหมาย)(?:\s*[:：-]\s*|\s+)?(.*)$/i },
+    { key: "connection", label: "เชื่อมโยงกับคำถาม", pattern: /^(?:เชื่อมโยงกับคำถาม|เชื่อมกับคำถาม|เชื่อมความหมายกับคำถาม)(?:\s*[:：-]\s*|\s+)?(.*)$/i },
+    { key: "summary", label: "สรุปคำตอบ", pattern: /^(?:สรุปคำตอบ|สรุป|ภาพรวม)(?:\s*[:：-]\s*|\s+)?(.*)$/i },
+    { key: "next", label: "คำแนะนำถัดไป", pattern: /^(?:คำแนะนำถัดไป|ก้าวเล็ก ๆ ที่ทำได้|ก้าวเล็กๆที่ทำได้|ก้าวถัดไป|คำแนะนำ)(?:\s*[:：-]\s*|\s+)?(.*)$/i },
+    { key: "reflection", label: "คำถามชวนทบทวน", pattern: /^(?:คำถามชวนทบทวน|คำถามสำหรับทบทวน)(?:\s*[:：-]\s*|\s+)?(.*)$/i },
+    { key: "note", label: "หมายเหตุ", pattern: /^(?:หมายเหตุ|ข้อควรจำ|คำทำนายนี้เป็นการอ่าน)(?:\s*[:：-]\s*|\s+)?(.*)$/i },
+  ];
+  for (const definition of definitions) {
+    const match = line.match(definition.pattern);
+    if (match) return { key: definition.key, label: definition.label, content: String(match[1] || "").trim() };
+  }
+  return null;
+}
+
+function parseAnswerSections(answer) {
+  const sections = [];
+  let current = null;
+  let activeDetail = null;
+  const lines = String(answer || "").split(/\n+/).map(cleanAnswerLine).filter(Boolean);
+  for (const line of lines) {
+    const heading = detectAnswerHeading(line);
+    if (heading) {
+      if (current?.key === "card" && ["meaning", "connection"].includes(heading.key)) {
+        activeDetail = { key: heading.key, label: heading.label, body: [] };
+        current.details.push(activeDetail);
+        if (heading.content) activeDetail.body.push(heading.content);
+        continue;
+      }
+      activeDetail = null;
+      current = heading.key === "card"
+        ? { key: "card", label: heading.label, title: heading.content, body: [], details: [] }
+        : { key: heading.key, label: heading.label, body: [], items: [] };
+      sections.push(current);
+      if (heading.content && heading.key !== "card") current.body.push(heading.content);
+      continue;
+    }
+    if (!current) {
+      current = { key: "overview", label: "คำตอบจากไพ่", body: [], items: [] };
+      sections.push(current);
+    }
+    if (activeDetail) activeDetail.body.push(line);
+    else if (current.key === "cards") current.items.push(line);
+    else current.body.push(line);
+  }
+  return sections;
+}
+
+function normalizeAnswerCards(cards) {
+  if (!Array.isArray(cards)) return [];
+  return cards.filter((card) => card && typeof card === "object").slice(0, 3).map((card) => ({
+    name: String(card.name || card.file || "ไพ่ที่เปิด").trim(),
+    keywords: Array.isArray(card.keywords) ? card.keywords.map((keyword) => String(keyword).trim()).filter(Boolean).slice(0, 4) : [],
+  }));
+}
+
+function createAnswerSectionHeading(section, index) {
+  const heading = document.createElement("div");
+  heading.className = "answer-section-heading";
+  const number = document.createElement("span");
+  number.className = "answer-section-number";
+  number.textContent = String(index).padStart(2, "0");
+  const copy = document.createElement("div");
+  const eyebrow = document.createElement("span");
+  eyebrow.className = "answer-section-eyebrow";
+  eyebrow.textContent = "TAROT READING";
+  const title = document.createElement("h3");
+  title.textContent = section.label;
+  copy.append(eyebrow, title);
+  heading.append(number, copy);
+  return heading;
+}
+
+function appendAnswerCopy(container, lines, className = "answer-copy") {
+  lines.filter(Boolean).forEach((line) => {
+    const paragraph = document.createElement("p");
+    paragraph.className = className;
+    paragraph.textContent = cleanAnswerLine(line);
+    container.append(paragraph);
+  });
+}
+
+function createTextAnswerCard(line, index) {
+  const card = document.createElement("article");
+  card.className = "answer-card answer-card--text";
+  const marker = document.createElement("span");
+  marker.className = "answer-card-marker";
+  marker.textContent = `ใบที่ ${index + 1}`;
+  const copy = document.createElement("div");
+  const parts = line.split(/\s+[—–]\s+|\s+-\s+/);
+  const name = document.createElement("strong");
+  name.className = "answer-card-name";
+  name.textContent = parts.shift()?.trim() || line;
+  copy.append(name);
+  if (parts.length) {
+    const meaning = document.createElement("p");
+    meaning.className = "answer-card-keywords";
+    meaning.textContent = parts.join(" — ").trim();
+    copy.append(meaning);
+  }
+  card.append(marker, copy);
+  return card;
+}
+
+function createMetadataCardsSection(cards, index) {
+  const section = document.createElement("section");
+  section.className = "answer-section answer-section--cards";
+  section.dataset.answerKey = "cards";
+  section.style.setProperty("--answer-delay", `${index * 110}ms`);
+  section.append(createAnswerSectionHeading({ label: "ไพ่ที่เปิดได้" }, index + 1));
+  const list = document.createElement("div");
+  list.className = "answer-card-list";
+  cards.forEach((card, cardIndex) => {
+    const item = document.createElement("article");
+    item.className = "answer-card";
+    item.style.setProperty("--answer-delay", `${(index + cardIndex + 1) * 110}ms`);
+    const marker = document.createElement("span");
+    marker.className = "answer-card-marker";
+    marker.textContent = `ใบที่ ${cardIndex + 1}`;
+    const copy = document.createElement("div");
+    const name = document.createElement("strong");
+    name.className = "answer-card-name";
+    name.textContent = card.name;
+    const keywords = document.createElement("p");
+    keywords.className = "answer-card-keywords";
+    keywords.textContent = card.keywords.length ? `คำบนไพ่: ${card.keywords.join(" · ")}` : "คำบนไพ่จากภาพที่เปิด";
+    copy.append(name, keywords);
+    item.append(marker, copy);
+    list.append(item);
+  });
+  section.append(list);
+  return section;
+}
+
+function createAnswerSection(section, index) {
+  const element = document.createElement("section");
+  element.className = `answer-section answer-section--${section.key}`;
+  element.dataset.answerKey = section.key;
+  element.style.setProperty("--answer-delay", `${index * 110}ms`);
+  if (section.key === "card") {
+    const header = document.createElement("div");
+    header.className = "answer-card-detail-heading";
+    const marker = document.createElement("span");
+    marker.className = "answer-card-marker";
+    marker.textContent = section.label;
+    const name = document.createElement("h3");
+    name.textContent = section.title || "ไพ่ที่เปิดได้";
+    header.append(marker, name);
+    element.append(header);
+    section.details.forEach((detail) => {
+      const detailRow = document.createElement("div");
+      detailRow.className = "answer-detail-row";
+      const label = document.createElement("strong");
+      label.textContent = detail.label;
+      detailRow.append(label);
+      appendAnswerCopy(detailRow, detail.body);
+      element.append(detailRow);
+    });
+    appendAnswerCopy(element, section.body);
+    return element;
+  }
+  element.append(createAnswerSectionHeading(section, index + 1));
+  if (section.key === "cards") {
+    const list = document.createElement("div");
+    list.className = "answer-card-list";
+    section.items.forEach((line, itemIndex) => list.append(createTextAnswerCard(line, itemIndex)));
+    if (section.items.length) element.append(list);
+  }
+  appendAnswerCopy(element, section.key === "cards" ? section.body : section.body);
+  return element;
+}
+
+function renderAnswer(answer, cards = state.answerCards) {
   const box = $("#ai-answer");
+  const metadataCards = normalizeAnswerCards(cards);
+  const sections = parseAnswerSections(answer);
   box.replaceChildren();
-  String(answer).split(/\n{2,}|\n/).map((line) => line.trim()).filter(Boolean).forEach((line, index) => { const paragraph = document.createElement("p"); paragraph.className = "answer-line"; paragraph.style.setProperty("--answer-delay", `${index * 110}ms`); paragraph.textContent = line; box.append(paragraph); });
+  let index = 0;
+  if (metadataCards.length) {
+    box.append(createMetadataCardsSection(metadataCards, index));
+    index += 1;
+  }
+  const parsedCards = sections.find((section) => section.key === "cards");
+  if (metadataCards.length && parsedCards?.items.length) {
+    box.append(createAnswerSection({ key: "card-words", label: "คำที่อ่านจากไพ่", body: parsedCards.items, items: [] }, index));
+    index += 1;
+  }
+  sections.filter((section) => !(metadataCards.length && section.key === "cards")).forEach((section) => {
+    box.append(createAnswerSection(section, index));
+    index += 1;
+  });
+  if (!box.childElementCount) {
+    const fallback = document.createElement("section");
+    fallback.className = "answer-section answer-section--overview";
+    fallback.dataset.answerKey = "overview";
+    appendAnswerCopy(fallback, ["ยังไม่มีข้อความคำตอบจาก AI กรุณาลองถามอีกครั้ง"]);
+    box.append(fallback);
+  }
   setWitchStatus("คำตอบพร้อมแล้ว · ถามต่อจากชุดเดิมได้", "ready");
 }
 
@@ -573,7 +792,8 @@ async function askAi(questionOverride = "") {
     const data = await api(`/api/ai/tarot-chat?reading_id=${encodeURIComponent(state.readingId)}&action=message`, { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ question }) });
     if (version !== state.requestVersion) return;
     state.memory = data.reading || state.memory;
-    renderAnswer(String(data.answer || "").trim());
+    state.answerCards = normalizeAnswerCards(data.cards || state.answerCards);
+    renderAnswer(String(data.answer || "").trim(), state.answerCards);
     renderMemory();
     $("#ai-question").value = "";
     state.failedQuestion = "";
