@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./ai.css?v=20260903-ai-flow-v19" />
+    <link rel="stylesheet" href="./ai.css?v=20260904-ai-flow-v20" />
   </head>
   <body>
     <div class="ai-bg ai-bg--one" aria-hidden="true"></div>
@@ -120,11 +120,11 @@
           <div class="memory-status" id="memory-status" role="status" aria-live="polite"><span class="memory-icon" aria-hidden="true">✦</span><div class="memory-copy"><strong id="memory-title">Memory ของชุดไพ่ยังว่าง</strong><p id="memory-message">หลังถามครั้งแรก AI จะจำบริบทของไพ่ชุดนี้ไว้ให้ถามต่อได้</p></div><button class="memory-action" id="new-reading-button" type="button" disabled>ล้างไพ่ · ถามเรื่องใหม่</button></div>
           <div class="follow-up-composer" id="follow-up-composer">
             <div class="follow-up-heading">
-              <div><p class="panel-kicker">ถามต่อจากไพ่ชุดเดิม</p><p>พิมพ์คำถามต่อไปได้เลย ระบบจะใช้ไพ่ชุดเดิมและจำคำถามก่อนหน้าให้</p></div>
+              <div><p class="panel-kicker">ถามต่อ · จับไพ่ใหม่</p><p>คำถามก่อนหน้าจะถูกจำไว้ แล้วเลือกไพ่ชุดใหม่เพื่อรับคำตอบที่ต่อเนื่อง</p></div>
               <span class="follow-up-number" aria-hidden="true">02</span>
             </div>
             <label class="question-label" for="follow-up-question">คำถามต่อไป</label>
-            <textarea id="follow-up-question" maxlength="2000" rows="3" aria-describedby="request-status" placeholder="เช่น ถ้าเป็นแบบนั้น ฉันควรเริ่มจากตรงไหน?"></textarea>
+            <textarea id="follow-up-question" maxlength="2000" rows="3" aria-describedby="request-status" placeholder="เช่น จากคำตอบนี้ ฉันควรเลือกทางไหนต่อ?"></textarea>
           </div>
           <div class="memory-history" id="memory-history" aria-live="polite" hidden>
             <div class="memory-history-heading"><strong>คำถามในชุดนี้</strong><span id="memory-history-count"></span></div>
@@ -137,6 +137,6 @@
 
       <footer class="ai-footer"><span>✦ TAROT DAILY</span><span>คำทำนายเป็นแนวทาง ไม่ใช่คำตัดสินชีวิต</span><a href="../privacy/">ความเป็นส่วนตัว</a><a href="../terms/">ข้อกำหนด</a><a href="../admin/">สำหรับผู้ดูแล</a></footer>
     </main>
-    <script type="module" src="./ai.js?v=20260903-ai-flow-v19" defer></script>
+    <script type="module" src="./ai.js?v=20260904-ai-flow-v20" defer></script>
   </body>
 </html>

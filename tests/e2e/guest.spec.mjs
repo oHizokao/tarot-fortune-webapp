@@ -135,7 +135,7 @@ test("member AI flow keeps the question, draw, and answer steps obvious", async 
   await expect(page.locator("#flow-step-answer")).toHaveClass(/is-complete/);
 });
 
-test("member can ask a follow-up from the answer screen and see saved question history", async ({ page }) => {
+test("member can ask a follow-up, draw a new spread, and keep the saved conversation", async ({ page }) => {
   await page.addInitScript(() => {
     if (!sessionStorage.getItem("qa-memory-started")) {
       localStorage.clear();
@@ -143,6 +143,8 @@ test("member can ask a follow-up from the answer screen and see saved question h
     }
   });
   let savedCards = [];
+  let activeReading = null;
+  const createBodies = [];
   await page.route("**/api/auth/me", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
@@ -150,30 +152,32 @@ test("member can ask a follow-up from the answer screen and see saved question h
   }));
   await page.route("**/api/ai/readings", async (route) => {
     if (route.request().method() === "POST") {
-      savedCards = (await route.request().postDataJSON()).cards;
-      await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true, reading: { id: "reading-follow-up", cards: savedCards, messages: [] } }) });
+      const body = await route.request().postDataJSON();
+      createBodies.push(body);
+      savedCards = body.cards;
+      activeReading = { id: `reading-follow-up-${createBodies.length}`, cards: savedCards, status: "active", messages: activeReading?.messages || [] };
+      await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true, reading: activeReading }) });
       return;
     }
-    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, readings: [{ id: "reading-follow-up", cards: savedCards, status: "active" }] }) });
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, readings: activeReading ? [activeReading] : [] }) });
   });
   let chatCalls = 0;
-  let savedMessages = [];
+  const postedQuestions = [];
   await page.route("**/api/ai/tarot-chat*", async (route) => {
     if (route.request().method() === "GET") {
-      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, cards: [{ file: "card-001.webp", name: "Relaxation", keywords: ["relaxation"] }], reading: { id: "reading-follow-up", cards: savedCards, messages: savedMessages } }) });
+      const cards = savedCards.map((file, index) => ({ file, name: index ? "Understanding" : "Relaxation", keywords: [index ? "understanding" : "relaxation"] }));
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, cards, reading: activeReading }) });
       return;
     }
     chatCalls += 1;
-    const firstQuestion = "เริ่มจากอะไร?";
-    const followUpQuestion = "แล้วก้าวต่อไปล่ะ?";
-    const answer = chatCalls === 1
-      ? "ไพ่ใบที่ 1 — Relaxation\nความหมายของไพ่: พักเพื่อคืนสมดุล\nคำทำนาย: เริ่มจากลดสิ่งที่กดดันลง\nสรุปคำตอบ: เริ่มจากสิ่งเล็ก ๆ ที่ทำให้ใจเบาลง"
-      : "ไพ่ใบที่ 1 — Relaxation\nความหมายของไพ่: ค่อย ๆ ดูแลพลังของตัวเอง\nคำทำนาย: ก้าวต่อไปคือเลือกหนึ่งเรื่องที่ทำได้วันนี้\nสรุปคำตอบ: เดินต่อด้วยจังหวะที่พอดีกับคุณ";
-    const messages = chatCalls === 1
-      ? [{ role: "user", content: firstQuestion }, { role: "assistant", content: answer }]
-      : [{ role: "user", content: firstQuestion }, { role: "assistant", content: "คำตอบแรก" }, { role: "user", content: followUpQuestion }, { role: "assistant", content: answer }];
-    savedMessages = messages;
-    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, cards: [{ file: "card-001.webp", name: "Relaxation", keywords: ["relaxation"] }], answer, reading: { id: "reading-follow-up", cards: savedCards, messages } }) });
+    const body = await route.request().postDataJSON();
+    postedQuestions.push({ readingId: new URL(route.request().url()).searchParams.get("reading_id"), question: body.question });
+    const cards = savedCards.map((file, index) => ({ file, name: index ? "Understanding" : "Relaxation", keywords: [index ? "understanding" : "relaxation"] }));
+    const answer = cards.map((card, index) => `ไพ่ใบที่ ${index + 1} — ${card.name}\nความหมายของไพ่: อ่านคำบนไพ่ตามบริบท\nคำทำนาย: เชื่อมกับคำถามปัจจุบันโดยตรง`).join("\n") + "\nสรุปคำตอบ: เลือกคำตอบที่ตรงกับเรื่องที่คุณกำลังถามอยู่";
+    const previousMessages = activeReading?.messages || [];
+    const messages = [...previousMessages, { role: "user", content: body.question }, { role: "assistant", content: answer }];
+    activeReading = { ...activeReading, cards: savedCards, messages };
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, cards, answer, reading: activeReading }) });
   });
 
   await page.goto("/ai/");
@@ -185,14 +189,28 @@ test("member can ask a follow-up from the answer screen and see saved question h
   await expect(page.locator("#memory-history")).toContainText("1 คำถาม");
   await page.getByLabel("คำถามต่อไป").fill("แล้วก้าวต่อไปล่ะ?");
   await expect(page.locator("#ask-ai-button")).toBeEnabled();
-  await page.getByRole("button", { name: "ถามต่อจากชุดเดิม" }).click();
+  await page.getByRole("button", { name: /ถามต่อ.*จับไพ่ใหม่/ }).click();
+  expect(chatCalls).toBe(1);
+  await expect(page.locator("#ai-answer")).toBeEmpty();
+  await expect(page.getByLabel("คำถามของคุณ")).toHaveValue("แล้วก้าวต่อไปล่ะ?");
+  await expect(page.locator("#draw-button")).toBeEnabled();
+  await page.locator('.choice-button[data-count="2"]').click();
+  await page.locator("#draw-button").click();
+  await expect(page.locator(".reading-set")).toHaveCount(2);
+  await expect(page.locator(".reading-set").first().locator(".tarot-card-card")).toHaveCount(2);
+  await expect(page.locator("#ai-answer")).toContainText("สรุปคำตอบ", { timeout: 5_000 });
   await expect(page.locator("#memory-history")).toContainText("2 คำถาม", { timeout: 5_000 });
   await expect(page.locator("#memory-history")).toContainText("แล้วก้าวต่อไปล่ะ?");
-  await expect(page.locator("#ai-answer .answer-section--summary")).toContainText("เดินต่อ");
   expect(chatCalls).toBe(2);
+  expect(createBodies).toHaveLength(2);
+  expect(createBodies[1].previous_reading_id).toBe("reading-follow-up-1");
+  expect(createBodies[1].cards).toHaveLength(2);
+  expect(new Set([...createBodies[0].cards, ...createBodies[1].cards]).size).toBe(3);
+  expect(postedQuestions[1]).toEqual({ readingId: "reading-follow-up-2", question: "แล้วก้าวต่อไปล่ะ?" });
   await page.reload();
   await expect(page.locator("#memory-history")).toContainText("2 คำถาม", { timeout: 5_000 });
   await expect(page.locator("#memory-history")).toContainText("แล้วก้าวต่อไปล่ะ?");
+  await expect(page.locator(".reading-set").first().locator(".tarot-card-card")).toHaveCount(2);
 });
 
 test("card count choices are easy to tap on desktop and mobile", async ({ page }) => {

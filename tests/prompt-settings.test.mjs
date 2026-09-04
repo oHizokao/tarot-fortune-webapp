@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { DEFAULT_OPENAI_MODEL, DEFAULT_TAROT_PROMPT, resolveOpenAiModel, resolveTarotPrompt } from "../lib/vercel/settings.mjs";
+import { DEFAULT_OPENAI_MODEL, DEFAULT_TAROT_PROMPT, TAROT_RESPONSE_FORMAT, resolveOpenAiModel, resolveTarotPrompt } from "../lib/vercel/settings.mjs";
 import { composeTarotInstructions } from "../lib/vercel/routes/ai.mjs";
 
 test("tarot settings keep the original prompt when no custom prompt is saved", () => {
@@ -51,6 +51,13 @@ test("tarot instructions require a professional card-by-card answer format", () 
   assert.match(instructions, /สรุปคำตอบ/);
   assert.doesNotMatch(instructions, /คำแนะนำถัดไป:/);
   assert.match(instructions, /ห้ามใช้ Markdown/);
+});
+
+test("tarot instructions keep the current question as the answer anchor", () => {
+  assert.match(DEFAULT_TAROT_PROMPT, /คำถามปัจจุบัน.*แกนหลัก/);
+  assert.match(DEFAULT_TAROT_PROMPT, /ห้ามเปลี่ยนประเด็น/);
+  assert.match(DEFAULT_TAROT_PROMPT, /ตอบคำถามปัจจุบันโดยตรง/);
+  assert.match(TAROT_RESPONSE_FORMAT, /สรุปคำตอบ.*ตอบคำถามปัจจุบันโดยตรง/);
 });
 
 test("admin settings can explicitly reset the saved model to the fallback", async () => {

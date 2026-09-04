@@ -4,7 +4,7 @@ import { groupReadingHistory } from "./reading-sets.mjs";
 const DECK = Array.from({ length: 78 }, (_, index) => `card-${String(index + 1).padStart(3, "0")}.webp`);
 const STORAGE_KEY = "tarot-daily-ai-reading-v2";
 const MAX_HISTORY = 60;
-const state = { count: 1, drawn: [], openedCards: [], remaining: [], history: [], memory: null, answerCards: [], readingId: "", user: null, csrf: "", backend: true, busy: false, requestVersion: 0, failedQuestion: "", failedErrorCode: "", failedRequestId: "", activeQuestion: "" };
+const state = { count: 1, drawn: [], openedCards: [], remaining: [], history: [], memory: null, answerCards: [], readingId: "", previousReadingId: "", pendingFollowUpQuestion: "", user: null, csrf: "", backend: true, busy: false, requestVersion: 0, failedQuestion: "", failedErrorCode: "", failedRequestId: "", activeQuestion: "" };
 const $ = (selector) => document.querySelector(selector);
 const choiceButtons = [...document.querySelectorAll(".choice-button")];
 let drawTimer = null;
@@ -86,7 +86,7 @@ function setReaderMode(user) {
       primary: "ให้แม่มดช่วยอ่าน",
       secondary: "สิ่งที่ไพ่อยากบอก",
       description: "พิมพ์เรื่องที่อยู่ในใจ เลือกจำนวนไพ่ แล้วดูการเปิดไพ่ทีละใบ ก่อนรับคำสะท้อนที่เชื่อมจากคำบนไพ่กับคำถามของคุณ",
-      spread: "เลือกตามความรู้สึกในตอนนี้ แล้วแม่มดจะเปิดไพ่ให้ทีละใบ",
+      spread: "เลือก 1, 2 หรือ 3 ใบ แล้วแม่มดจะเปิดไพ่ชุดใหม่ให้ทีละใบ",
       cards: "แม่มดกำลังเปิดไพ่",
       seal: "ASK\nGENTLY",
     }
@@ -165,15 +165,17 @@ function renderProgress() {
   $("#deck-message").textContent = empty
     ? "เปิดครบทั้ง 78 ใบแล้ว กดล้างไพ่เพื่อเริ่มรอบใหม่"
     : hasSpread
-      ? isMemberMode() ? aiMode ? `เปิดแล้ว ${opened} ใบ · ถามต่อจากชุดนี้ได้ หรือกดล้างไพ่เพื่อเริ่มเรื่องใหม่` : `เปิดแล้ว ${opened} ใบ · อ่านความหมายจากไพ่ชุดนี้ได้เลย` : `เปิดแล้ว ${opened} ใบ · เปิดต่อได้เลย ไพ่จะไม่ซ้ำกัน`
+      ? isMemberMode() ? aiMode ? hasAnswer() ? `เปิดแล้ว ${opened} ใบ · ถามต่อเพื่อจับไพ่ชุดใหม่ได้` : `เปิดแล้ว ${opened} ใบ · รอคำตอบจากไพ่ชุดนี้` : `เปิดแล้ว ${opened} ใบ · อ่านความหมายจากไพ่ชุดนี้ได้เลย` : `เปิดแล้ว ${opened} ใบ · เปิดต่อได้เลย ไพ่จะไม่ซ้ำกัน`
       : aiMode
         ? questionReady
-          ? `คำถามพร้อมแล้ว · กดเปิดไพ่เพื่อเริ่มอ่าน (เหลือ ${state.remaining.length} ใบ)`
+          ? state.pendingFollowUpQuestion
+            ? `คำถามต่อไปพร้อมแล้ว · เลือกจำนวนไพ่ แล้วกดเปิดไพ่ (เหลือ ${state.remaining.length} ใบ)`
+            : `คำถามพร้อมแล้ว · กดเปิดไพ่เพื่อเริ่มอ่าน (เหลือ ${state.remaining.length} ใบ)`
           : "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงกดเปิดไพ่"
         : `พร้อมเปิดไพ่ · เหลือ ${state.remaining.length} ใบในสำรับนี้`;
   if (empty) setWitchStatus("เปิดครบทั้งสำรับแล้ว · เริ่มใหม่ได้เลย");
   else if (hasSpread && state.busy) setWitchStatus("แม่มดกำลังอ่านไพ่...", "reading");
-  else if (hasSpread && hasAnswer()) setWitchStatus("คำตอบพร้อมแล้ว · ถามต่อได้", "ready");
+  else if (hasSpread && hasAnswer()) setWitchStatus("คำตอบพร้อมแล้ว · ถามต่อด้วยไพ่ชุดใหม่ได้", "ready");
   else if (hasSpread) setWitchStatus(isMemberMode() && aiMode ? "ไพ่เปิดแล้ว · รอคำตอบ" : !isMemberMode() ? "ไพ่เปิดแล้ว · เปิดต่อได้เลย" : "ไพ่เปิดแล้ว · อ่านได้เลย");
   else if (aiMode && questionReady) setWitchStatus("คำถามพร้อมแล้ว · กดเปิดไพ่");
   else if (aiMode) setWitchStatus("รอคำถามของคุณ");
@@ -310,8 +312,8 @@ function renderMemory() {
     message.textContent = state.user?.ai_enabled ? "ถามครั้งแรกแล้วระบบจะจำบริบทไว้บนบัญชีของคุณ เพื่อถามต่อจากไพ่ชุดเดิมได้" : "เมื่อเข้าใช้งานและได้รับสิทธิ์ AI แล้ว ระบบจะจำบริบทไว้บนบัญชีของคุณ";
   } else {
     const firstQuestion = String(messages.find((item) => item.role === "user")?.content || "").slice(0, 90);
-    title.textContent = "Memory พร้อม · ถามต่อจากคำถามเดิมได้";
-    message.textContent = `คำถามตั้งต้น: “${firstQuestion}${firstQuestion.length >= 90 ? "…" : ""}” · ถ้าเป็นเรื่องใหม่ให้กดล้างไพ่`;
+    title.textContent = "Memory พร้อม · ถามต่อด้วยไพ่ชุดใหม่ได้";
+    message.textContent = `คำถามตั้งต้น: “${firstQuestion}${firstQuestion.length >= 90 ? "…" : ""}” · ระบบจะใช้เป็นบริบท แต่ตอบคำถามปัจจุบันเป็นหลัก`;
   }
   renderFlow();
 }
@@ -342,6 +344,8 @@ function clearPrivateMemory() {
   state.memory = null;
   state.answerCards = [];
   state.readingId = "";
+  state.previousReadingId = "";
+  state.pendingFollowUpQuestion = "";
   state.activeQuestion = "";
   state.failedQuestion = "";
   state.failedErrorCode = "";
@@ -374,7 +378,7 @@ function drawCards() {
     const nextCards = state.remaining.splice(0, amount);
     state.drawn = nextCards;
     state.openedCards = [...state.openedCards, ...nextCards];
-    state.memory = null;
+    if (!state.previousReadingId) state.memory = null;
     state.answerCards = [];
     state.readingId = "";
     if (amount) state.history.unshift({ id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, createdAt: Date.now(), cards: [...nextCards] });
@@ -397,8 +401,43 @@ function drawCards() {
 }
 
 async function closeServerReading() {
-  if (!state.readingId || !state.user?.ai_enabled) return;
-  try { await api(`/api/ai/tarot-chat?reading_id=${encodeURIComponent(state.readingId)}&action=close`, { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: "{}" }); } catch { /* local reset must remain usable if the network is unavailable */ }
+  if (!state.user?.ai_enabled) return;
+  const readingIds = [...new Set([state.readingId, state.previousReadingId].map((id) => String(id || "").trim()).filter(Boolean))];
+  for (const readingId of readingIds) {
+    try { await api(`/api/ai/tarot-chat?reading_id=${encodeURIComponent(readingId)}&action=close`, { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: "{}" }); } catch { /* local reset must remain usable if the network is unavailable */ }
+  }
+}
+
+function startFollowUp() {
+  const field = $("#follow-up-question");
+  const question = String(field?.value || "").trim();
+  if (!question || state.busy) {
+    field?.focus();
+    return syncQuestion();
+  }
+  if (!state.remaining.length) {
+    $("#request-status").textContent = "สำรับหมดแล้ว · กดล้างไพ่เพื่อเริ่มชุดใหม่";
+    return;
+  }
+  state.pendingFollowUpQuestion = question;
+  state.previousReadingId = state.readingId;
+  state.readingId = "";
+  state.requestVersion += 1;
+  state.drawn = [];
+  state.answerCards = [];
+  state.activeQuestion = question;
+  state.failedQuestion = "";
+  state.failedErrorCode = "";
+  state.failedRequestId = "";
+  clearAnswer();
+  $("#ai-question").value = question;
+  if (field) field.value = "";
+  saveState();
+  renderProgress();
+  renderCards();
+  renderMemory();
+  syncQuestion();
+  requestAnimationFrame(() => $("#spread-title")?.scrollIntoView?.({ behavior: "smooth", block: "center" }));
 }
 
 function resetCards() {
@@ -416,6 +455,8 @@ function resetCards() {
   state.memory = null;
   state.answerCards = [];
   state.readingId = "";
+  state.previousReadingId = "";
+  state.pendingFollowUpQuestion = "";
   state.activeQuestion = "";
   state.failedQuestion = "";
   state.failedErrorCode = "";
@@ -479,6 +520,8 @@ async function loadServerReadingForSpread() {
   if (!match) return;
   const detail = await api(`/api/ai/tarot-chat?reading_id=${encodeURIComponent(match.id)}`);
   state.readingId = detail.reading?.id || "";
+  state.previousReadingId = "";
+  state.pendingFollowUpQuestion = "";
   state.memory = detail.reading || null;
   state.answerCards = normalizeAnswerCards(detail.cards);
   renderMemory();
@@ -507,12 +550,12 @@ function syncQuestion() {
   const aiMode = hasAiAccess();
   const button = $("#ask-ai-button");
   button.disabled = state.busy || !aiMode || !spreadReady || !questionReady;
-  button.querySelector("span")?.replaceChildren(document.createTextNode(answered ? "ถามต่อจากชุดเดิม" : "รับคำตอบจาก AI"));
+  button.querySelector("span")?.replaceChildren(document.createTextNode(answered ? "ถามต่อ · จับไพ่ใหม่" : "รับคำตอบจาก AI"));
   if (!aiMode) {
     if (state.user && !state.user.ai_enabled) $("#request-status").textContent = "บัญชีนี้ยังไม่ได้รับสิทธิ์ AI จากผู้ดูแล · เปิดไพ่ดูเองได้เลย";
     else if (state.user?.must_change_password) $("#request-status").textContent = "เปลี่ยนรหัสผ่านก่อนจึงจะถาม AI ได้ · เปิดไพ่ดูเองได้เลย";
     else $("#request-status").textContent = "โหมดเปิดไพ่ฟรี · เข้าใช้งานเพื่อพิมพ์คำถามถาม AI";
-  } else if (!questionReady && answered) $("#request-status").textContent = "คำตอบพร้อมแล้ว · พิมพ์คำถามต่อได้เลย";
+  } else if (!questionReady && answered) $("#request-status").textContent = "คำตอบพร้อมแล้ว · พิมพ์คำถามต่อ แล้วเลือกไพ่ชุดใหม่";
   else if (!questionReady && !spreadReady) $("#request-status").textContent = "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงกดเปิดไพ่";
   else if (!spreadReady) $("#request-status").textContent = "คำถามพร้อมแล้ว · กดเปิดไพ่เพื่อเริ่มอ่าน";
   else if (!state.user) $("#request-status").textContent = "เปิดไพ่แล้ว · เข้าใช้งานเพื่อรับคำตอบจาก AI";
@@ -524,7 +567,7 @@ function syncQuestion() {
       ? messageForError(state.failedErrorCode, state.failedRequestId)
       : questionReady ? "กำลังเตรียมคำตอบจากคำบนไพ่..." : "พิมพ์คำถามเพื่อรับคำตอบ";
   }
-  else if (!state.busy && answered && questionReady) $("#request-status").textContent = "พร้อมถามต่อจากไพ่ชุดเดิม";
+  else if (!state.busy && answered && questionReady) $("#request-status").textContent = "พร้อมถามต่อ · กดเพื่อเลือกไพ่ชุดใหม่";
   renderProgress();
   renderFlow();
 }
@@ -748,14 +791,18 @@ function renderAnswer(answer, cards = state.answerCards) {
     appendAnswerCopy(fallback, ["ยังไม่มีข้อความคำตอบจาก AI กรุณาลองถามอีกครั้ง"]);
     box.append(fallback);
   }
-  setWitchStatus("คำตอบพร้อมแล้ว · ถามต่อจากชุดเดิมได้", "ready");
+  setWitchStatus("คำตอบพร้อมแล้ว · ถามต่อด้วยไพ่ชุดใหม่ได้", "ready");
 }
 
 async function ensureReading() {
   if (state.readingId) return;
-  const data = await api("/api/ai/readings", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ cards: state.drawn, title: "คำถามจากชุดไพ่" }) });
+  const payload = { cards: state.drawn, title: state.previousReadingId ? "คำถามต่อ · ไพ่ชุดใหม่" : "คำถามจากชุดไพ่" };
+  if (state.previousReadingId) payload.previous_reading_id = state.previousReadingId;
+  const data = await api("/api/ai/readings", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify(payload) });
   state.readingId = data.reading?.id || "";
   state.memory = data.reading || null;
+  state.previousReadingId = "";
+  state.pendingFollowUpQuestion = "";
   if (!state.readingId) throw new Error("สร้างชุดไพ่สำหรับ Memory ไม่สำเร็จ");
 }
 
@@ -805,7 +852,8 @@ function handleQuestionInput(event) {
 }
 $("#ai-question").addEventListener("input", handleQuestionInput);
 $("#follow-up-question").addEventListener("input", handleQuestionInput);
-$("#ask-ai-button").addEventListener("click", () => askAi());
+function handleAskAction() { if (hasAnswer()) startFollowUp(); else void askAi(); }
+$("#ask-ai-button").addEventListener("click", handleAskAction);
 $("#retry-ai-button").addEventListener("click", () => askAi());
 $("#account-action").addEventListener("click", async (event) => {
   if (!state.user) return;

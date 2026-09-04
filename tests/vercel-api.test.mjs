@@ -65,3 +65,15 @@ test("AI input keeps the original reading context alongside the latest follow-up
   assert.match(input, /USER: คำถามต่อเนื่องล่าสุด/);
   assert.match(input, /ASSISTANT: คำตอบล่าสุด/);
 });
+
+test("AI input makes the latest question the highest-priority answer anchor", async () => {
+  const { buildTarotInput: buildInput } = await import("../lib/vercel/routes/ai.mjs");
+  const input = buildInput("เย็นนี้ควรจัดการงานค้างอย่างไร", [{ file: "card-078.webp", name: "Worry", keywords: ["worry"] }], [
+    { role: "user", content: "คำถามเก่า" },
+    { role: "assistant", content: "คำตอบเก่า" },
+  ]);
+
+  assert.match(input, /คำถามปัจจุบัน.*ต้องตอบตรงประเด็น/);
+  assert.match(input, /ห้ามเปลี่ยนไปตอบคำถามเก่า/);
+  assert.match(input, /เย็นนี้ควรจัดการงานค้างอย่างไร/);
+});

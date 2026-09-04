@@ -3018,3 +3018,135 @@ body {
     padding-left: 12px;
   }
 }
+
+/* v20: make the spread choice the easiest, most visible action on every screen. */
+.ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage .choice-row {
+  width: min(100%, 1040px);
+  gap: clamp(16px, 2vw, 24px);
+  margin-top: 32px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage .choice-button {
+  min-height: 160px;
+  padding: 24px 26px;
+  align-content: center;
+  gap: 8px;
+  border-radius: 26px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage .choice-button b {
+  font-size: clamp(38px, 3.8vw, 52px);
+  line-height: 1;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage .choice-button span {
+  font-size: 17px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage .choice-button small {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage .choice-button:focus-visible {
+  outline: 3px solid rgba(144, 211, 255, .8);
+  outline-offset: 4px;
+}
+
+@media (max-width: 650px) {
+  .ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage .choice-row {
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage .choice-button {
+    min-height: 108px;
+    padding: 16px 18px;
+    grid-template-columns: 76px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 16px;
+    border-radius: 22px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage .choice-button b {
+    font-size: 42px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage .choice-button span {
+    font-size: 16px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage .choice-button small {
+    font-size: 12px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .spread-actions {
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .draw-button,
+  .ai-reading-stage.ai-reading-stage--sequential .reset-button {
+    width: 100%;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .draw-button {
+    min-height: 58px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .reset-button {
+    min-height: 44px;
+  }
+
+  .ai-answer-stage .memory-status {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+  }
+
+  .ai-answer-stage .memory-status .memory-action {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .follow-up-heading {
+    gap: 10px;
+  }
+
+  .follow-up-heading .panel-kicker {
+    font-size: 12px;
+  }
+
+  .follow-up-composer textarea {
+    min-height: 128px;
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  .ai-answer-stage .memory-history {
+    padding: 15px 14px;
+  }
+
+  .memory-history-list {
+    max-height: 240px;
+    padding-left: 24px;
+    font-size: 13px;
+  }
+
+  .ai-answer-stage .answer-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .ai-answer-stage .ask-button,
+  .ai-answer-stage .retry-button {
+    width: 100%;
+    min-height: 56px;
+  }
+}
