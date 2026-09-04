@@ -16,7 +16,8 @@ test("approved member asks a follow-up in the same reading", async ({ page }) =>
   await expect(page.locator("#draw-button")).toBeEnabled();
   await page.locator("#draw-button").click();
   await expect(page.locator("#ai-answer")).not.toBeEmpty({ timeout: 30_000 });
-  await page.getByLabel("คำถามของคุณ").fill("แล้วก้าวเล็กที่สุดคืออะไร?");
+  await page.getByLabel("คำถามต่อไป").fill("แล้วก้าวเล็กที่สุดคืออะไร?");
   await page.getByRole("button", { name: /ถามต่อ/ }).click();
   await expect(page.locator("#memory-title")).toContainText("ถามต่อ", { timeout: 30_000 });
+  await expect(page.locator("#memory-history")).toContainText("แล้วก้าวเล็กที่สุดคืออะไร?", { timeout: 30_000 });
 });

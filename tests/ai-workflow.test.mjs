@@ -31,7 +31,9 @@ test("AI reader presents and enforces question → draw → answer workflow", as
   assert.match(html, /id="flow-step-draw"/);
   assert.match(html, /id="flow-step-answer"/);
   assert.match(html, /พิมพ์คำถามก่อน/);
-  assert.match(script, /function hasQuestion\(\)\s*\{\s*return \$\("#ai-question"\)\.value\.trim\(\)\.length > 0/);
+  assert.match(html, /id="follow-up-question"/);
+  assert.match(script, /function currentQuestionField\(\)/);
+  assert.match(script, /function hasQuestion\(\)\s*\{\s*return currentQuestionValue\(\)\.length > 0/);
   assert.match(script, /function hasAiAccess\(\)/);
   assert.match(script, /if \(hasAiAccess\(\) && !question\)/);
   assert.match(script, /if \(hasAiAccess\(\) && question\)/);

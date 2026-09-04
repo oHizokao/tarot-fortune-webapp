@@ -13,6 +13,8 @@ test("AI reader exposes the active reading Memory and a clear new-reading action
   assert.match(html, /id="memory-status"/);
   assert.match(html, /id="memory-title"/);
   assert.match(html, /id="new-reading-button"/);
+  assert.match(html, /id="follow-up-question"/);
+  assert.match(html, /id="memory-history"/);
   assert.match(script, /\/api\/ai\/readings/);
 });
 
@@ -25,6 +27,8 @@ test("AI reader uses server Memory for the same spread and clears it on a new re
   assert.doesNotMatch(script, /JSON\.stringify\(\{[^}]*memory/);
   assert.match(script, /new-reading-button/);
   assert.match(script, /\$\("#ai-question"\)\.value = ""/);
+  assert.match(script, /function currentQuestionField\(\)/);
+  assert.match(script, /function renderMemoryHistory\(/);
 });
 
 test("server AI Memory is restored only for an authenticated member and is cleared on logout", () => {

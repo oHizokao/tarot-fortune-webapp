@@ -58,9 +58,13 @@ function initMotion() {
   try { localStorage.removeItem("tarot-daily-motion-enabled"); } catch { /* private browsing can disable storage */ }
 }
 
-function hasQuestion() { return $("#ai-question").value.trim().length > 0; }
-
 function hasAnswer() { return Boolean($("#ai-answer")?.childElementCount); }
+
+function currentQuestionField() { return hasAnswer() ? $("#follow-up-question") : $("#ai-question"); }
+
+function currentQuestionValue() { return String(currentQuestionField()?.value || "").trim(); }
+
+function hasQuestion() { return currentQuestionValue().length > 0; }
 
 function hasAiAccess() { return Boolean(state.user?.ai_enabled && !state.user?.must_change_password); }
 
@@ -293,6 +297,7 @@ function renderMemory() {
   const status = $("#memory-status");
   if (!title || !message || !action || !status) return;
   const messages = memoryMessages();
+  renderMemoryHistory(messages);
   const turns = Math.floor(messages.filter((item) => item.role === "assistant").length);
   const hasSpread = activeCards().length > 0;
   action.disabled = !hasSpread || state.busy;
@@ -311,6 +316,21 @@ function renderMemory() {
   renderFlow();
 }
 
+function renderMemoryHistory(messages = memoryMessages()) {
+  const history = $("#memory-history");
+  const list = $("#memory-history-list");
+  const count = $("#memory-history-count");
+  if (!history || !list || !count) return;
+  const questions = messages.filter((item) => item?.role === "user" && String(item.content || "").trim());
+  list.replaceChildren(...questions.map((item) => {
+    const entry = document.createElement("li");
+    entry.textContent = String(item.content).trim();
+    return entry;
+  }));
+  history.hidden = questions.length === 0;
+  count.textContent = questions.length ? `${questions.length} คำถาม` : "";
+}
+
 function clearAnswer() { $("#ai-answer").replaceChildren(); }
 
 function restoreSavedMemoryAnswer() {
@@ -327,6 +347,8 @@ function clearPrivateMemory() {
   state.failedErrorCode = "";
   state.failedRequestId = "";
   clearAnswer();
+  $("#ai-question").value = "";
+  $("#follow-up-question").value = "";
   renderMemory();
 }
 
@@ -400,6 +422,7 @@ function resetCards() {
   state.failedRequestId = "";
   state.busy = false;
   $("#ai-question").value = "";
+  $("#follow-up-question").value = "";
   clearAnswer();
   saveState();
   renderProgress();
@@ -477,7 +500,7 @@ async function loadSession() {
 }
 
 function syncQuestion() {
-  const question = $("#ai-question").value.trim();
+  const question = currentQuestionValue();
   const questionReady = hasQuestion();
   const spreadReady = state.drawn.length > 0;
   const answered = hasAnswer();
@@ -489,7 +512,7 @@ function syncQuestion() {
     if (state.user && !state.user.ai_enabled) $("#request-status").textContent = "บัญชีนี้ยังไม่ได้รับสิทธิ์ AI จากผู้ดูแล · เปิดไพ่ดูเองได้เลย";
     else if (state.user?.must_change_password) $("#request-status").textContent = "เปลี่ยนรหัสผ่านก่อนจึงจะถาม AI ได้ · เปิดไพ่ดูเองได้เลย";
     else $("#request-status").textContent = "โหมดเปิดไพ่ฟรี · เข้าใช้งานเพื่อพิมพ์คำถามถาม AI";
-  } else if (!questionReady && answered) $("#request-status").textContent = "คำตอบพร้อมแล้ว · พิมพ์คำถามต่อเพื่ออ้างอิงไพ่ชุดเดิม";
+  } else if (!questionReady && answered) $("#request-status").textContent = "คำตอบพร้อมแล้ว · พิมพ์คำถามต่อได้เลย";
   else if (!questionReady && !spreadReady) $("#request-status").textContent = "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงกดเปิดไพ่";
   else if (!spreadReady) $("#request-status").textContent = "คำถามพร้อมแล้ว · กดเปิดไพ่เพื่อเริ่มอ่าน";
   else if (!state.user) $("#request-status").textContent = "เปิดไพ่แล้ว · เข้าใช้งานเพื่อรับคำตอบจาก AI";
@@ -501,7 +524,7 @@ function syncQuestion() {
       ? messageForError(state.failedErrorCode, state.failedRequestId)
       : questionReady ? "กำลังเตรียมคำตอบจากคำบนไพ่..." : "พิมพ์คำถามเพื่อรับคำตอบ";
   }
-  else if (!state.busy && answered && questionReady) $("#request-status").textContent = "คำถามนี้จะเชื่อมกับ Memory ของไพ่ชุดเดิม";
+  else if (!state.busy && answered && questionReady) $("#request-status").textContent = "พร้อมถามต่อจากไพ่ชุดเดิม";
   renderProgress();
   renderFlow();
 }
@@ -702,7 +725,7 @@ function createAnswerSection(section, index) {
 function renderAnswer(answer, cards = state.answerCards) {
   const box = $("#ai-answer");
   const metadataCards = normalizeAnswerCards(cards);
-  const sections = parseAnswerSections(answer).filter((section) => section.key !== "next");
+  const sections = parseAnswerSections(answer).filter((section) => !["next", "reflection"].includes(section.key));
   box.replaceChildren();
   let index = 0;
   if (metadataCards.length) {
@@ -738,7 +761,8 @@ async function ensureReading() {
 
 async function askAi(questionOverride = "") {
   if (!state.user?.ai_enabled || state.user.must_change_password || !state.drawn.length) return syncQuestion();
-  const question = String(questionOverride || $("#ai-question").value.trim() || state.failedQuestion).trim();
+  const questionField = currentQuestionField();
+  const question = String(questionOverride || questionField?.value || state.failedQuestion).trim();
   if (!question || state.busy) return syncQuestion();
   const version = ++state.requestVersion;
   state.busy = true;
@@ -754,7 +778,7 @@ async function askAi(questionOverride = "") {
     state.answerCards = normalizeAnswerCards(data.cards || state.answerCards);
     renderAnswer(String(data.answer || "").trim(), state.answerCards);
     renderMemory();
-    $("#ai-question").value = "";
+    if (questionField) questionField.value = "";
     state.failedQuestion = "";
     state.failedErrorCode = "";
     state.failedRequestId = "";
@@ -771,14 +795,16 @@ $("#draw-button").addEventListener("click", drawCards);
 $("#reset-button").addEventListener("click", resetCards);
 $("#new-reading-button").addEventListener("click", resetCards);
 choiceButtons.forEach((button) => button.addEventListener("click", () => setCount(Number(button.dataset.count))));
-$("#ai-question").addEventListener("input", () => {
-  if ($("#ai-question").value.trim() !== state.failedQuestion) {
+function handleQuestionInput(event) {
+  if (String(event.currentTarget?.value || "").trim() !== state.failedQuestion) {
     state.failedQuestion = "";
     state.failedErrorCode = "";
     state.failedRequestId = "";
   }
   syncQuestion();
-});
+}
+$("#ai-question").addEventListener("input", handleQuestionInput);
+$("#follow-up-question").addEventListener("input", handleQuestionInput);
 $("#ask-ai-button").addEventListener("click", () => askAi());
 $("#retry-ai-button").addEventListener("click", () => askAi());
 $("#account-action").addEventListener("click", async (event) => {
