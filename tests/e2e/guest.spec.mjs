@@ -127,6 +127,8 @@ test("member AI flow keeps the question, draw, and answer steps obvious", async 
   await expect(page.locator("#ai-answer .answer-section[data-answer-key='connection']")).toContainText("คำทำนาย");
   await expect(page.locator("#ai-answer .answer-section[data-answer-key='connection']")).not.toContainText("เชื่อมโยงกับคำถาม");
   await expect(page.locator("#ai-answer .answer-section[data-answer-key='summary']")).toContainText("สรุปคำตอบ");
+  await expect(page.locator("#ai-answer .answer-section--next")).toHaveCount(0);
+  await expect(page.locator("#ai-answer")).not.toContainText("คำแนะนำถัดไป");
   await expect(page.locator("#ai-answer")).not.toContainText("**");
   await expect(page.locator("#flow-step-answer")).toHaveClass(/is-complete/);
 });
@@ -168,6 +170,8 @@ test("member AI answer separates every card from its interpretation and summary"
   await expect(page.locator("#ai-answer .answer-section--card").nth(0)).toContainText("Relaxation");
   await expect(page.locator("#ai-answer .answer-section--card").nth(1)).toContainText("Acceptance");
   await expect(page.locator("#ai-answer .answer-section--summary")).toContainText("พักให้พอ");
+  await expect(page.locator("#ai-answer .answer-section--next")).toHaveCount(0);
+  await expect(page.locator("#ai-answer")).not.toContainText("คำแนะนำถัดไป");
   await expect(page.locator("#ai-answer")).not.toContainText("**");
 });
 

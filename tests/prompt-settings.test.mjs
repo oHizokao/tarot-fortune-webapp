@@ -49,6 +49,7 @@ test("tarot instructions require a professional card-by-card answer format", () 
   assert.match(instructions, /คำทำนาย/);
   assert.doesNotMatch(instructions, /เชื่อมโยงกับคำถาม:/);
   assert.match(instructions, /สรุปคำตอบ/);
+  assert.doesNotMatch(instructions, /คำแนะนำถัดไป:/);
   assert.match(instructions, /ห้ามใช้ Markdown/);
 });
 

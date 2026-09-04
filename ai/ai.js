@@ -702,7 +702,7 @@ function createAnswerSection(section, index) {
 function renderAnswer(answer, cards = state.answerCards) {
   const box = $("#ai-answer");
   const metadataCards = normalizeAnswerCards(cards);
-  const sections = parseAnswerSections(answer);
+  const sections = parseAnswerSections(answer).filter((section) => section.key !== "next");
   box.replaceChildren();
   let index = 0;
   if (metadataCards.length) {
