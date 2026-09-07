@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { redactReadiness } from "../lib/vercel/readiness.mjs";
+import { REQUIRED_SCHEMA_VERSION, redactReadiness } from "../lib/vercel/readiness.mjs";
+
+test("readiness requires the continuous deck migration", () => {
+  assert.equal(REQUIRED_SCHEMA_VERSION, 2);
+});
 
 test("public readiness never exposes secret values", () => {
   const result = redactReadiness({

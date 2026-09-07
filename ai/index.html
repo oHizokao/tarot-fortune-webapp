@@ -6,12 +6,12 @@
     <meta name="theme-color" content="#100c2d" />
     <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
     <link rel="preload" as="image" href="../assets/witch/witch-reader.webp" />
-    <meta name="description" content="ห้องถามไพ่แม่มด AI ที่อ่านจากคำบนไพ่และสรุปคำทำนายอย่างอ่อนโยน" />
+    <meta name="description" content="ห้องถามไพ่ AI ที่อ่านจากคำบนไพ่และตอบคำถามอย่างชัดเจน" />
     <title>Tarot Daily — ถามแม่มด AI</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./ai.css?v=20260904-ai-flow-v20" />
+    <link rel="stylesheet" href="./ai.css?v=20260904-ai-flow-v22" />
   </head>
   <body>
     <div class="ai-bg ai-bg--one" aria-hidden="true"></div>
@@ -45,7 +45,7 @@
           <h2>เปิดไพ่ได้เลย</h2>
           <p>เลือก 1, 2 หรือ 3 ใบ แล้วกด “เปิดไพ่” เพื่ออ่านภาพและคำบนไพ่ด้วยตัวเอง</p>
         </div>
-        <a class="guest-mode-banner__action" href="../login/?next=/ai/">เข้าใช้งานเพื่อถาม AI <span aria-hidden="true">→</span></a>
+        <a class="guest-mode-banner__action" href="../login/?next=/ai/">เข้าใช้งานเพื่อถามไพ่ AI <span aria-hidden="true">→</span></a>
       </section>
 
       <section class="ai-reading-stage ai-reading-stage--sequential" data-reader-order="question spread reveal answer" aria-label="ขั้นตอนถามแม่มด AI">
@@ -58,7 +58,7 @@
 
         <section class="ai-question-stage panel question-panel member-only" id="question-stage" aria-label="ขั้นที่ 1 พิมพ์คำถาม" hidden>
           <div class="stage-heading">
-            <div><p class="panel-kicker">01 / YOUR QUESTION</p><h2 id="question-title">เริ่มจากคำถามของคุณ</h2><p>พิมพ์ให้เป็นภาษาของคุณเอง ยิ่งชัดเจนยิ่งช่วยให้การสะท้อนตรงกับสิ่งที่กำลังคิด</p></div>
+            <div><p class="panel-kicker" id="question-kicker">01 / YOUR QUESTION</p><h2 id="question-title">พิมพ์คำถามของคุณ</h2><p id="question-description">เขียนเรื่องที่ต้องการถามให้ชัดเจน คำถามนี้จะเป็นแกนหลักของคำทำนาย</p></div>
             <span class="stage-number" aria-hidden="true">01</span>
           </div>
           <div class="account-callout" id="account-callout">
@@ -66,9 +66,9 @@
             <div><strong id="account-title">พิมพ์คำถามได้เลย</strong><p id="account-message">คุณเปิดไพ่ได้ฟรีโดยไม่ต้องล็อกอิน เมื่ออยากรับคำตอบจาก AI ให้เข้าใช้งานก่อนส่งคำถาม</p></div>
             <a class="small-action" id="account-action" href="../login/?next=/ai/">เข้าใช้งาน</a>
           </div>
-          <label class="question-label" for="ai-question">คำถามของคุณ</label>
+          <label class="question-label" id="question-label" for="ai-question">คำถามของคุณ</label>
           <textarea id="ai-question" maxlength="2000" rows="4" required aria-describedby="request-status" placeholder="เช่น ตอนนี้ฉันควรเริ่มจัดการความกังวลเรื่องงานจากตรงไหนดี?"></textarea>
-          <p class="question-hint">ไม่ต้องถามเรื่องอนาคตแบบตายตัว ลองถามเพื่อมองเห็นทางเลือกและก้าวถัดไปของคุณ</p>
+          <p class="question-hint" id="question-hint">ยิ่งระบุเรื่องที่อยากรู้ชัด คำทำนายจากไพ่ก็จะตรงกับคำถามมากขึ้น</p>
         </section>
 
         <section class="ai-spread-stage panel" aria-labelledby="spread-title">
@@ -90,11 +90,12 @@
             <button class="draw-button" id="draw-button" type="button"><span>✦</span><b id="draw-label">เปิดไพ่</b><span>→</span></button>
             <button class="reset-button" id="reset-button" type="button">ล้างไพ่ · เริ่มเรื่องใหม่</button>
           </div>
+          <p class="request-status request-status--main" id="request-status" role="status" aria-live="polite">ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงเลือกจำนวนไพ่</p>
         </section>
 
         <section class="ai-reveal-stage panel" aria-labelledby="cards-title">
           <div class="stage-heading stage-heading--compact">
-            <div><p class="panel-kicker" id="reveal-kicker">02 / YOUR REVEAL</p><h2 id="cards-title">ไพ่ของคุณ</h2></div>
+            <div><p class="panel-kicker" id="reveal-kicker">02 / THE REVEAL</p><h2 id="cards-title">ไพ่ที่เปิดได้</h2></div>
             <span class="spread-count" id="spread-count">ยังไม่ได้เปิด</span>
           </div>
           <div class="witch-scene" data-motion="ambient" aria-hidden="true">
@@ -114,29 +115,21 @@
 
         <section class="ai-answer-stage panel member-only" id="ai-answer-stage" aria-labelledby="ai-answer-title" hidden>
           <div class="stage-heading stage-heading--compact">
-            <div><p class="panel-kicker">04 / A GENTLE READING</p><h2 id="ai-answer-title" tabindex="-1">คำตอบจากแม่มด AI</h2><p>คำตอบนี้เป็นแนวทางชวนสะท้อน ไม่ใช่คำตัดสินชีวิตของคุณ</p></div>
+            <div><p class="panel-kicker">04 / THE ANSWER</p><h2 id="ai-answer-title" tabindex="-1">คำตอบจากไพ่</h2><p>คำทำนายเริ่มจากคำฟันธง แล้วแยกความหมายของไพ่แต่ละใบให้เห็นชัดเจน</p></div>
             <span class="answer-orbit" aria-hidden="true">✧</span>
           </div>
-          <div class="memory-status" id="memory-status" role="status" aria-live="polite"><span class="memory-icon" aria-hidden="true">✦</span><div class="memory-copy"><strong id="memory-title">Memory ของชุดไพ่ยังว่าง</strong><p id="memory-message">หลังถามครั้งแรก AI จะจำบริบทของไพ่ชุดนี้ไว้ให้ถามต่อได้</p></div><button class="memory-action" id="new-reading-button" type="button" disabled>ล้างไพ่ · ถามเรื่องใหม่</button></div>
-          <div class="follow-up-composer" id="follow-up-composer">
-            <div class="follow-up-heading">
-              <div><p class="panel-kicker">ถามต่อ · จับไพ่ใหม่</p><p>คำถามก่อนหน้าจะถูกจำไว้ แล้วเลือกไพ่ชุดใหม่เพื่อรับคำตอบที่ต่อเนื่อง</p></div>
-              <span class="follow-up-number" aria-hidden="true">02</span>
-            </div>
-            <label class="question-label" for="follow-up-question">คำถามต่อไป</label>
-            <textarea id="follow-up-question" maxlength="2000" rows="3" aria-describedby="request-status" placeholder="เช่น จากคำตอบนี้ ฉันควรเลือกทางไหนต่อ?"></textarea>
-          </div>
+          <div class="answer-box" id="ai-answer" aria-live="polite" aria-label="คำตอบจาก AI"></div>
+          <div class="memory-status" id="memory-status" role="status" aria-live="polite"><span class="memory-icon" aria-hidden="true">✦</span><div class="memory-copy"><strong id="memory-title">Memory ของสำรับนี้ยังว่าง</strong><p id="memory-message">เมื่อเปิดไพ่และได้รับคำตอบ ระบบจะจำคำถามกับคำทำนายแต่ละรอบไว้</p></div><button class="memory-action" id="new-reading-button" type="button" disabled>ล้างไพ่และสับใหม่</button></div>
           <div class="memory-history" id="memory-history" aria-live="polite" hidden>
             <div class="memory-history-heading"><strong>คำถามในชุดนี้</strong><span id="memory-history-count"></span></div>
             <ol class="memory-history-list" id="memory-history-list"></ol>
           </div>
-          <div class="answer-actions"><p class="request-status" id="request-status" role="status" aria-live="polite">ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงเลือกจำนวนไพ่</p><button class="retry-button" id="retry-ai-button" type="button" hidden>ลองคำถามเดิมอีกครั้ง</button><button class="ask-button" id="ask-ai-button" type="button" disabled><span>รับคำตอบจาก AI</span><span aria-hidden="true">✦</span></button></div>
-          <div class="answer-box" id="ai-answer" aria-live="polite" aria-label="คำตอบจาก AI"></div>
+          <div class="answer-actions"><button class="retry-button" id="retry-ai-button" type="button" hidden>ลองอ่านคำทำนายอีกครั้ง</button></div>
         </section>
       </section>
 
       <footer class="ai-footer"><span>✦ TAROT DAILY</span><span>คำทำนายเป็นแนวทาง ไม่ใช่คำตัดสินชีวิต</span><a href="../privacy/">ความเป็นส่วนตัว</a><a href="../terms/">ข้อกำหนด</a><a href="../admin/">สำหรับผู้ดูแล</a></footer>
     </main>
-    <script type="module" src="./ai.js?v=20260904-ai-flow-v20" defer></script>
+    <script type="module" src="./ai.js?v=20260904-ai-flow-v22" defer></script>
   </body>
 </html>

@@ -72,6 +72,9 @@ CREATE TABLE IF NOT EXISTS reading_sessions (
   id UUID PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   cards JSONB NOT NULL,
+  deck_order JSONB NOT NULL DEFAULT '[]'::jsonb,
+  draw_cursor INTEGER NOT NULL DEFAULT 0 CHECK (draw_cursor >= 0),
+  opened_count INTEGER NOT NULL DEFAULT 0 CHECK (opened_count >= 0),
   title VARCHAR(160) NOT NULL DEFAULT 'คำถามใหม่',
   status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'closed')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -79,9 +82,27 @@ CREATE TABLE IF NOT EXISTS reading_sessions (
 );
 CREATE INDEX IF NOT EXISTS reading_sessions_user_updated_idx ON reading_sessions (user_id, updated_at DESC);
 
+CREATE TABLE IF NOT EXISTS reading_rounds (
+  id UUID PRIMARY KEY,
+  session_id UUID NOT NULL REFERENCES reading_sessions(id) ON DELETE CASCADE,
+  round_number INTEGER NOT NULL CHECK (round_number >= 1),
+  question TEXT NOT NULL,
+  cards JSONB NOT NULL,
+  answer_json JSONB,
+  answer_text TEXT,
+  status VARCHAR(20) NOT NULL DEFAULT 'drawn' CHECK (status IN ('drawn', 'answered', 'failed')),
+  request_id VARCHAR(120),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (session_id, round_number)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS reading_rounds_session_request_idx ON reading_rounds (session_id, request_id) WHERE request_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS reading_rounds_session_number_idx ON reading_rounds (session_id, round_number);
+
 CREATE TABLE IF NOT EXISTS reading_messages (
   id BIGSERIAL PRIMARY KEY,
   session_id UUID NOT NULL REFERENCES reading_sessions(id) ON DELETE CASCADE,
+  round_id UUID REFERENCES reading_rounds(id) ON DELETE SET NULL,
   role VARCHAR(20) NOT NULL CHECK (role IN ('user', 'assistant')),
   content TEXT NOT NULL,
   model VARCHAR(120),
@@ -91,6 +112,7 @@ CREATE TABLE IF NOT EXISTS reading_messages (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS reading_messages_session_id_idx ON reading_messages (session_id, id);
+CREATE INDEX IF NOT EXISTS reading_messages_round_id_idx ON reading_messages (round_id, id);
 
 CREATE TABLE IF NOT EXISTS admin_audit_log (
   id BIGSERIAL PRIMARY KEY,

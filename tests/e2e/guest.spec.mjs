@@ -1,5 +1,79 @@
 import { test, expect } from "@playwright/test";
 
+async function installMemberApi(page) {
+  const api = { session: false, rounds: [], nextCard: 1, drawCalls: 0, answerCalls: 0, questions: [] };
+  const cardName = (file) => file.includes("002") ? "Acceptance" : file.includes("003") ? "Understanding" : "Relaxation";
+  const structuredAnswer = (round) => ({
+    verdict: `ฟันธง: คำตอบของคำถาม “${round.question}” คือให้เดินหน้ากับเรื่องนี้อย่างชัดเจน`,
+    cards: round.cards.map((file, index) => ({
+      position: index + 1,
+      name: cardName(file),
+      meaning: `ไพ่ ${cardName(file)} สะท้อนความหมายที่เกี่ยวข้องกับคำถามนี้โดยตรง`,
+      prediction: "สำหรับคำถามนี้ ไพ่ใบนี้ชี้ให้เห็นทิศทางที่ควรเลือกอย่างชัดเจน",
+    })),
+    overall_prediction: `สรุปคำทำนาย: เรื่อง “${round.question}” มีแนวโน้มไปในทางที่ดีเมื่อคุณเลือกทำสิ่งสำคัญอย่างต่อเนื่อง`,
+    safety_note: "",
+  });
+  const sessionPayload = () => {
+    const opened = api.rounds.reduce((total, round) => total + round.cards.length, 0);
+    return { id: "session-1", status: "active", deck_ready: true, draw_cursor: opened, opened_count: opened, remaining: 78 - opened, rounds: api.rounds.map((round) => ({ ...round, cards: [...round.cards] })) };
+  };
+  const nextCards = (count) => Array.from({ length: count }, () => `card-${String(api.nextCard++).padStart(3, "0")}.webp`);
+
+  await page.route("**/api/auth/me", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ ok: true, authenticated: true, csrf_token: "test-csrf", backend_configured: true, user: { username: "tester", name: "ผู้ใช้งาน", ai_enabled: true, must_change_password: false } }),
+  }));
+  await page.route("**/api/ai/deck-sessions", async (route) => {
+    if (route.request().method() === "POST") {
+      api.session = true;
+      api.rounds = [];
+      api.nextCard = 1;
+      await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true, session: sessionPayload(), rounds: [], remaining: 78 }) });
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, sessions: api.session ? [sessionPayload()] : [] }) });
+  });
+  await page.route("**/api/ai/deck-sessions/**", async (route) => {
+    const url = new URL(route.request().url());
+    const parts = url.pathname.split("/").filter(Boolean);
+    const action = parts[parts.length - 1];
+    if (route.request().method() === "GET" && parts.length === 4) {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, session: sessionPayload() }) });
+      return;
+    }
+    if (route.request().method() === "POST" && action === "draw") {
+      const body = await route.request().postDataJSON();
+      const round = { id: `round-${api.rounds.length + 1}`, round_number: api.rounds.length + 1, question: body.question, cards: nextCards(Number(body.count)), status: "drawn", answer_json: null, answer_text: "" };
+      api.rounds.push(round);
+      api.questions.push(body.question);
+      api.drawCalls += 1;
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, session: sessionPayload(), round, remaining: sessionPayload().remaining }) });
+      return;
+    }
+    if (route.request().method() === "POST" && action === "answer") {
+      const roundId = parts[parts.length - 2];
+      const round = api.rounds.find((item) => item.id === roundId);
+      const structured = structuredAnswer(round);
+      round.answer_json = structured;
+      round.answer_text = structured.verdict;
+      round.status = "answered";
+      api.answerCalls += 1;
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, session: sessionPayload(), round, answer: round.answer_text, structured }) });
+      return;
+    }
+    if (route.request().method() === "POST" && action === "reset") {
+      api.session = false;
+      api.rounds = [];
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, session: { ...sessionPayload(), status: "closed", remaining: 0 } }) });
+      return;
+    }
+    await route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ ok: false, message: "mock route not found" }) });
+  });
+  return api;
+}
+
 test("guest sees both modes and opens manual cards from the foyer", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("#manual-mode-link")).toContainText("เปิดไพ่ด้วยตัวเอง");
@@ -35,22 +109,22 @@ test("guest can open cards on the AI reader without a question", async ({ page }
   await expect(page.locator("#flow-number-spread")).toHaveText("01");
   await expect(page.locator("#flow-number-draw")).toHaveText("02");
   await expect(page.locator("#spread-kicker")).toHaveText("01 / CHOOSE CARDS");
-  await expect(page.locator("#reveal-kicker")).toHaveText("02 / YOUR REVEAL");
+  await expect(page.locator("#reveal-kicker")).toHaveText("02 / THE REVEAL");
   const witchBeforeDraw = await page.locator(".witch-art").boundingBox();
-  const minimumWitchHeight = (page.viewportSize()?.width || 0) <= 650 ? 230 : 320;
+  const minimumWitchHeight = (page.viewportSize()?.width || 0) <= 650 ? 175 : 240;
   expect(witchBeforeDraw?.height || 0).toBeGreaterThanOrEqual(minimumWitchHeight);
   const drawButton = page.locator("#draw-button");
   await expect(drawButton).toBeEnabled();
   await drawButton.click();
   await expect(page.locator(".tarot-card-card")).toHaveCount(1);
-  await expect(page.locator("#reading-note")).toContainText("อ่านภาพและคำบนไพ่");
+  await expect(page.locator("#reading-note")).toContainText("เปิดแล้ว 1 ชุด");
   const readingSetStyle = await page.locator(".reading-set").evaluate((element) => {
     const style = getComputedStyle(element);
     return { borderTopStyle: style.borderTopStyle, borderRightStyle: style.borderRightStyle, borderBottomStyle: style.borderBottomStyle, borderRadius: style.borderRadius, boxShadow: style.boxShadow };
   });
   expect(readingSetStyle.borderTopStyle).toBe("none");
   expect(readingSetStyle.borderRightStyle).toBe("none");
-  expect(readingSetStyle.borderBottomStyle).toBe("none");
+  expect(readingSetStyle.borderBottomStyle).toBe("solid");
   expect(readingSetStyle.borderRadius).toBe("0px");
   expect(readingSetStyle.boxShadow).toBe("none");
 });
@@ -83,6 +157,7 @@ test("ritual motion is always on without a toggle", async ({ page }) => {
 
 test("member AI flow keeps the question, draw, and answer steps obvious", async ({ page }) => {
   await page.addInitScript(() => localStorage.clear());
+  await installMemberApi(page);
   await page.route("**/api/auth/me", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
@@ -119,20 +194,24 @@ test("member AI flow keeps the question, draw, and answer steps obvious", async 
   expect(drawAlignment).toBeLessThan(2);
   await page.locator("#draw-button").click();
   await expect(page.locator(".tarot-card-card")).toHaveCount(1);
-  await expect(page.locator("#ai-answer")).toContainText("สรุปคำตอบ", { timeout: 5_000 });
+  await expect(page.locator("#ai-answer")).toContainText("สรุปคำทำนาย", { timeout: 5_000 });
   await expect(page.locator("#draw-label")).toHaveText("เปิดไพ่");
   await expect(page.locator("#ai-answer .answer-section--cards")).toHaveCount(1);
   await expect(page.locator("#ai-answer .answer-card")).toHaveCount(1);
   await expect(page.locator("#ai-answer .answer-card")).toContainText("Relaxation");
-  await expect(page.locator("#ai-answer .answer-section[data-answer-key='connection']")).toContainText("คำทำนาย");
-  await expect(page.locator("#ai-answer .answer-section[data-answer-key='connection']")).not.toContainText("เชื่อมโยงกับคำถาม");
-  await expect(page.locator("#ai-answer .answer-section[data-answer-key='summary']")).toContainText("สรุปคำตอบ");
+  await expect(page.locator("#ai-answer .answer-section[data-answer-key='cards']")).toContainText("คำทำนาย");
+  await expect(page.locator("#ai-answer .answer-section[data-answer-key='cards']")).not.toContainText("เชื่อมโยงกับคำถาม");
+  await expect(page.locator("#ai-answer .answer-section[data-answer-key='overall']")).toContainText("สรุปคำทำนาย");
   await expect(page.locator("#ai-answer .answer-section--next")).toHaveCount(0);
   await expect(page.locator("#ai-answer")).not.toContainText("คำแนะนำถัดไป");
   await expect(page.locator("#ai-answer .answer-section--reflection")).toHaveCount(0);
   await expect(page.locator("#ai-answer")).not.toContainText("คำถามชวนทบทวน");
   await expect(page.locator("#ai-answer")).not.toContainText("**");
   await expect(page.locator("#flow-step-answer")).toHaveClass(/is-complete/);
+  await expect(page.locator("#question-title")).toHaveText("ถามคำถามใหม่");
+  await expect(page.locator("#ai-question")).toHaveValue("");
+  await page.getByLabel("คำถามรอบถัดไป").fill("วันนี้ควรจัดการเรื่องไหนก่อน?");
+  await expect(page.locator("#draw-button")).toBeEnabled();
 });
 
 test("member can ask a follow-up, draw a new spread, and keep the saved conversation", async ({ page }) => {
@@ -142,6 +221,7 @@ test("member can ask a follow-up, draw a new spread, and keep the saved conversa
       sessionStorage.setItem("qa-memory-started", "1");
     }
   });
+  const api = await installMemberApi(page);
   let savedCards = [];
   let activeReading = null;
   const createBodies = [];
@@ -183,30 +263,23 @@ test("member can ask a follow-up, draw a new spread, and keep the saved conversa
   await page.goto("/ai/");
   await page.getByLabel("คำถามของคุณ").fill("เริ่มจากอะไร?");
   await page.locator("#draw-button").click();
-  await expect(page.locator("#ai-answer")).toContainText("สรุปคำตอบ", { timeout: 5_000 });
-  await expect(page.locator("#follow-up-question")).toBeVisible();
-  await expect(page.locator("#ask-ai-button")).toBeDisabled();
+  await expect(page.locator("#ai-answer")).toContainText("สรุปคำทำนาย", { timeout: 5_000 });
   await expect(page.locator("#memory-history")).toContainText("1 คำถาม");
-  await page.getByLabel("คำถามต่อไป").fill("แล้วก้าวต่อไปล่ะ?");
-  await expect(page.locator("#ask-ai-button")).toBeEnabled();
-  await page.getByRole("button", { name: /ถามต่อ.*จับไพ่ใหม่/ }).click();
-  expect(chatCalls).toBe(1);
-  await expect(page.locator("#ai-answer")).toBeEmpty();
-  await expect(page.getByLabel("คำถามของคุณ")).toHaveValue("แล้วก้าวต่อไปล่ะ?");
+  await expect(page.getByLabel("คำถามรอบถัดไป")).toHaveValue("");
+  await page.getByLabel("คำถามรอบถัดไป").fill("แล้วก้าวต่อไปล่ะ?");
   await expect(page.locator("#draw-button")).toBeEnabled();
   await page.locator('.choice-button[data-count="2"]').click();
   await page.locator("#draw-button").click();
   await expect(page.locator(".reading-set")).toHaveCount(2);
   await expect(page.locator(".reading-set").first().locator(".tarot-card-card")).toHaveCount(2);
-  await expect(page.locator("#ai-answer")).toContainText("สรุปคำตอบ", { timeout: 5_000 });
+  await expect(page.locator("#ai-answer")).toContainText("สรุปคำทำนาย", { timeout: 5_000 });
   await expect(page.locator("#memory-history")).toContainText("2 คำถาม", { timeout: 5_000 });
   await expect(page.locator("#memory-history")).toContainText("แล้วก้าวต่อไปล่ะ?");
-  expect(chatCalls).toBe(2);
-  expect(createBodies).toHaveLength(2);
-  expect(createBodies[1].previous_reading_id).toBe("reading-follow-up-1");
-  expect(createBodies[1].cards).toHaveLength(2);
-  expect(new Set([...createBodies[0].cards, ...createBodies[1].cards]).size).toBe(3);
-  expect(postedQuestions[1]).toEqual({ readingId: "reading-follow-up-2", question: "แล้วก้าวต่อไปล่ะ?" });
+  expect(api.answerCalls).toBe(2);
+  expect(api.drawCalls).toBe(2);
+  expect(api.rounds).toHaveLength(2);
+  expect(api.rounds[1].cards).toHaveLength(2);
+  expect(new Set(api.rounds.flatMap((round) => round.cards)).size).toBe(3);
   await page.reload();
   await expect(page.locator("#memory-history")).toContainText("2 คำถาม", { timeout: 5_000 });
   await expect(page.locator("#memory-history")).toContainText("แล้วก้าวต่อไปล่ะ?");
@@ -235,6 +308,7 @@ test("card count choices are easy to tap on desktop and mobile", async ({ page }
 
 test("member AI answer separates every card from its interpretation and summary", async ({ page }) => {
   await page.addInitScript(() => localStorage.clear());
+  await installMemberApi(page);
   await page.route("**/api/auth/me", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
@@ -269,7 +343,7 @@ test("member AI answer separates every card from its interpretation and summary"
   await expect(page.locator("#ai-answer .answer-section--card")).toHaveCount(2);
   await expect(page.locator("#ai-answer .answer-section--card").nth(0)).toContainText("Relaxation");
   await expect(page.locator("#ai-answer .answer-section--card").nth(1)).toContainText("Acceptance");
-  await expect(page.locator("#ai-answer .answer-section--summary")).toContainText("พักให้พอ");
+  await expect(page.locator("#ai-answer .answer-section--overall")).toContainText("สรุปคำทำนาย");
   await expect(page.locator("#ai-answer .answer-section--next")).toHaveCount(0);
   await expect(page.locator("#ai-answer")).not.toContainText("คำแนะนำถัดไป");
   await expect(page.locator("#ai-answer")).not.toContainText("**");
@@ -299,10 +373,14 @@ test("guest can keep opening additional rounds until the deck is exhausted", asy
   expect(new Set(cardSources).size).toBe(5);
 
   await page.locator('.choice-button[data-count="3"]').click();
-  for (let round = 0; round < 25; round += 1) {
+  for (let round = 0; round < 24; round += 1) {
     await page.locator("#draw-button").click();
     await expect(page.locator(".tarot-card-card")).toHaveCount(Math.min(78, 5 + ((round + 1) * 3)));
   }
+  await expect(page.locator("#remaining-count")).toHaveText("1");
+  await page.locator('.choice-button[data-count="1"]').click();
+  await page.locator("#draw-button").click();
+  await expect(page.locator(".tarot-card-card")).toHaveCount(78);
   await expect(page.locator("#remaining-count")).toHaveText("0");
   await expect(page.locator("#draw-button")).toBeDisabled();
   await expect(page.locator("#draw-label")).toContainText("สำรับหมดแล้ว");
@@ -319,11 +397,13 @@ test("reader stages share a smooth surface instead of separate boxed panels", as
   await page.goto("/ai/");
   const stageStyles = await page.evaluate(() => [".ai-spread-stage", ".ai-reveal-stage"].map((selector) => {
     const style = getComputedStyle(document.querySelector(selector));
-    return { borderStyle: style.borderStyle, boxShadow: style.boxShadow, radius: style.borderRadius };
+    return { borderTopStyle: style.borderTopStyle, borderLeftStyle: style.borderLeftStyle, borderRightStyle: style.borderRightStyle, boxShadow: style.boxShadow, radius: style.borderRadius };
   }));
 
   for (const style of stageStyles) {
-    expect(style.borderStyle).toBe("none");
+    expect(style.borderTopStyle).toBe("none");
+    expect(style.borderLeftStyle).toBe("none");
+    expect(style.borderRightStyle).toBe("none");
     expect(style.boxShadow).toBe("none");
     expect(style.radius).toBe("0px");
   }

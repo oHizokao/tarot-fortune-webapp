@@ -1,6 +1,6 @@
 import { AppError } from "../../lib/vercel/db.mjs";
 import { endpoint } from "../../lib/vercel/http.mjs";
-import { addMessage, closeReading, createReading, getReading, listReadings, tarotChat } from "../../lib/vercel/routes/ai.mjs";
+import { addMessage, answerReadingRound, closeReading, createDeckSession, createReading, drawReadingRound, getDeckSession, getReading, listDeckSessions, listReadings, resetDeckSession, tarotChat } from "../../lib/vercel/routes/ai.mjs";
 
 function parts(request) {
   const pathname = new URL(request.url).pathname.replace(/\/+$/, "");
@@ -21,6 +21,13 @@ export function flatAiCommand(request) {
 
 async function dispatch(request) {
   const route = parts(request);
+  if (route[0] === "deck-sessions") {
+    if (route.length === 1) return request.method === "GET" ? listDeckSessions(request) : createDeckSession(request);
+    if (route.length === 2) return getDeckSession(request, route[1]);
+    if (route.length === 3 && route[2] === "draw") return drawReadingRound(request, route[1]);
+    if (route.length === 3 && route[2] === "reset") return resetDeckSession(request, route[1]);
+    if (route.length === 5 && route[2] === "rounds" && route[4] === "answer") return answerReadingRound(request, route[1], route[3]);
+  }
   if (route.length === 1 && route[0] === "tarot-chat") {
     const command = flatAiCommand(request);
     if (command.action === "detail") return getReading(request, command.readingId);

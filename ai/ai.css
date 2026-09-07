@@ -663,6 +663,284 @@ a { color: inherit; }
   }
 }
 
+/* v21: one calm vertical ritual rail; content stays readable before decoration. */
+.ai-reading-stage.ai-reading-stage--sequential {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto !important;
+  grid-template-areas: "flow" "question" "spread" "reveal" "answer" !important;
+  gap: 0 !important;
+  max-width: 1080px;
+  margin-inline: auto;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential > .flow-steps {
+  grid-area: flow !important;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0 0 6px;
+  padding: 0 0 18px;
+  border: 0;
+  border-bottom: 1px solid rgba(159, 175, 243, .14);
+  border-radius: 0;
+  background: transparent;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential > .ai-question-stage,
+.ai-reading-stage.ai-reading-stage--sequential > .ai-spread-stage,
+.ai-reading-stage.ai-reading-stage--sequential > .ai-reveal-stage,
+.ai-reading-stage.ai-reading-stage--sequential > .ai-answer-stage {
+  grid-column: 1 !important;
+  grid-row: auto !important;
+  min-width: 0;
+  padding: clamp(30px, 5vw, 58px) 0;
+  border: 0;
+  border-bottom: 1px solid rgba(159, 175, 243, .14);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential > .ai-question-stage { grid-area: question !important; }
+.ai-reading-stage.ai-reading-stage--sequential > .ai-spread-stage { grid-area: spread !important; }
+.ai-reading-stage.ai-reading-stage--sequential > .ai-reveal-stage { grid-area: reveal !important; }
+.ai-reading-stage.ai-reading-stage--sequential > .ai-answer-stage { grid-area: answer !important; }
+
+.ai-reading-stage.ai-reading-stage--sequential > .ai-answer-stage[hidden],
+.ai-reading-stage.ai-reading-stage--sequential > .ai-question-stage[hidden] {
+  display: none !important;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .stage-heading h2 {
+  font-size: clamp(28px, 4vw, 42px);
+  letter-spacing: -.02em;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .stage-heading p:last-child {
+  max-width: 680px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage .choice-row {
+  width: 100%;
+  gap: 16px;
+  margin-top: 30px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage .choice-button {
+  min-height: 150px;
+  padding: 22px 24px;
+  border-radius: 22px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .ai-reveal-stage .witch-scene {
+  min-height: 310px;
+  margin: 30px 0 0;
+  border: 0;
+  border-radius: 28px;
+  background: radial-gradient(circle at 50% 62%, rgba(122, 78, 224, .3), transparent 36%), linear-gradient(160deg, rgba(31, 27, 91, .62), rgba(8, 13, 41, .4));
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .ai-reveal-stage .witch-art {
+  width: min(100%, 360px);
+  height: auto;
+  max-height: 330px;
+  object-fit: contain;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .ai-reveal-stage .reading-sets {
+  margin-top: 34px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set {
+  padding: 0 0 28px;
+  border: 0;
+  border-bottom: 1px solid rgba(159, 175, 243, .14);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set + .reading-set {
+  margin-top: 34px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set-heading {
+  padding: 0;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .cards-grid {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  align-items: start;
+  gap: clamp(12px, 2vw, 22px);
+  margin-top: 22px;
+}
+
+.ai-reveal-stage .tarot-card-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 448 / 800;
+  object-fit: contain;
+  background: #0c1035;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .tarot-card-card {
+  padding: 10px 10px 14px;
+  border: 0;
+  border-radius: 15px;
+  background: rgba(24, 20, 66, .58);
+  box-shadow: 0 18px 35px rgba(3, 4, 21, .3);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-box {
+  display: grid;
+  gap: 0;
+  margin-top: 30px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-section {
+  padding: 0 0 30px;
+  border-bottom: 1px solid rgba(159, 175, 243, .14);
+  animation: answerIn .55s ease var(--answer-delay) both;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-section + .answer-section {
+  margin-top: 32px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-section-heading h3 {
+  margin: 3px 0 0;
+  color: #f1edff;
+  font: 500 24px "Kanit", sans-serif;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-verdict-text {
+  max-width: 860px;
+  margin: 20px 0 0;
+  color: #fff4ca;
+  font: 500 clamp(20px, 2.5vw, 30px) "Kanit", sans-serif;
+  line-height: 1.55;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-question-context {
+  max-width: 900px;
+  margin: 15px 0 0;
+  color: #9eadd0;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-card-list {
+  display: grid;
+  gap: 0;
+  margin-top: 22px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-card {
+  padding: 24px 0;
+  border: 0;
+  border-top: 1px solid rgba(159, 175, 243, .12);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-card:first-child { border-top: 0; }
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-detail-row {
+  max-width: 900px;
+  margin-top: 16px;
+  padding-left: 17px;
+  border-left: 2px solid rgba(155, 125, 255, .72);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-detail-row strong {
+  display: block;
+  color: #d7ccff;
+  font: 500 14px "Kanit", sans-serif;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-copy,
+.ai-reading-stage.ai-reading-stage--sequential .answer-overall-text {
+  margin: 5px 0 0;
+  color: #dbe2f7;
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+@media (max-width: 650px) {
+  .ai-reading-stage.ai-reading-stage--sequential > .flow-steps {
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential > .ai-question-stage,
+  .ai-reading-stage.ai-reading-stage--sequential > .ai-spread-stage,
+  .ai-reading-stage.ai-reading-stage--sequential > .ai-reveal-stage,
+  .ai-reading-stage.ai-reading-stage--sequential > .ai-answer-stage {
+    padding: 28px 0;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .stage-heading h2 {
+    font-size: 29px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .stage-heading p:last-child {
+    font-size: 12px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage .choice-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 22px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage .choice-button {
+    min-height: 96px;
+    padding: 16px 18px;
+    grid-template-columns: 70px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 14px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .ai-reveal-stage .witch-scene {
+    min-height: 265px;
+    margin-top: 22px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .ai-reveal-stage .witch-art {
+    width: min(100%, 300px);
+    max-height: 275px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 9px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .answer-section-heading h3 {
+    font-size: 21px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .answer-verdict-text {
+    font-size: 22px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .answer-copy,
+  .ai-reading-stage.ai-reading-stage--sequential .answer-overall-text {
+    font-size: 16px;
+    line-height: 1.85;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ai-bg--one,
   .ai-bg--two,
@@ -3148,5 +3426,243 @@ body {
   .ai-answer-stage .retry-button {
     width: 100%;
     min-height: 56px;
+  }
+}
+
+/* v22: one composer, one reading rail, and a clear answer-first rhythm. */
+.ai-reading-stage.ai-reading-stage--sequential {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-areas: "flow" "question" "spread" "reveal" "answer" !important;
+  gap: 0 !important;
+  width: min(100%, 1040px);
+  margin-inline: auto;
+}
+
+#ai-reader-app[data-reader-mode="guest"] .ai-reading-stage.ai-reading-stage--sequential {
+  grid-template-areas: "flow" "spread" "reveal" !important;
+}
+
+#ai-reader-app[data-reading-state="answered"] .ai-reading-stage.ai-reading-stage--sequential {
+  grid-template-areas: "flow" "spread" "reveal" "answer" "question" !important;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential > .flow-steps { grid-area: flow !important; }
+.ai-reading-stage.ai-reading-stage--sequential > .ai-question-stage { grid-area: question !important; }
+.ai-reading-stage.ai-reading-stage--sequential > .ai-spread-stage { grid-area: spread !important; }
+.ai-reading-stage.ai-reading-stage--sequential > .ai-reveal-stage { grid-area: reveal !important; }
+.ai-reading-stage.ai-reading-stage--sequential > .ai-answer-stage { grid-area: answer !important; }
+
+.ai-reading-stage.ai-reading-stage--sequential > .ai-question-stage,
+.ai-reading-stage.ai-reading-stage--sequential > .ai-spread-stage,
+.ai-reading-stage.ai-reading-stage--sequential > .ai-reveal-stage,
+.ai-reading-stage.ai-reading-stage--sequential > .ai-answer-stage {
+  width: 100%;
+  margin: 0;
+  padding: clamp(30px, 5vw, 64px) clamp(16px, 4vw, 52px);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential > .ai-question-stage {
+  padding-top: clamp(38px, 6vw, 74px);
+  padding-bottom: clamp(28px, 4vw, 48px);
+  border-bottom: 1px solid rgba(195, 175, 255, .14);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential > .ai-spread-stage {
+  border-bottom: 1px solid rgba(195, 175, 255, .14);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential > .ai-reveal-stage {
+  padding-top: clamp(38px, 5vw, 62px);
+  padding-bottom: clamp(36px, 5vw, 64px);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential > .ai-answer-stage {
+  padding-top: clamp(18px, 3vw, 34px);
+  padding-bottom: clamp(32px, 5vw, 64px);
+  border-top: 1px solid rgba(195, 175, 255, .14);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .stage-heading,
+.ai-reading-stage.ai-reading-stage--sequential .choice-row,
+.ai-reading-stage.ai-reading-stage--sequential .progress-wrap,
+.ai-reading-stage.ai-reading-stage--sequential .spread-actions,
+.ai-reading-stage.ai-reading-stage--sequential .request-status--main,
+.ai-reading-stage.ai-reading-stage--sequential .reading-sets,
+.ai-reading-stage.ai-reading-stage--sequential .reading-note,
+.ai-reading-stage.ai-reading-stage--sequential .answer-box,
+.ai-reading-stage.ai-reading-stage--sequential .memory-status,
+.ai-reading-stage.ai-reading-stage--sequential .memory-history,
+.ai-reading-stage.ai-reading-stage--sequential .answer-actions {
+  width: min(100%, 880px);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .ai-question-stage .stage-heading,
+.ai-reading-stage.ai-reading-stage--sequential .ai-spread-stage .stage-heading,
+.ai-reading-stage.ai-reading-stage--sequential .ai-reveal-stage .stage-heading,
+.ai-reading-stage.ai-reading-stage--sequential .ai-answer-stage .stage-heading {
+  width: min(100%, 880px);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .ai-question-stage .account-callout {
+  width: min(100%, 880px);
+  margin-right: auto;
+  margin-left: auto;
+  border: 0;
+  border-left: 2px solid rgba(169, 145, 255, .55);
+  border-radius: 0;
+  background: rgba(73, 60, 162, .08);
+  box-shadow: none;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .ai-question-stage .account-callout.is-follow-up {
+  display: none;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .choice-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(12px, 2vw, 20px);
+  margin-top: 28px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .choice-button {
+  min-height: 132px;
+  padding: 20px;
+  border-radius: 18px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .choice-button b { font-size: clamp(34px, 4vw, 48px); }
+.ai-reading-stage.ai-reading-stage--sequential .choice-button span { font-size: 15px; }
+.ai-reading-stage.ai-reading-stage--sequential .choice-button small { font-size: 11px; }
+
+.ai-reading-stage.ai-reading-stage--sequential .request-status--main {
+  min-height: 22px;
+  margin-top: 12px;
+  text-align: center;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .ai-reveal-stage .witch-scene {
+  width: min(100%, 880px);
+  min-height: clamp(150px, 22vw, 250px);
+  margin: 20px auto 8px;
+  border: 0;
+  border-radius: 22px;
+  background: radial-gradient(circle at 50% 60%, rgba(97, 69, 219, .25), transparent 46%), rgba(10, 14, 47, .22);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .ai-reveal-stage .witch-art {
+  width: min(48%, 340px);
+  max-height: 270px;
+  object-fit: contain;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set {
+  padding: 26px 0 34px;
+  border: 0;
+  border-bottom: 1px solid rgba(195, 175, 255, .14);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set:first-child { padding-top: 12px; }
+.ai-reading-stage.ai-reading-stage--sequential .reading-set.is-current { border-left: 0; background: transparent; }
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set .cards-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  width: 100%;
+  gap: clamp(14px, 2vw, 24px);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set[data-card-count="1"] .cards-grid {
+  grid-template-columns: minmax(0, min(100%, 320px));
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set .tarot-card-card {
+  padding: 10px 10px 14px;
+  border-radius: 18px;
+  background: rgba(21, 20, 64, .7);
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .reading-set .tarot-card-card img,
+.ai-reveal-stage .tarot-card-card img {
+  height: auto;
+  aspect-ratio: 448 / 800;
+  object-fit: contain;
+}
+
+.ai-answer-stage .answer-box { margin-top: 22px; }
+.ai-answer-stage .answer-section--card {
+  padding: 22px 0 26px;
+  border: 0;
+  border-top: 1px solid rgba(195, 175, 255, .14);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ai-answer-stage .answer-section--card + .answer-section--card { margin-top: 0; }
+.ai-answer-stage .answer-section--overall {
+  padding-top: 28px;
+  border-top: 1px solid rgba(129, 228, 189, .35);
+}
+
+.ai-answer-stage .memory-status,
+.ai-answer-stage .memory-history,
+.ai-answer-stage .answer-actions {
+  margin-top: 26px;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+@media (max-width: 650px) {
+  .ai-reading-stage.ai-reading-stage--sequential > .ai-question-stage,
+  .ai-reading-stage.ai-reading-stage--sequential > .ai-spread-stage,
+  .ai-reading-stage.ai-reading-stage--sequential > .ai-reveal-stage,
+  .ai-reading-stage.ai-reading-stage--sequential > .ai-answer-stage {
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .choice-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .choice-button {
+    min-height: 94px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .ai-reveal-stage .witch-scene {
+    min-height: 160px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .ai-reveal-stage .witch-art {
+    width: min(74%, 280px);
+    max-height: 185px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .reading-set .cards-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .reading-set[data-card-count="1"] .cards-grid {
+    grid-template-columns: minmax(0, 250px);
+  }
+}
+
+/* The ritual wheel is ambient decoration, so it remains alive even when the
+   browser asks ordinary entrance animations to reduce their motion. */
+@media (prefers-reduced-motion: reduce) {
+  #ai-reader-app.motion-always-on .witch-motion-wheel,
+  #ai-reader-app.motion-always-on .witch-motion-wheel::before,
+  #ai-reader-app.motion-always-on .witch-motion-wheel__spark {
+    animation-iteration-count: infinite !important;
+    animation-play-state: running !important;
   }
 }

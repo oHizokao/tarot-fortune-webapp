@@ -18,9 +18,9 @@ test("member pages expose login, signup, and the separate AI reader", async () =
   assert.match(login, /สมัครสมาชิก/);
   assert.match(ai, /id="ai-reader-app"/);
   assert.match(ai, /id="ai-question"/);
-  assert.match(ai, /id="ask-ai-button"/);
+  assert.doesNotMatch(ai, /id="ask-ai-button"/);
   assert.match(aiScript, /\/api\/auth\/me/);
-  assert.match(aiScript, /\/api\/ai\/readings/);
+  assert.match(aiScript, /\/api\/ai\/deck-sessions/);
 });
 
 test("admin is a landing page with member approval controls", async () => {

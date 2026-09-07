@@ -17,11 +17,14 @@ test("production migration is additive and idempotent", async () => {
 
 test("fresh schema includes the production tables", async () => {
   const sql = await fs.readFile(path.join(root, "database/schema.vercel.sql"), "utf8");
-  for (const table of ["schema_migrations", "rate_limit_buckets", "reading_sessions", "reading_messages", "admin_audit_log"]) {
+  for (const table of ["schema_migrations", "rate_limit_buckets", "reading_sessions", "reading_rounds", "reading_messages", "admin_audit_log"]) {
     assert.match(sql, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}`, "i"));
   }
   assert.match(sql, /daily_ai_limit\s+INTEGER/i);
   assert.match(sql, /session_version\s+INTEGER/i);
+  assert.match(sql, /deck_order\s+JSONB/i);
+  assert.match(sql, /draw_cursor\s+INTEGER/i);
+  assert.match(sql, /opened_count\s+INTEGER/i);
 });
 
 test("migration runner submits raw statements as Neon transaction queries", async () => {

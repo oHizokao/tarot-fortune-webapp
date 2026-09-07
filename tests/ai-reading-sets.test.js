@@ -14,7 +14,7 @@ const staticServer = readFileSync(path.join(root, "scripts", "static-server.mjs"
 test("AI reader renders every draw as a separate reading set", () => {
   assert.match(html, /id="reading-sets"/);
   assert.match(script, /groupReadingHistory/);
-  assert.match(script, /data-set-id/);
+  assert.match(script, /readingSet\.dataset\.setId/);
   assert.match(css, /\.reading-set\s*\{/);
   assert.match(css, /\.reading-set[\s\S]*?\.cards-grid/);
 });

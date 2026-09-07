@@ -4,8 +4,8 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { DEFAULT_OPENAI_MODEL, DEFAULT_TAROT_PROMPT, TAROT_RESPONSE_FORMAT, resolveOpenAiModel, resolveTarotPrompt } from "../lib/vercel/settings.mjs";
-import { composeTarotInstructions } from "../lib/vercel/routes/ai.mjs";
+import { DEFAULT_OPENAI_MODEL, DEFAULT_TAROT_PROMPT, TAROT_ANSWER_SCHEMA, TAROT_RESPONSE_FORMAT, resolveOpenAiModel, resolveTarotPrompt } from "../lib/vercel/settings.mjs";
+import { composeTarotInstructions, parseTarotAnswer } from "../lib/vercel/openai.mjs";
 
 test("tarot settings keep the original prompt when no custom prompt is saved", () => {
   assert.equal(resolveTarotPrompt("", ""), DEFAULT_TAROT_PROMPT);
@@ -58,6 +58,28 @@ test("tarot instructions keep the current question as the answer anchor", () => 
   assert.match(DEFAULT_TAROT_PROMPT, /ห้ามเปลี่ยนประเด็น/);
   assert.match(DEFAULT_TAROT_PROMPT, /ตอบคำถามปัจจุบันโดยตรง/);
   assert.match(TAROT_RESPONSE_FORMAT, /สรุปคำตอบ.*ตอบคำถามปัจจุบันโดยตรง/);
+});
+
+test("tarot output requires a direct verdict and structured card readings", () => {
+  assert.match(DEFAULT_TAROT_PROMPT, /คำฟันธง/);
+  assert.match(DEFAULT_TAROT_PROMPT, /ไม่เปลี่ยนคำทำนายให้เป็นคำแนะนำทั่วไป/);
+  assert.match(TAROT_RESPONSE_FORMAT, /คำฟันธง/);
+  assert.match(TAROT_RESPONSE_FORMAT, /คำทำนายโดยรวม/);
+  assert.deepEqual(TAROT_ANSWER_SCHEMA.required, ["verdict", "cards", "overall_prediction", "safety_note"]);
+  assert.equal(TAROT_ANSWER_SCHEMA.properties.cards.items.required.includes("prediction"), true);
+});
+
+test("parseTarotAnswer normalizes a direct tarot response and rejects missing verdicts", () => {
+  const parsed = parseTarotAnswer(JSON.stringify({
+    verdict: "ควรเดินหน้าต่อ",
+    cards: [{ position: 1, name: "Growth", meaning: "การเติบโต", prediction: "เริ่มจากงานที่เปิดทางให้งานอื่น" }],
+    overall_prediction: "คำทำนายโดยรวมคือให้ลงมือกับงานหลักก่อน",
+    safety_note: "",
+  }));
+  assert.equal(parsed.verdict, "ควรเดินหน้าต่อ");
+  assert.equal(parsed.cards[0].prediction, "เริ่มจากงานที่เปิดทางให้งานอื่น");
+  assert.equal(parsed.overall_prediction, "คำทำนายโดยรวมคือให้ลงมือกับงานหลักก่อน");
+  assert.throws(() => parseTarotAnswer(JSON.stringify({ verdict: "", cards: [], overall_prediction: "", safety_note: "" })), /คำตอบ/);
 });
 
 test("admin settings can explicitly reset the saved model to the fallback", async () => {
