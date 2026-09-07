@@ -77,8 +77,6 @@ async function loadDiagnostics() {
     item.classList.toggle("is-error", !ready);
     item.querySelector("strong").textContent = ready ? label : "ยังไม่พร้อม";
   });
-  const migrationButton = $("#run-migration-button");
-  if (migrationButton) migrationButton.hidden = Boolean(data.schema?.ok);
 }
 
 async function loadAudit() {
@@ -265,17 +263,6 @@ $("#refresh-users-button").addEventListener("click", refreshAll);
 $("#refresh-diagnostics-button").addEventListener("click", async () => {
   try { await loadDiagnostics(); showStatus($("#diagnostics-status"), "ตรวจระบบแล้ว"); }
   catch (error) { showStatus($("#diagnostics-status"), error.message, true); }
-});
-$("#run-migration-button")?.addEventListener("click", async () => {
-  const button = $("#run-migration-button");
-  button.disabled = true;
-  try {
-    await api("/api/admin/migrate", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: "{}" });
-    showStatus($("#diagnostics-status"), "ติดตั้ง Migration สำเร็จ กำลังตรวจระบบอีกครั้ง");
-    await loadDiagnostics();
-  } catch (error) {
-    showStatus($("#diagnostics-status"), error.message, true);
-  } finally { button.disabled = false; }
 });
 $("#admin-logout-button").addEventListener("click", async () => { try { await api("/api/admin/logout", { method: "POST", body: "{}" }); } finally { clearSensitiveFields(); toggleDashboard(false); } });
 

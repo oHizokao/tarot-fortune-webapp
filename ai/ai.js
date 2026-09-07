@@ -167,6 +167,12 @@ function setReaderMode(user) {
   $("#account-message")?.replaceChildren(document.createTextNode(member
     ? user.ai_enabled ? "พิมพ์คำถามก่อน แล้วกดเปิดไพ่ ระบบจะอ่านคำตอบให้ตรงกับคำถามและจำรอบก่อนหน้าไว้" : "บัญชีเข้าใช้งานแล้ว แต่ผู้ดูแลยังไม่ได้เปิดสิทธิ์ AI ให้บัญชีนี้"
     : "เลือกจำนวนไพ่แล้วกดเปิดไพ่ได้ทันที ถ้าอยากให้ AI ตอบคำถาม ให้เข้าใช้งานก่อน"));
+  const accountAction = $("#account-action");
+  if (accountAction) {
+    accountAction.textContent = member ? "ออกจากระบบ" : "เข้าใช้งาน";
+    accountAction.href = member ? "#question-title" : "../login/?next=/ai/";
+    accountAction.dataset.action = member ? "logout" : "login";
+  }
   renderQuestionComposer();
 }
 
@@ -820,6 +826,19 @@ async function loadSession() {
   renderAll();
 }
 
+async function logoutMember(event) {
+  if (!isMemberMode()) return;
+  event.preventDefault();
+  try { await api("/api/auth/logout", { method: "POST", body: "{}" }); } catch { /* local guest mode remains usable */ }
+  state.user = null;
+  state.csrf = "";
+  clearPrivateMemory();
+  applyLocalSession(state.localSession || createLocalDeckSession());
+  setReaderMode(null);
+  renderAll();
+  window.location.hash = "question-title";
+}
+
 function handleQuestionInput(event) {
   if (textValue(event.currentTarget?.value) !== state.failedQuestion) {
     state.failedQuestion = "";
@@ -839,6 +858,7 @@ $("#reset-button")?.addEventListener("click", resetCards);
 $("#new-reading-button")?.addEventListener("click", resetCards);
 $("#retry-ai-button")?.addEventListener("click", retryAi);
 $("#ai-question")?.addEventListener("input", handleQuestionInput);
+$("#account-action")?.addEventListener("click", logoutMember);
 choiceButtons.forEach((button) => button.addEventListener("click", () => setCount(button.dataset.count)));
 
 initMotion();

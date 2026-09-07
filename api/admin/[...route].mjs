@@ -1,5 +1,5 @@
 import { AppError } from "../../lib/vercel/db.mjs";
-import { aiCheck, audit, bootstrap, createUser, diagnostics, login, logout, me, migrate, retention, settings, updateUser, usage, users } from "../../lib/vercel/routes/admin.mjs";
+import { aiCheck, audit, bootstrap, createUser, diagnostics, login, logout, me, retention, settings, updateUser, usage, users } from "../../lib/vercel/routes/admin.mjs";
 import { endpoint } from "../../lib/vercel/http.mjs";
 
 function routeName(request) {
@@ -22,7 +22,6 @@ async function dispatch(request) {
   if (route === "login") return login(request);
   if (route === "logout") return logout(request);
   if (route === "ai-check") return aiCheck(request);
-  if (route === "migrate") return migrate(request);
   if (route === "settings") return settings(request);
   if (route === "update-user") return updateUser(request);
   throw new AppError("ไม่พบเส้นทาง API นี้", 404, "NOT_FOUND");
