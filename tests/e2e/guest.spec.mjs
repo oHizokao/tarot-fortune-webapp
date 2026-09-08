@@ -342,6 +342,17 @@ test("member AI answer separates every card from its interpretation and summary"
   await page.locator("#draw-button").click();
   await expect(page.locator("#ai-answer .answer-section--cards .answer-card")).toHaveCount(2, { timeout: 5_000 });
   await expect(page.locator("#ai-answer .answer-section--card")).toHaveCount(2);
+  const answerLayout = await page.locator("#ai-answer .answer-card-list").evaluate((list) => {
+    const card = list.querySelector(".answer-section--card");
+    return {
+      columns: getComputedStyle(list).gridTemplateColumns.split(" ").filter(Boolean).length,
+      cardDisplay: card ? getComputedStyle(card).display : "",
+      detailDisplay: card ? getComputedStyle(card.querySelector(".answer-detail-row")).display : "",
+    };
+  });
+  expect(answerLayout.columns, JSON.stringify(answerLayout)).toBe(1);
+  expect(answerLayout.cardDisplay, JSON.stringify(answerLayout)).toBe("block");
+  expect(answerLayout.detailDisplay, JSON.stringify(answerLayout)).toBe("block");
   await expect(page.locator("#ai-answer .answer-section--card").nth(0)).toContainText("Relaxation");
   await expect(page.locator("#ai-answer .answer-section--card").nth(1)).toContainText("Acceptance");
   await expect(page.locator("#ai-answer .answer-section--overall")).toContainText("สรุปคำทำนาย");

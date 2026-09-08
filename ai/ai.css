@@ -3666,3 +3666,46 @@ body {
     animation-play-state: running !important;
   }
 }
+
+/* v29: keep each card reading vertical and give long card names a safe line box. */
+.ai-reading-stage.ai-reading-stage--sequential .answer-card-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-section--card {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-card-detail-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-card-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-size: clamp(18px, 2vw, 24px);
+  line-height: 1.3;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-detail-row {
+  display: block;
+  width: 100%;
+  max-width: 860px;
+  overflow-wrap: anywhere;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .answer-detail-row .answer-copy {
+  max-width: 790px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-size: 15px;
+  line-height: 1.9;
+}
