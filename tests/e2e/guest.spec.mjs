@@ -25,22 +25,24 @@ async function installMemberApi(page) {
     contentType: "application/json",
     body: JSON.stringify({ ok: true, authenticated: true, csrf_token: "test-csrf", backend_configured: true, user: { username: "tester", name: "ผู้ใช้งาน", ai_enabled: true, must_change_password: false } }),
   }));
-  await page.route("**/api/ai/deck-sessions", async (route) => {
-    if (route.request().method() === "POST") {
+  await page.route("**/api/ai/deck-sessions*", async (route) => {
+    const url = new URL(route.request().url());
+    const action = url.searchParams.get("action") || "";
+    const sessionId = url.searchParams.get("session_id") || "";
+    const roundId = url.searchParams.get("round_id") || "";
+    if (route.request().method() === "POST" && !action) {
       api.session = true;
       api.rounds = [];
       api.nextCard = 1;
       await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ ok: true, session: sessionPayload(), rounds: [], remaining: 78 }) });
       return;
     }
-    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, sessions: api.session ? [sessionPayload()] : [] }) });
-  });
-  await page.route("**/api/ai/deck-sessions/**", async (route) => {
-    const url = new URL(route.request().url());
-    const parts = url.pathname.split("/").filter(Boolean);
-    const action = parts[parts.length - 1];
-    if (route.request().method() === "GET" && parts.length === 4) {
+    if (route.request().method() === "GET" && sessionId) {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, session: sessionPayload() }) });
+      return;
+    }
+    if (route.request().method() === "GET") {
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, sessions: api.session ? [sessionPayload()] : [] }) });
       return;
     }
     if (route.request().method() === "POST" && action === "draw") {
@@ -53,7 +55,6 @@ async function installMemberApi(page) {
       return;
     }
     if (route.request().method() === "POST" && action === "answer") {
-      const roundId = parts[parts.length - 2];
       const round = api.rounds.find((item) => item.id === roundId);
       const structured = structuredAnswer(round);
       round.answer_json = structured;
