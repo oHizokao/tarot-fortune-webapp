@@ -621,8 +621,23 @@ async function api(url, options = {}) {
 
 async function createServerSession() {
   const data = await api("/api/ai/deck-sessions", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ title: "คำถามจากไพ่" }) });
-  applyServerSession(data.session);
-  return data.session;
+  const session = data?.session;
+  const sessionId = textValue(session?.id, 120);
+  if (!sessionId) {
+    const error = new Error("ไม่พบรหัสสำรับไพ่หลังสร้างสำรับ");
+    error.code = "SESSION_CREATE_FAILED";
+    throw error;
+  }
+  // Keep the new id locally before any secondary render work. This prevents
+  // the next draw request from ever being built with an empty session id.
+  state.serverSession = session;
+  state.sessionId = sessionId;
+  state.rounds = Array.isArray(session.rounds) ? session.rounds.map(normalizeServerRound) : [];
+  state.currentRoundId = state.rounds.at(-1)?.id || "";
+  state.drawn = state.rounds.at(-1) ? [...state.rounds.at(-1).cards] : [];
+  syncHistory();
+  saveState();
+  return session;
 }
 
 async function loadServerDeckSession() {
@@ -732,6 +747,12 @@ async function drawCards() {
     let round;
     if (hasAiAccess()) {
       if (!state.sessionId) await createServerSession();
+      const sessionId = textValue(state.sessionId, 120);
+      if (!sessionId) {
+        const error = new Error("ไม่พบสำรับไพ่ของบัญชีนี้");
+        error.code = "SESSION_CREATE_FAILED";
+        throw error;
+      }
       const data = await api(`/api/ai/deck-sessions/${encodeURIComponent(state.sessionId)}/draw`, {
         method: "POST",
         headers: { "X-CSRF-Token": state.csrf },
