@@ -1,4 +1,4 @@
-const state = { csrf: "", accessCode: "", defaultPrompt: "" };
+const state = { csrf: "", oneTimeCredential: "", defaultPrompt: "" };
 const $ = (selector) => document.querySelector(selector);
 
 function showStatus(element, message, error = false) {
@@ -44,7 +44,7 @@ function clearSensitiveFields() {
   $("#bootstrap-password").value = "";
   $("#openai-api-key").value = "";
   state.csrf = "";
-  state.accessCode = "";
+  state.oneTimeCredential = "";
 }
 
 async function loadSettings() {
@@ -219,8 +219,9 @@ $("#create-user-form").addEventListener("submit", async (event) => {
   const status = $("#create-user-status");
   try {
     const data = await api("/api/admin/create-user", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ username: $("#tester-username").value.trim(), name: $("#tester-name").value.trim(), email: $("#tester-email").value.trim(), duration: $("#tester-duration").value }) });
-    state.accessCode = data.access_code || "";
-    $("#new-access-code").textContent = state.accessCode;
+    state.oneTimeCredential = data.access_code || "";
+    $("#new-code-label").textContent = "Access Code (แสดงครั้งเดียว) · ใช้ที่หน้า Login ในช่อง Beta Access Code";
+    $("#new-access-code").textContent = state.oneTimeCredential;
     $("#new-code-output").hidden = false;
     $("#create-user-form").reset();
     showStatus(status, "สร้าง Beta แล้ว — คัดลอก Access Code ให้ผู้ทดสอบตอนนี้");
@@ -229,8 +230,8 @@ $("#create-user-form").addEventListener("submit", async (event) => {
 });
 
 $("#copy-code-button").addEventListener("click", async () => {
-  if (!state.accessCode) return;
-  try { await navigator.clipboard.writeText(state.accessCode); showStatus($("#create-user-status"), "คัดลอก Access Code แล้ว"); } catch { showStatus($("#create-user-status"), state.accessCode); }
+  if (!state.oneTimeCredential) return;
+  try { await navigator.clipboard.writeText(state.oneTimeCredential); showStatus($("#create-user-status"), "คัดลอกโค้ดแล้ว"); } catch { showStatus($("#create-user-status"), state.oneTimeCredential); }
 });
 
 $("#users-table-body").addEventListener("click", async (event) => {
@@ -246,8 +247,8 @@ $("#users-table-body").addEventListener("click", async (event) => {
   }
   try {
     const data = await api("/api/admin/update-user", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ id: Number(button.dataset.id), action, duration: button.dataset.duration || "24h", ...extra }) });
-    if (data.access_code) { state.accessCode = data.access_code; $("#new-access-code").textContent = data.access_code; $("#new-code-output").hidden = false; showStatus($("#users-status"), "สร้าง Access Code ใหม่แล้ว — คัดลอกก่อนปิดหน้านี้"); }
-    if (data.temporary_password) { state.accessCode = data.temporary_password; $("#new-access-code").textContent = data.temporary_password; $("#new-code-output").hidden = false; showStatus($("#users-status"), "ออกรหัสผ่านชั่วคราวแล้ว — คัดลอกให้ผู้ใช้และให้เปลี่ยนหลังเข้าใช้งาน"); }
+    if (data.access_code) { state.oneTimeCredential = data.access_code; $("#new-code-label").textContent = "Access Code (แสดงครั้งเดียว) · ใช้ที่หน้า Login ในช่อง Beta Access Code"; $("#new-access-code").textContent = data.access_code; $("#new-code-output").hidden = false; showStatus($("#users-status"), "สร้าง Access Code ใหม่แล้ว — คัดลอกก่อนปิดหน้านี้"); }
+    if (data.temporary_password) { state.oneTimeCredential = data.temporary_password; $("#new-code-label").textContent = "รหัสผ่านชั่วคราว (แสดงครั้งเดียว) · ใช้คู่กับ Username ในตาราง"; $("#new-access-code").textContent = data.temporary_password; $("#new-code-output").hidden = false; showStatus($("#users-status"), "ออกรหัสผ่านชั่วคราวแล้ว — ใช้คู่กับ Username ในตาราง แล้วให้ผู้ใช้เปลี่ยนหลังเข้าใช้งาน"); }
     await refreshAll();
   } catch (error) { showStatus($("#users-status"), error.message, true); }
 });
