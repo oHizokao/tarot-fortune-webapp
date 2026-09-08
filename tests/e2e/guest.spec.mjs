@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 async function installMemberApi(page) {
-  const api = { session: false, rounds: [], nextCard: 1, drawCalls: 0, answerCalls: 0, questions: [] };
+  const api = { session: false, rounds: [], nextCard: 1, drawCalls: 0, answerCalls: 0, questions: [], answerDelay: 0 };
   const cardName = (file) => file.includes("002") ? "Acceptance" : file.includes("003") ? "Understanding" : "Relaxation";
   const structuredAnswer = (round) => ({
     verdict: `ฟันธง: คำตอบของคำถาม “${round.question}” คือให้เดินหน้ากับเรื่องนี้อย่างชัดเจน`,
@@ -57,6 +57,7 @@ async function installMemberApi(page) {
     }
     if (route.request().method() === "POST" && action === "answer") {
       const round = api.rounds.find((item) => item.id === roundId);
+      if (api.answerDelay) await new Promise((resolve) => setTimeout(resolve, api.answerDelay));
       const structured = structuredAnswer(round);
       round.answer_json = structured;
       round.answer_text = structured.verdict;
@@ -223,6 +224,24 @@ test("member AI flow keeps the question, draw, and answer steps obvious", async 
   await expect(page.locator("#ai-question")).toHaveValue("");
   await page.getByLabel("คำถามรอบถัดไป").fill("วันนี้ควรจัดการเรื่องไหนก่อน?");
   await expect(page.locator("#draw-button")).toBeEnabled();
+});
+
+test("member keeps opened cards visible behind a clear ritual while AI is answering", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  const api = await installMemberApi(page);
+  api.answerDelay = 900;
+
+  await page.goto("/ai/");
+  await page.getByLabel("คำถามของคุณ").fill("เรื่องงานของฉันควรเดินหน้าต่ออย่างไร?");
+  await page.locator("#draw-button").click();
+  await expect(page.locator(".tarot-card-card")).toHaveCount(1, { timeout: 5_000 });
+  await expect(page.locator("#tarot-waiting-ritual")).toBeVisible();
+  await expect(page.locator("#tarot-waiting-ritual .tarot-waiting-ritual__ring")).toHaveCSS("animation-name", "tarotWaitingSpin");
+  await expect(page.locator("#tarot-waiting-ritual")).toContainText("กำลังอ่านคำบนไพ่");
+  await expect(page.locator("#tarot-waiting-ritual")).toContainText("กำลังเชื่อมโยงกับคำถามของคุณ");
+  await expect(page.locator("#ai-answer-stage")).toBeHidden();
+  await expect(page.locator("#tarot-waiting-ritual")).toBeHidden({ timeout: 5_000 });
+  await expect(page.locator("#ai-answer")).toContainText("สรุปคำทำนาย", { timeout: 5_000 });
 });
 
 test("member can ask a follow-up and keep the saved conversation in selectable history", async ({ page }) => {

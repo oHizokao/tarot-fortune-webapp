@@ -194,6 +194,13 @@ function setWitchStatus(message, mode = "") {
   element.classList.toggle("is-ready", mode === "ready");
 }
 
+function renderWaitingRitual() {
+  const round = currentRound();
+  const waiting = Boolean(hasAiAccess() && state.busy && round?.cards?.length && !hasAnswer() && !isViewingHistory());
+  $("#tarot-waiting-ritual")?.toggleAttribute("hidden", !waiting);
+  $("#ai-reader-app")?.toggleAttribute("data-ai-waiting", waiting);
+}
+
 function renderFlow() {
   const questionReady = !isMemberMode() || hasQuestion();
   const hasSpread = Boolean(state.currentRoundId);
@@ -257,6 +264,7 @@ function renderProgress() {
   else if (hasAiAccess() && questionReady) setWitchStatus("คำถามพร้อมแล้ว · กดเปิดไพ่");
   else if (hasAiAccess()) setWitchStatus("รอคำถามของคุณ");
   else setWitchStatus("พร้อมเปิดไพ่");
+  renderWaitingRitual();
   renderQuestionComposer();
   renderFlow();
 }
@@ -551,6 +559,7 @@ function renderAnswer(answer, structured = null, round = currentRound()) {
   $("#request-status").textContent = "คำตอบพร้อมแล้ว · พิมพ์คำถามใหม่ด้านล่าง แล้วกดเปิดไพ่";
   renderQuestionComposer();
   setWitchStatus("คำตอบพร้อมแล้ว · ถามไพ่รอบใหม่ได้", "ready");
+  renderWaitingRitual();
 }
 
 function normalizeServerRound(round, index = 0) {

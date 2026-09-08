@@ -4087,3 +4087,160 @@ body {
     min-height: 52px;
   }
 }
+
+/* v32: make the AI pause feel like part of the reading, not a blank wait. */
+.ai-reading-stage.ai-reading-stage--sequential .tarot-waiting-ritual[hidden] {
+  display: none !important;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .tarot-waiting-ritual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  width: min(100%, 880px);
+  margin: 16px auto 8px;
+  padding: 16px 22px;
+  border: 1px solid rgba(255, 224, 165, .3);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 22% 50%, rgba(119, 87, 238, .22), transparent 32%),
+    linear-gradient(110deg, rgba(35, 27, 100, .78), rgba(12, 30, 76, .76));
+  box-shadow: 0 14px 32px rgba(24, 13, 79, .26), 0 0 35px rgba(128, 99, 255, .14);
+  color: #f7edcf;
+}
+
+.tarot-waiting-ritual__ring {
+  position: relative;
+  display: grid;
+  width: 68px;
+  height: 68px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 224, 165, .72);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 224, 165, .2), rgba(76, 53, 164, .12) 48%, transparent 50%);
+  box-shadow: 0 0 28px rgba(255, 210, 129, .26), inset 0 0 20px rgba(161, 128, 255, .22);
+  animation: tarotWaitingSpin 4s linear infinite;
+  will-change: transform;
+}
+
+.tarot-waiting-ritual__ring::before,
+.tarot-waiting-ritual__ring::after {
+  position: absolute;
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.tarot-waiting-ritual__ring::before {
+  inset: 8px;
+  border: 1px dashed rgba(173, 221, 255, .76);
+  animation: tarotWaitingSpin 2.6s linear reverse infinite;
+}
+
+.tarot-waiting-ritual__ring::after {
+  top: -5px;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  background: #ffe0a5;
+  box-shadow: 0 0 14px #ffe0a5;
+  transform: translateX(-50%);
+  animation: tarotWaitingPulse 1.5s ease-in-out infinite;
+}
+
+.tarot-waiting-ritual__ring i {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #a8e6ff;
+  box-shadow: 0 0 12px rgba(168, 230, 255, .95);
+  animation: tarotWaitingOrbit 2.2s linear infinite;
+}
+
+.tarot-waiting-ritual__ring i:nth-child(1) { transform: translateY(-29px); }
+.tarot-waiting-ritual__ring i:nth-child(2) { transform: rotate(120deg) translateY(-29px); animation-delay: -.7s; }
+.tarot-waiting-ritual__ring i:nth-child(3) { transform: rotate(240deg) translateY(-29px); animation-delay: -1.4s; }
+
+.tarot-waiting-ritual__copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.tarot-waiting-ritual__copy strong {
+  color: #fff2c9;
+  font: 500 clamp(16px, 2vw, 21px)/1.35 "Kanit", sans-serif;
+  letter-spacing: .01em;
+}
+
+.tarot-waiting-ritual__copy p {
+  margin: 0;
+  color: #becbed;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+@keyframes tarotWaitingSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes tarotWaitingOrbit {
+  0% { transform: rotate(0deg) translateY(-29px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateY(-29px) rotate(-360deg); }
+}
+
+@keyframes tarotWaitingPulse {
+  0%, 100% { opacity: .55; transform: translateX(-50%) scale(.72); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.18); }
+}
+
+@media (max-width: 650px) {
+  .ai-reading-stage.ai-reading-stage--sequential .tarot-waiting-ritual {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 18px 16px;
+    text-align: center;
+  }
+
+  .tarot-waiting-ritual__ring {
+    width: 62px;
+    height: 62px;
+  }
+
+  .tarot-waiting-ritual__ring i:nth-child(1) { transform: translateY(-26px); }
+  .tarot-waiting-ritual__ring i:nth-child(2) { transform: rotate(120deg) translateY(-26px); }
+  .tarot-waiting-ritual__ring i:nth-child(3) { transform: rotate(240deg) translateY(-26px); }
+
+  .tarot-waiting-ritual__copy strong { font-size: 17px; }
+  .tarot-waiting-ritual__copy p { font-size: 11px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #ai-reader-app.motion-always-on .tarot-waiting-ritual__ring,
+  #ai-reader-app.motion-always-on .tarot-waiting-ritual__ring::before,
+  #ai-reader-app.motion-always-on .tarot-waiting-ritual__ring::after,
+  #ai-reader-app.motion-always-on .tarot-waiting-ritual__ring i {
+    animation-iteration-count: infinite !important;
+    animation-play-state: running !important;
+  }
+
+  #ai-reader-app.motion-always-on .tarot-waiting-ritual__ring {
+    animation-duration: 4s !important;
+  }
+
+  #ai-reader-app.motion-always-on .tarot-waiting-ritual__ring::before {
+    animation-duration: 2.6s !important;
+  }
+
+  #ai-reader-app.motion-always-on .tarot-waiting-ritual__ring::after {
+    animation-duration: 1.5s !important;
+  }
+
+  #ai-reader-app.motion-always-on .tarot-waiting-ritual__ring i {
+    animation-duration: 2.2s !important;
+  }
+}
