@@ -609,12 +609,13 @@ async function api(url, options = {}) {
   const raw = await response.text();
   let data = {};
   try { data = raw ? JSON.parse(raw) : {}; } catch { throw new Error("เซิร์ฟเวอร์ส่งข้อมูลที่อ่านไม่ได้"); }
-  if (!response.ok || data.ok === false) {
-    const error = new Error(data.message || data.error || "ทำรายการไม่สำเร็จ");
-    error.code = data.code || "REQUEST_FAILED";
-    error.status = response.status;
-    error.requestId = data.request_id || response.headers.get("x-request-id") || "";
-    throw error;
+    if (!response.ok || data.ok === false) {
+      const error = new Error(data.message || data.error || "ทำรายการไม่สำเร็จ");
+      error.code = data.code || "REQUEST_FAILED";
+      error.status = response.status;
+      error.requestId = data.request_id || response.headers.get("x-request-id") || "";
+      error.requestUrl = url;
+      throw error;
   }
   return data;
 }
@@ -793,7 +794,7 @@ async function drawCards() {
     state.busy = false;
     $("#draw-button").classList.remove("is-busy");
     const debugMessage = new URLSearchParams(window.location.search).get("debug") === "1"
-      ? ` · [${phase}] ${JSON.stringify({ name: error?.name || "", code: error?.code || "", status: error?.status || "", message: String(error?.message || error || ""), requestId: error?.requestId || "" })}`
+      ? ` · [${phase}] ${JSON.stringify({ name: error?.name || "", code: error?.code || "", status: error?.status || "", message: String(error?.message || error || ""), requestId: error?.requestId || "", url: error?.requestUrl || "" })}`
       : "";
     $("#request-status").textContent = `${messageForError(error.code, error.requestId) || error.message}${debugMessage}`;
     setWitchStatus("ยังเปิดไพ่ไม่ได้ · กดลองอีกครั้ง");
