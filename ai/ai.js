@@ -12,9 +12,12 @@ const state = {
   savedServerSessionId: "",
   sessionId: "",
   serverSession: null,
+  serverHistory: [],
   rounds: [],
   history: [],
   currentRoundId: "",
+  viewingHistorySessionId: "",
+  historyBusy: false,
   drawn: [],
   user: null,
   csrf: "",
@@ -53,6 +56,7 @@ function currentQuestionValue() { return textValue(currentQuestionField()?.value
 function hasQuestion() { return currentQuestionValue().length > 0; }
 function hasAiAccess() { return Boolean(state.user?.ai_enabled && !state.user?.must_change_password); }
 function isMemberMode() { return Boolean(state.user); }
+function isViewingHistory() { return Boolean(state.viewingHistorySessionId); }
 
 function remainingCount() {
   if (isMemberMode() && hasAiAccess()) return Math.max(0, Number(state.serverSession?.remaining ?? DECK_SIZE));
@@ -82,7 +86,7 @@ function renderQuestionComposer() {
   if (!stage) return;
   const enabled = hasAiAccess();
   const answered = hasAnswer();
-  stage.hidden = !enabled;
+  stage.hidden = !enabled || isViewingHistory();
   stage.dataset.composerMode = answered ? "follow-up" : "initial";
   $("#question-kicker")?.replaceChildren(document.createTextNode(answered ? "คำถามรอบใหม่" : "01 / YOUR QUESTION"));
   $("#question-title")?.replaceChildren(document.createTextNode(answered ? "ถามคำถามใหม่" : "พิมพ์คำถามของคุณ"));
@@ -226,13 +230,16 @@ function renderProgress() {
   const hasSpread = Boolean(round);
   const answered = hasAnswer();
   const question = currentQuestionValue();
+  const historyView = isViewingHistory();
   const aiQuestionBlocked = hasAiAccess() && hasSpread && (!answered || !question || duplicateCurrentQuestion(question));
   const questionReady = !hasAiAccess() || Boolean(question);
-  $("#draw-button").disabled = empty || state.busy || aiQuestionBlocked || !questionReady;
-  $("#reset-button").disabled = state.busy;
-  choiceButtons.forEach((button) => { button.disabled = state.busy || (hasAiAccess() && hasSpread && !answered); });
+  $("#draw-button").disabled = empty || state.busy || historyView || aiQuestionBlocked || !questionReady;
+  $("#reset-button").disabled = state.busy || historyView;
+  choiceButtons.forEach((button) => { button.disabled = state.busy || historyView || (hasAiAccess() && hasSpread && !answered); });
   $("#draw-label").textContent = empty ? "สำรับหมดแล้ว" : "เปิดไพ่";
-  $("#deck-message").textContent = empty
+  $("#deck-message").textContent = historyView
+    ? "กำลังดูประวัติเดิม · กดเริ่มดูดวงใหม่ด้านบนเมื่อต้องการเปิดรอบใหม่"
+    : empty
     ? "เปิดครบทั้ง 78 ใบแล้ว กดล้างไพ่และสับใหม่เพื่อเริ่มต้นอีกครั้ง"
     : !hasAiAccess()
       ? `เปิดแล้ว ${opened} ใบ · กดเปิดไพ่ต่อได้ ไพ่จะไม่ซ้ำกัน`
@@ -345,6 +352,48 @@ function renderCards() {
   const totalCards = readingSets.reduce((sum, entry) => sum + entry.cardCount, 0);
   $("#spread-count").textContent = `${readingSets.length} ชุด · ${totalCards} ใบ`;
   $("#reading-note").textContent = hasAiAccess() ? "แต่ละชุดแสดงแยกกัน · รอบล่าสุดคือชุดที่ใช้ตอบคำถามปัจจุบัน" : `เปิดแล้ว ${readingSets.length} ชุด · เลื่อนดูไพ่รอบก่อนหน้าได้`;
+}
+
+function historySessionTitle(session, index = 0) {
+  return textValue(session?.latest_question || session?.latestQuestion || session?.title, 160) || `ดูดวงครั้งที่ ${index + 1}`;
+}
+
+function renderServerHistory() {
+  const panel = $("#reading-history-panel");
+  const list = $("#reading-history-list");
+  if (!panel || !list) return;
+  const sessions = isMemberMode()
+    ? state.serverHistory.filter((session) => Number(session?.opened_count ?? session?.draw_cursor ?? 0) > 0)
+    : [];
+  panel.hidden = sessions.length === 0;
+  list.replaceChildren(...sessions.map((session, index) => {
+    const item = document.createElement("article");
+    const selected = String(session.id) === state.viewingHistorySessionId;
+    item.className = "reading-history-item";
+    item.classList.toggle("is-selected", selected);
+
+    const copy = document.createElement("div");
+    copy.className = "reading-history-copy";
+    const label = document.createElement("span");
+    label.className = "reading-history-label";
+    label.textContent = `รอบที่ ${sessions.length - index}`;
+    const title = document.createElement("strong");
+    title.textContent = historySessionTitle(session, index);
+    const meta = document.createElement("p");
+    const opened = Number(session.opened_count ?? session.draw_cursor ?? 0);
+    const status = session.status === "active" ? "ยังเปิดอยู่" : "เก็บไว้ดูย้อนหลัง";
+    meta.textContent = `${status} · เปิดแล้ว ${opened} ใบ · ${formatReadingSetTime(session.updated_at || session.created_at)}`;
+    copy.append(label, title, meta);
+
+    const action = document.createElement("button");
+    action.className = "history-open-button";
+    action.type = "button";
+    action.textContent = selected ? "กำลังดู" : "ดูย้อนหลัง";
+    action.disabled = state.historyBusy || selected;
+    action.addEventListener("click", () => { void openHistorySession(session.id); });
+    item.append(copy, action);
+    return item;
+  }));
 }
 
 function renderMemoryHistory() {
@@ -561,6 +610,7 @@ function saveState() {
 
 function renderAll() {
   renderProgress();
+  renderServerHistory();
   renderCards();
   renderMemory();
   renderAnswerFromCurrent();
@@ -594,11 +644,15 @@ function syncQuestion() {
 }
 
 function clearPrivateMemory() {
+  state.savedServerSessionId = "";
   state.sessionId = "";
   state.serverSession = null;
+  state.serverHistory = [];
   state.rounds = [];
   state.currentRoundId = "";
   state.drawn = [];
+  state.viewingHistorySessionId = "";
+  state.historyBusy = false;
   state.failedQuestion = "";
   state.failedErrorCode = "";
   state.failedRequestId = "";
@@ -653,32 +707,61 @@ function deckSessionUrl(sessionId, action = "", roundId = "") {
   return `/api/ai/deck-sessions?${params.toString()}`;
 }
 
-async function loadServerDeckSession() {
-  let sessionId = state.savedServerSessionId;
-  if (!sessionId) {
-    const list = await api("/api/ai/deck-sessions");
-    sessionId = String(list.sessions?.find((session) => session.status === "active")?.id || "");
-  }
-  if (!sessionId) {
-    state.savedServerSessionId = "";
-    state.serverSession = null;
-    state.sessionId = "";
-    state.rounds = [];
-    state.currentRoundId = "";
-    state.drawn = [];
-    clearAnswer();
-    syncHistory();
+async function loadServerReadingHistory() {
+  if (!hasAiAccess()) {
+    state.serverHistory = [];
+    renderServerHistory();
     return;
   }
-  const data = await api(deckSessionUrl(sessionId));
-  if (data.session?.deck_ready === false) {
-    state.savedServerSessionId = "";
-    return;
+  const data = await api("/api/ai/deck-sessions");
+  state.serverHistory = Array.isArray(data.sessions)
+    ? data.sessions.filter((session) => Number(session?.opened_count ?? session?.draw_cursor ?? 0) > 0)
+    : [];
+  renderServerHistory();
+}
+
+async function openHistorySession(sessionId) {
+  if (!hasAiAccess() || state.busy || state.historyBusy || !sessionId) return;
+  state.historyBusy = true;
+  renderServerHistory();
+  try {
+    const data = await api(deckSessionUrl(sessionId));
+    if (!data.session || data.session.deck_ready === false) throw new Error("ประวัติชุดนี้ไม่พร้อมเปิดดู");
+    state.viewingHistorySessionId = String(sessionId);
+    applyServerSession(data.session);
+    renderAll();
+    $("#request-status").textContent = "กำลังดูประวัติเดิม · กดเริ่มดูดวงใหม่เมื่อต้องการเปิดรอบใหม่";
+    setWitchStatus("กำลังดูประวัติเดิม", "ready");
+    document.querySelector("#ai-answer-stage")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    $("#request-status").textContent = messageForError(error.code, error.requestId) || error.message;
+  } finally {
+    state.historyBusy = false;
+    renderAll();
   }
-  applyServerSession(data.session);
-  const latest = currentRound();
-  if (latest?.answer || latest?.structured) renderAnswer(latest.answer, latest.structured, latest);
-  else if (latest?.status === "drawn" && hasAiAccess()) await answerCurrentRound(latest.id);
+}
+
+function startNewReading() {
+  if (state.busy || state.historyBusy) return;
+  state.requestVersion += 1;
+  state.savedServerSessionId = "";
+  state.serverSession = null;
+  state.sessionId = "";
+  state.viewingHistorySessionId = "";
+  state.rounds = [];
+  state.currentRoundId = "";
+  state.drawn = [];
+  state.failedQuestion = "";
+  state.failedErrorCode = "";
+  state.failedRequestId = "";
+  $("#ai-question").value = "";
+  clearAnswer();
+  syncHistory();
+  saveState();
+  renderAll();
+  $("#request-status").textContent = "พร้อมเริ่มดูดวงใหม่ · พิมพ์คำถามแล้วเลือกจำนวนไพ่";
+  setWitchStatus("พร้อมเริ่มดูดวงใหม่");
+  if (hasAiAccess()) window.requestAnimationFrame(() => $("#ai-question")?.focus());
 }
 
 async function answerCurrentRound(roundId) {
@@ -706,6 +789,7 @@ async function answerCurrentRound(roundId) {
     syncHistory();
     saveState();
     renderAnswer(answered.answer, answered.structured, answered);
+    void loadServerReadingHistory().catch(() => {});
     $("#ai-question").value = "";
     renderQuestionComposer();
     $("#retry-ai-button").hidden = true;
@@ -847,7 +931,8 @@ async function loadSession() {
     state.csrf = data.csrf_token || "";
     setReaderMode(state.user);
     if (authenticated && hasAiAccess()) {
-      try { await loadServerDeckSession(); } catch { /* local shell remains usable while backend recovers */ }
+      clearPrivateMemory();
+      try { await loadServerReadingHistory(); } catch { /* the new reader remains usable while history recovers */ }
     }
     if (!state.user) applyLocalSession(state.localSession);
   } catch {
@@ -890,6 +975,7 @@ function retryAi() {
 $("#draw-button")?.addEventListener("click", drawCards);
 $("#reset-button")?.addEventListener("click", resetCards);
 $("#new-reading-button")?.addEventListener("click", resetCards);
+$("#start-new-reading-button")?.addEventListener("click", startNewReading);
 $("#retry-ai-button")?.addEventListener("click", retryAi);
 $("#ai-question")?.addEventListener("input", handleQuestionInput);
 $("#account-action")?.addEventListener("click", logoutMember);

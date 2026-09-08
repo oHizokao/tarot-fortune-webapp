@@ -20,6 +20,8 @@ test("AI reader exposes one continuous deck Memory and a clear reset action", as
   assert.match(script, /\/api\/ai\/deck-sessions/);
   assert.match(script, /state\.rounds/);
   assert.match(script, /resetLocalDeckSession/);
+  assert.match(html, /id="reading-history-panel"/);
+  assert.match(html, /id="start-new-reading-button"/);
 });
 
 test("AI reader keeps rounds in one server deck and starts a new deck only on reset", () => {
@@ -38,11 +40,15 @@ test("AI reader keeps rounds in one server deck and starts a new deck only on re
   assert.doesNotMatch(script, /previous_reading_id/);
 });
 
-test("server AI Memory is restored only for an authenticated member and is cleared on logout", () => {
-  assert.match(script, /async function loadServerDeckSession\(\)/);
+test("member login starts a fresh reader while saved sessions stay selectable", () => {
+  assert.match(script, /async function loadServerReadingHistory\(\)/);
   assert.match(script, /function clearPrivateMemory\(\)/);
-  assert.match(script, /await loadServerDeckSession\(\)/);
+  assert.match(script, /await loadServerReadingHistory\(\)/);
+  assert.match(script, /async function openHistorySession\(sessionId\)/);
+  assert.match(script, /function startNewReading\(\)/);
+  assert.match(script, /state\.viewingHistorySessionId = ""/);
   assert.match(script, /clearPrivateMemory\(\)/);
+  assert.doesNotMatch(script, /async function loadServerDeckSession\(\)/);
   assert.match(script, /error\.status === 401[\s\S]*clearPrivateMemory\(\)/);
   assert.match(script, /if \(!state\.user\) applyLocalSession\(state\.localSession\)/);
 });

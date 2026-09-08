@@ -18,6 +18,7 @@ async function installMemberApi(page) {
     const opened = api.rounds.reduce((total, round) => total + round.cards.length, 0);
     return { id: "session-1", status: "active", deck_ready: true, draw_cursor: opened, opened_count: opened, remaining: 78 - opened, rounds: api.rounds.map((round) => ({ ...round, cards: [...round.cards] })) };
   };
+  const historyPayload = () => ({ ...sessionPayload(), latest_question: api.rounds.at(-1)?.question || "" });
   const nextCards = (count) => Array.from({ length: count }, () => `card-${String(api.nextCard++).padStart(3, "0")}.webp`);
 
   await page.route("**/api/auth/me", (route) => route.fulfill({
@@ -42,7 +43,7 @@ async function installMemberApi(page) {
       return;
     }
     if (route.request().method() === "GET") {
-      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, sessions: api.session ? [sessionPayload()] : [] }) });
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, sessions: api.session ? [historyPayload()] : [] }) });
       return;
     }
     if (route.request().method() === "POST" && action === "draw") {
@@ -73,6 +74,15 @@ async function installMemberApi(page) {
     await route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ ok: false, message: "mock route not found" }) });
   });
   return api;
+}
+
+function structuredAnswerForTest() {
+  return {
+    verdict: "คำฟันธงจากรอบก่อน",
+    cards: [{ position: 1, name: "Relaxation", meaning: "ความหมายเดิม", prediction: "คำทำนายเดิม" }],
+    overall_prediction: "สรุปคำทำนายจากรอบก่อน",
+    safety_note: "",
+  };
 }
 
 test("guest sees both modes and opens manual cards from the foyer", async ({ page }) => {
@@ -215,7 +225,7 @@ test("member AI flow keeps the question, draw, and answer steps obvious", async 
   await expect(page.locator("#draw-button")).toBeEnabled();
 });
 
-test("member can ask a follow-up, draw a new spread, and keep the saved conversation", async ({ page }) => {
+test("member can ask a follow-up and keep the saved conversation in selectable history", async ({ page }) => {
   await page.addInitScript(() => {
     if (!sessionStorage.getItem("qa-memory-started")) {
       localStorage.clear();
@@ -282,9 +292,47 @@ test("member can ask a follow-up, draw a new spread, and keep the saved conversa
   expect(api.rounds[1].cards).toHaveLength(2);
   expect(new Set(api.rounds.flatMap((round) => round.cards)).size).toBe(3);
   await page.reload();
+  await expect(page.locator("#question-stage")).toBeVisible();
+  await expect(page.locator("#reading-sets .empty-card")).toBeVisible();
+  await expect(page.locator("#ai-answer-stage")).toBeHidden();
+  await expect(page.locator("#reading-history-panel")).toBeVisible();
+  await expect(page.locator("#reading-history-list")).toContainText("แล้วก้าวต่อไปล่ะ?");
+  await page.getByRole("button", { name: /ดูย้อนหลัง/ }).click();
   await expect(page.locator("#memory-history")).toContainText("2 คำถาม", { timeout: 5_000 });
   await expect(page.locator("#memory-history")).toContainText("แล้วก้าวต่อไปล่ะ?");
   await expect(page.locator(".reading-set").first().locator(".tarot-card-card")).toHaveCount(2);
+});
+
+test("member starts with a fresh reading while older sessions remain selectable", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  const api = await installMemberApi(page);
+  api.session = true;
+  api.rounds = [{
+    id: "round-history-1",
+    round_number: 1,
+    question: "รอบก่อนควรตัดสินใจอย่างไร?",
+    cards: ["card-001.webp"],
+    status: "answered",
+    answer_json: structuredAnswerForTest(),
+    answer_text: "คำฟันธงจากรอบก่อน",
+  }];
+
+  await page.goto("/ai/");
+  await expect(page.locator("#question-stage")).toBeVisible();
+  await expect(page.locator("#reading-sets .empty-card")).toBeVisible();
+  await expect(page.locator("#ai-answer-stage")).toBeHidden();
+  await expect(page.locator("#reading-history-panel")).toBeVisible();
+  await expect(page.locator("#reading-history-list")).toContainText("รอบก่อนควรตัดสินใจอย่างไร?");
+
+  await page.getByRole("button", { name: /ดูย้อนหลัง/ }).click();
+  await expect(page.locator("#ai-answer-stage")).toBeVisible();
+  await expect(page.locator("#ai-answer")).toContainText("คำฟันธงจากรอบก่อน");
+  await expect(page.locator("#start-new-reading-button")).toBeVisible();
+
+  await page.locator("#start-new-reading-button").click();
+  await expect(page.locator("#question-stage")).toBeVisible();
+  await expect(page.locator("#reading-sets .empty-card")).toBeVisible();
+  await expect(page.locator("#ai-answer-stage")).toBeHidden();
 });
 
 test("card count choices are easy to tap on desktop and mobile", async ({ page }) => {
