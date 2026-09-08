@@ -22,6 +22,16 @@ export function flatAiCommand(request) {
 async function dispatch(request) {
   const route = parts(request);
   if (route[0] === "deck-sessions") {
+    // Vercel serves this catch-all reliably at the flat function path, while
+    // nested dynamic paths can be answered by the platform before this file
+    // runs. Keep the operation in query parameters for the browser client.
+    const params = new URL(request.url).searchParams;
+    const sessionId = String(params.get("session_id") || "").trim();
+    const action = String(params.get("action") || "").trim().toLowerCase();
+    if (sessionId && action === "draw") return drawReadingRound(request, sessionId);
+    if (sessionId && action === "reset") return resetDeckSession(request, sessionId);
+    if (sessionId && action === "answer") return answerReadingRound(request, sessionId, String(params.get("round_id") || "").trim());
+    if (sessionId && request.method === "GET") return getDeckSession(request, sessionId);
     if (route.length === 1) return request.method === "GET" ? listDeckSessions(request) : createDeckSession(request);
     if (route.length === 2) return getDeckSession(request, route[1]);
     if (route.length === 3 && route[2] === "draw") return drawReadingRound(request, route[1]);

@@ -641,6 +641,13 @@ async function createServerSession() {
   return session;
 }
 
+function deckSessionUrl(sessionId, action = "", roundId = "") {
+  const params = new URLSearchParams({ session_id: textValue(sessionId, 120) });
+  if (action) params.set("action", action);
+  if (roundId) params.set("round_id", textValue(roundId, 120));
+  return `/api/ai/deck-sessions?${params.toString()}`;
+}
+
 async function loadServerDeckSession() {
   let sessionId = state.savedServerSessionId;
   if (!sessionId) {
@@ -658,7 +665,7 @@ async function loadServerDeckSession() {
     syncHistory();
     return;
   }
-  const data = await api(`/api/ai/deck-sessions/${encodeURIComponent(sessionId)}`);
+  const data = await api(deckSessionUrl(sessionId));
   if (data.session?.deck_ready === false) {
     state.savedServerSessionId = "";
     return;
@@ -682,7 +689,7 @@ async function answerCurrentRound(roundId) {
   $("#request-status").textContent = "กำลังอ่านไพ่ให้ตรงกับคำถาม...";
   renderProgress();
   try {
-    const data = await api(`/api/ai/deck-sessions/${encodeURIComponent(state.sessionId)}/rounds/${encodeURIComponent(roundId)}/answer`, { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: "{}" });
+    const data = await api(deckSessionUrl(state.sessionId, "answer", roundId), { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: "{}" });
     if (version !== state.requestVersion) return;
     applyServerSession(data.session);
     state.currentRoundId = String(data.round?.id || roundId);
@@ -757,7 +764,7 @@ async function drawCards() {
         throw error;
       }
       phase = "จับไพ่จากสำรับสมาชิก";
-      const data = await api(`/api/ai/deck-sessions/${encodeURIComponent(state.sessionId)}/draw`, {
+      const data = await api(deckSessionUrl(state.sessionId, "draw"), {
         method: "POST",
         headers: { "X-CSRF-Token": state.csrf },
         body: JSON.stringify({ count: state.count, question, request_id: randomId("draw") }),
@@ -809,7 +816,7 @@ async function resetCards() {
   state.requestVersion += 1;
   renderProgress();
   if (hasAiAccess() && oldSessionId) {
-    try { await api(`/api/ai/deck-sessions/${encodeURIComponent(oldSessionId)}/reset`, { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: "{}" }); } catch { /* local reset remains usable */ }
+    try { await api(deckSessionUrl(oldSessionId, "reset"), { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: "{}" }); } catch { /* local reset remains usable */ }
   }
   state.localSession = resetLocalDeckSession(state.localSession);
   state.savedServerSessionId = "";

@@ -40,7 +40,8 @@ test("AI reader presents and enforces question → draw → answer → new round
   assert.match(script, /if \(hasAiAccess\(\) && !question\)/);
   assert.match(script, /if \(hasAiAccess\(\) && !question\)[\s\S]*พิมพ์คำถามก่อน/);
   assert.match(script, /answerCurrentRound\(round\.id\)/);
-  assert.match(script, /\/api\/ai\/deck-sessions\/\$\{encodeURIComponent\(state\.sessionId\)\}\/draw/);
+  assert.match(script, /deckSessionUrl\(state\.sessionId, "draw"\)/);
+  assert.match(script, /params\.set\("round_id"/);
   assert.doesNotMatch(script, /ask-ai-button/);
   assert.doesNotMatch(script, /previous_reading_id/);
   assert.match(script, /คำถามรอบใหม่/);

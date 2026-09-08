@@ -26,7 +26,9 @@ test("AI reader keeps rounds in one server deck and starts a new deck only on re
   assert.match(script, /const STORAGE_KEY = "tarot-daily-ai-reading-v3"/);
   assert.match(script, /sessionId/);
   assert.match(script, /createServerSession\(\)/);
-  assert.match(script, /\/api\/ai\/deck-sessions\/\$\{encodeURIComponent\(state\.sessionId\)\}\/draw/);
+  assert.match(script, /function deckSessionUrl\(sessionId, action = "", roundId = ""\)/);
+  assert.match(script, /params\.set\("round_id"/);
+  assert.match(script, /deckSessionUrl\(state\.sessionId, "draw"\)/);
   assert.match(script, /state\.rounds = state\.rounds/);
   assert.match(script, /resetCards\(\)/);
   assert.match(script, /new-reading-button/);
