@@ -792,7 +792,9 @@ async function drawCards() {
     if (version !== state.requestVersion) return;
     state.busy = false;
     $("#draw-button").classList.remove("is-busy");
-    const debugMessage = new URLSearchParams(window.location.search).get("debug") === "1" ? ` · [${phase}] ${error.message || error.name || "unknown"}` : "";
+    const debugMessage = new URLSearchParams(window.location.search).get("debug") === "1"
+      ? ` · [${phase}] ${JSON.stringify({ name: error?.name || "", code: error?.code || "", status: error?.status || "", message: String(error?.message || error || ""), requestId: error?.requestId || "" })}`
+      : "";
     $("#request-status").textContent = `${messageForError(error.code, error.requestId) || error.message}${debugMessage}`;
     setWitchStatus("ยังเปิดไพ่ไม่ได้ · กดลองอีกครั้ง");
     renderProgress();
