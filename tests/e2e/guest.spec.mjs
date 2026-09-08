@@ -342,8 +342,16 @@ test("card count choices are easy to tap on desktop and mobile", async ({ page }
     height: button.getBoundingClientRect().height,
     fontSize: getComputedStyle(button.querySelector("b")).fontSize,
   }));
-  expect(desktopMetrics.height).toBeGreaterThanOrEqual(128);
+  expect(desktopMetrics.height).toBeGreaterThanOrEqual(154);
   expect(Number.parseFloat(desktopMetrics.fontSize)).toBeGreaterThanOrEqual(30);
+  expect(await page.locator(".choice-visual").count()).toBe(3);
+  expect(await page.locator('.choice-button[data-count="1"]').innerText()).toContain("จับไพ่ 1 ใบ");
+  const desktopActions = await page.locator(".spread-actions").evaluate((actions) => ({
+    drawHeight: actions.querySelector("#draw-button")?.getBoundingClientRect().height || 0,
+    resetHeight: actions.querySelector("#reset-button")?.getBoundingClientRect().height || 0,
+  }));
+  expect(desktopActions.drawHeight).toBeGreaterThanOrEqual(68);
+  expect(desktopActions.resetHeight).toBeGreaterThanOrEqual(48);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
@@ -351,8 +359,14 @@ test("card count choices are easy to tap on desktop and mobile", async ({ page }
     const row = button.closest(".choice-row");
     return { height: button.getBoundingClientRect().height, columnCount: getComputedStyle(row).gridTemplateColumns.split(" ").length };
   });
-  expect(mobileMetrics.height).toBeGreaterThanOrEqual(78);
+  expect(mobileMetrics.height).toBeGreaterThanOrEqual(112);
   expect(mobileMetrics.columnCount).toBe(1);
+  const mobileActions = await page.locator(".spread-actions").evaluate((actions) => ({
+    drawHeight: actions.querySelector("#draw-button")?.getBoundingClientRect().height || 0,
+    resetHeight: actions.querySelector("#reset-button")?.getBoundingClientRect().height || 0,
+  }));
+  expect(mobileActions.drawHeight).toBeGreaterThanOrEqual(64);
+  expect(mobileActions.resetHeight).toBeGreaterThanOrEqual(50);
 });
 
 test("member AI answer separates every card from its interpretation and summary", async ({ page }) => {

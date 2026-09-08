@@ -49,7 +49,7 @@ test("AI question field keeps the accessible customer-facing label", () => {
 test("customer pages version their JavaScript and CSS assets", () => {
   assert.match(homeHtml, /style\.css\?v=20260901-witch-two-modes/);
   assert.match(homeHtml, /app\.js\?v=20260901-witch-two-modes/);
-  assert.match(aiHtml, /ai\.css\?v=20260908-ai-history-v30/);
+  assert.match(aiHtml, /ai\.css\?v=20260908-ai-controls-v31/);
   assert.match(aiHtml, /ai\.js\?v=20260908-ai-flow-v\d+/);
   assert.match(aiHtml, /อ่านจากคำบนไพ่และตอบคำถามอย่างชัดเจน/);
   assert.doesNotMatch(aiHtml, /เชื่อมโยงกับคำถามของคุณอย่างอ่อนโยน/);

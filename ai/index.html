@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./ai.css?v=20260908-ai-history-v30" />
+    <link rel="stylesheet" href="./ai.css?v=20260908-ai-controls-v31" />
   </head>
   <body>
     <div class="ai-bg ai-bg--one" aria-hidden="true"></div>
@@ -89,9 +89,9 @@
             <span class="deck-status"><i></i><strong id="remaining-count">78</strong> ใบเหลือ</span>
           </div>
           <div class="choice-row" role="group" aria-label="จำนวนไพ่ที่ต้องการเปิด">
-            <button class="choice-button is-selected" data-count="1" type="button" aria-pressed="true"><b>01</b><span>ไพ่ใบเดียว</span><small>ภาพรวม</small></button>
-            <button class="choice-button" data-count="2" type="button" aria-pressed="false"><b>02</b><span>ไพ่สองใบ</span><small>สถานการณ์ · ก้าวต่อไป</small></button>
-            <button class="choice-button" data-count="3" type="button" aria-pressed="false"><b>03</b><span>ไพ่สามใบ</span><small>อดีต · ปัจจุบัน · แนวทาง</small></button>
+            <button class="choice-button is-selected" data-count="1" type="button" aria-pressed="true"><span class="choice-visual choice-visual--one" aria-hidden="true"><i></i></span><span class="choice-copy"><b>01</b><strong>จับไพ่ 1 ใบ</strong><small>ภาพรวม</small></span></button>
+            <button class="choice-button" data-count="2" type="button" aria-pressed="false"><span class="choice-visual choice-visual--two" aria-hidden="true"><i></i></span><span class="choice-copy"><b>02</b><strong>จับไพ่ 2 ใบ</strong><small>สถานการณ์ · ก้าวต่อไป</small></span></button>
+            <button class="choice-button" data-count="3" type="button" aria-pressed="false"><span class="choice-visual choice-visual--three" aria-hidden="true"><i></i></span><span class="choice-copy"><b>03</b><strong>จับไพ่ 3 ใบ</strong><small>อดีต · ปัจจุบัน · แนวทาง</small></span></button>
           </div>
           <div class="progress-wrap">
             <div class="progress-label"><span>สำรับรอบนี้</span><strong><span id="opened-count">0</span> / 78</strong></div>
@@ -100,7 +100,7 @@
           </div>
           <div class="spread-actions">
             <button class="draw-button" id="draw-button" type="button"><span>✦</span><b id="draw-label">เปิดไพ่</b><span>→</span></button>
-            <button class="reset-button" id="reset-button" type="button">ล้างไพ่ · เริ่มเรื่องใหม่</button>
+            <button class="reset-button" id="reset-button" type="button"><span class="reset-icon" aria-hidden="true">↻</span><span class="reset-label">ล้างไพ่</span><small>เริ่มสำรับใหม่</small></button>
           </div>
           <p class="request-status request-status--main" id="request-status" role="status" aria-live="polite">ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงเลือกจำนวนไพ่</p>
         </section>
