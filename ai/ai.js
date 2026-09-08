@@ -738,6 +738,7 @@ async function drawCards() {
   }
   if ($("#draw-button").disabled) return;
   const version = ++state.requestVersion;
+  let phase = "เริ่มเปิดไพ่";
   state.busy = true;
   $("#draw-button").classList.add("is-busy");
   setWitchStatus("กำลังสับไพ่...", "reading");
@@ -746,6 +747,7 @@ async function drawCards() {
     await sleep(420);
     let round;
     if (hasAiAccess()) {
+      phase = "สร้างสำรับสมาชิก";
       if (!state.sessionId) await createServerSession();
       const sessionId = textValue(state.sessionId, 120);
       if (!sessionId) {
@@ -753,6 +755,7 @@ async function drawCards() {
         error.code = "SESSION_CREATE_FAILED";
         throw error;
       }
+      phase = "จับไพ่จากสำรับสมาชิก";
       const data = await api(`/api/ai/deck-sessions/${encodeURIComponent(state.sessionId)}/draw`, {
         method: "POST",
         headers: { "X-CSRF-Token": state.csrf },
@@ -767,6 +770,7 @@ async function drawCards() {
       syncHistory();
       saveState();
     } else {
+      phase = "จับไพ่โหมดฟรี";
       const result = drawNextRound(state.localSession, state.count, "", () => randomId("round"));
       state.localSession = result.session;
       round = result.round;
@@ -788,7 +792,8 @@ async function drawCards() {
     if (version !== state.requestVersion) return;
     state.busy = false;
     $("#draw-button").classList.remove("is-busy");
-    $("#request-status").textContent = messageForError(error.code, error.requestId) || error.message;
+    const debugMessage = new URLSearchParams(window.location.search).get("debug") === "1" ? ` · [${phase}] ${error.message || error.name || "unknown"}` : "";
+    $("#request-status").textContent = `${messageForError(error.code, error.requestId) || error.message}${debugMessage}`;
     setWitchStatus("ยังเปิดไพ่ไม่ได้ · กดลองอีกครั้ง");
     renderProgress();
   }
