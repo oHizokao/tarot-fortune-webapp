@@ -9,18 +9,23 @@ const read = (relativePath) => fs.readFile(path.join(root, relativePath), "utf8"
 
 test("member pages expose login, signup, and the separate AI reader", async () => {
   const login = await read("login/index.html");
+  const loginScript = await read("login/login.js");
   const ai = await read("ai/index.html");
   const aiScript = await read("ai/ai.js");
 
   assert.match(login, /id="login-form"/);
   assert.match(login, /id="login-username"/);
+  assert.match(login, /id="beta-login-form"/);
+  assert.match(login, /id="beta-code"/);
+  assert.match(login, /Beta Access Code/);
   assert.match(login, /id="signup-form"/);
   assert.match(login, /สมัครสมาชิก/);
   assert.match(ai, /id="ai-reader-app"/);
   assert.match(ai, /id="ai-question"/);
-  assert.doesNotMatch(ai, /id="ask-ai-button"/);
+  assert.match(ai, /id="ask-ai-button"/);
   assert.match(aiScript, /\/api\/auth\/me/);
-  assert.match(aiScript, /\/api\/ai\/deck-sessions/);
+  assert.match(aiScript, /\/api\/ai\/readings/);
+  assert.match(loginScript, /\/api\/auth\/beta-login/);
 });
 
 test("admin is a landing page with member approval controls", async () => {
