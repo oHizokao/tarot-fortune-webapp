@@ -2,6 +2,7 @@ import { messageForError } from "../lib/client/error-copy.js";
 
 const $ = (selector) => document.querySelector(selector);
 const state = { busy: false, csrf: "" };
+const betaLoginForm = $("#beta-login-form");
 
 function showStatus(element, message, error = false) {
   element.textContent = message;
@@ -40,7 +41,7 @@ function setMode(mode) {
   $("#signup-tab").setAttribute("aria-selected", String(!login));
   $("#login-panel").hidden = !login;
   $("#signup-panel").hidden = login;
-  $("#auth-subtitle").textContent = login ? "ใช้ username และรหัสผ่านเพื่อเข้าใช้งาน" : "สร้างบัญชีเพื่อขอสิทธิ์ห้องถาม AI";
+  $("#auth-subtitle").textContent = login ? "ใช้ username กับรหัสผ่าน หรือ Beta Access Code" : "สร้างบัญชีเพื่อขอสิทธิ์ห้องถาม AI";
 }
 
 function redirectForUser() {
@@ -71,6 +72,24 @@ $("#login-form").addEventListener("submit", async (event) => {
     state.csrf = data.csrf_token || "";
     if (data.user?.must_change_password) showChangePassword(data.user, state.csrf);
     else { showStatus(status, "เข้าใช้งานสำเร็จ กำลังพาไปห้องอ่านไพ่..."); redirectForUser(); }
+  } catch (error) {
+    showStatus(status, messageForError(error.code, error.requestId), true);
+  } finally {
+    state.busy = false;
+  }
+});
+
+betaLoginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (state.busy) return;
+  state.busy = true;
+  const status = $("#beta-login-status");
+  showStatus(status, "กำลังตรวจสอบ Beta Access Code...");
+  try {
+    const data = await api("/api/auth/beta-login", { method: "POST", body: JSON.stringify({ access_code: $("#beta-code").value.trim() }) });
+    state.csrf = data.csrf_token || "";
+    showStatus(status, "เข้าใช้งานสำเร็จ กำลังพาไปห้องอ่านไพ่...");
+    redirectForUser();
   } catch (error) {
     showStatus(status, messageForError(error.code, error.requestId), true);
   } finally {
