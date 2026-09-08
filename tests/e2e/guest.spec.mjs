@@ -226,6 +226,30 @@ test("member AI flow keeps the question, draw, and answer steps obvious", async 
   await expect(page.locator("#draw-button")).toBeEnabled();
 });
 
+test("member keeps the follow-up question above the next card selection", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  await installMemberApi(page);
+
+  await page.goto("/ai/");
+  await page.getByLabel("คำถามของคุณ").fill("เรื่องนี้ควรเริ่มจากตรงไหน?");
+  await page.locator("#draw-button").click();
+  await expect(page.locator("#ai-answer-stage")).toBeVisible();
+  await expect(page.locator("#question-title")).toHaveText("ถามคำถามใหม่");
+
+  const stageOrder = await page.locator(".ai-reading-stage").evaluate((stage) => {
+    const rect = (selector) => stage.querySelector(selector).getBoundingClientRect().top;
+    return {
+      questionTop: rect(".ai-question-stage"),
+      spreadTop: rect(".ai-spread-stage"),
+      revealTop: rect(".ai-reveal-stage"),
+      answerTop: rect(".ai-answer-stage"),
+    };
+  });
+  expect(stageOrder.questionTop).toBeLessThan(stageOrder.spreadTop);
+  expect(stageOrder.spreadTop).toBeLessThan(stageOrder.revealTop);
+  expect(stageOrder.revealTop).toBeLessThan(stageOrder.answerTop);
+});
+
 test("member keeps opened cards visible behind a clear ritual while AI is answering", async ({ page }) => {
   await page.addInitScript(() => localStorage.clear());
   const api = await installMemberApi(page);

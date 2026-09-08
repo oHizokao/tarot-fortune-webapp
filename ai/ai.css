@@ -3444,7 +3444,7 @@ body {
 }
 
 #ai-reader-app[data-reading-state="answered"] .ai-reading-stage.ai-reading-stage--sequential {
-  grid-template-areas: "flow" "spread" "reveal" "answer" "question" !important;
+  grid-template-areas: "flow" "question" "spread" "reveal" "answer" !important;
 }
 
 .ai-reading-stage.ai-reading-stage--sequential > .flow-steps { grid-area: flow !important; }
