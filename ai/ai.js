@@ -6,6 +6,7 @@ const STORAGE_KEY = "tarot-daily-ai-reading-v3";
 const LEGACY_STORAGE_KEY = "tarot-daily-ai-reading-v2";
 const MAX_HISTORY = 78;
 const DECK_SIZE = 78;
+const FAN_CARD_COUNT = 7;
 const state = {
   count: 1,
   localSession: null,
@@ -23,6 +24,7 @@ const state = {
   csrf: "",
   backend: true,
   busy: false,
+  fanPhase: "ready",
   requestVersion: 0,
   failedQuestion: "",
   failedErrorCode: "",
@@ -192,6 +194,97 @@ function setWitchStatus(message, mode = "") {
   element.textContent = message;
   element.classList.toggle("is-reading", mode === "reading");
   element.classList.toggle("is-ready", mode === "ready");
+}
+
+function ensureFanCards() {
+  const fan = $("#tarot-fan");
+  if (!fan) return [];
+  if (fan.children.length === FAN_CARD_COUNT) return [...fan.children];
+
+  fan.replaceChildren(...Array.from({ length: FAN_CARD_COUNT }, (_, index) => {
+    const card = document.createElement("div");
+    card.className = "tarot-fan-card";
+    card.dataset.slot = String(index + 1);
+    card.style.setProperty("--fan-slot", String(index + 1));
+
+    const inner = document.createElement("div");
+    inner.className = "tarot-fan-card__inner";
+
+    const back = document.createElement("div");
+    back.className = "tarot-fan-card__back";
+    back.innerHTML = '<span aria-hidden="true">✦</span><small>เปิดไพ่</small>';
+
+    const front = document.createElement("div");
+    front.className = "tarot-fan-card__front";
+    const image = document.createElement("img");
+    image.loading = "eager";
+    image.decoding = "async";
+    const label = document.createElement("span");
+    label.className = "tarot-fan-card__label";
+    front.append(image, label);
+
+    inner.append(back, front);
+    card.append(inner);
+    return card;
+  }));
+  return [...fan.children];
+}
+
+function renderFanBoard() {
+  const board = $("#tarot-fan-board");
+  if (!board) return;
+  const fanCards = ensureFanCards();
+  const round = currentRound();
+  const hasCards = Boolean(round?.cards?.length);
+  const phase = state.fanPhase === "ready" && hasCards && !isViewingHistory() ? "revealed" : state.fanPhase;
+  const files = phase === "answering" || phase === "revealed" ? [...(round?.cards || [])] : [];
+  const history = isViewingHistory();
+  board.dataset.fanState = phase;
+  board.dataset.cardCount = String(files.length);
+  const selectedStart = Math.floor((FAN_CARD_COUNT - files.length) / 2);
+
+  fanCards.forEach((card, index) => {
+    const fileIndex = index - selectedStart;
+    const file = fileIndex >= 0 && fileIndex < files.length ? files[fileIndex] : "";
+    const image = card.querySelector("img");
+    const label = card.querySelector(".tarot-fan-card__label");
+    card.classList.toggle("is-revealed", Boolean(file));
+    card.classList.toggle("is-selected", Boolean(file));
+    card.setAttribute("aria-label", file ? `ไพ่ทำนายใบที่ ${fileIndex + 1}` : `ไพ่คว่ำใบที่ ${index + 1}`);
+    if (file) {
+      image.src = `../tarot-cards/${file}`;
+      image.alt = `ไพ่ทำนายใบที่ ${fileIndex + 1}`;
+      label.textContent = `ไพ่ใบที่ ${fileIndex + 1}`;
+    } else {
+      image.removeAttribute("src");
+      image.alt = "";
+      label.textContent = "";
+    }
+  });
+
+  const title = $("#tarot-fan-title");
+  const message = $("#tarot-fan-message");
+  if (phase === "shuffling") {
+    title && (title.textContent = "กำลังสับไพ่…");
+    message && (message.textContent = "ไพ่กำลังหมุนออกมาทีละใบ");
+  } else if (phase === "answering") {
+    title && (title.textContent = `ไพ่เปิดแล้ว · ${files.length} ใบ`);
+    message && (message.textContent = "กำลังอ่านคำบนไพ่ให้ตรงกับคำถามของคุณ");
+  } else if (phase === "revealed" && history) {
+    title && (title.textContent = `ประวัติการเปิดไพ่ · ${files.length} ใบ`);
+    message && (message.textContent = "กำลังดูผลของรอบก่อนหน้า");
+  } else if (phase === "revealed") {
+    title && (title.textContent = `ไพ่ของรอบนี้ · ${files.length} ใบ`);
+    message && (message.textContent = "เลื่อนลงเพื่ออ่านความหมายและคำทำนาย");
+  } else {
+    title && (title.textContent = "สำรับพร้อมแล้ว");
+    message && (message.textContent = "เลือกจำนวนไพ่ แล้วกด “เปิดไพ่”");
+  }
+}
+
+function setFanPhase(phase) {
+  state.fanPhase = phase;
+  renderFanBoard();
 }
 
 function renderWaitingRitual() {
@@ -621,6 +714,7 @@ function renderAll() {
   renderProgress();
   renderServerHistory();
   renderCards();
+  renderFanBoard();
   renderMemory();
   renderAnswerFromCurrent();
   renderQuestionComposer();
@@ -665,6 +759,7 @@ function clearPrivateMemory() {
   state.failedQuestion = "";
   state.failedErrorCode = "";
   state.failedRequestId = "";
+  state.fanPhase = "ready";
   $("#ai-question").value = "";
   clearAnswer();
   syncHistory();
@@ -738,6 +833,7 @@ async function openHistorySession(sessionId) {
     if (!data.session || data.session.deck_ready === false) throw new Error("ประวัติชุดนี้ไม่พร้อมเปิดดู");
     state.viewingHistorySessionId = String(sessionId);
     applyServerSession(data.session);
+    state.fanPhase = "revealed";
     renderAll();
     $("#request-status").textContent = "กำลังดูประวัติเดิม · กดเริ่มดูดวงใหม่เมื่อต้องการเปิดรอบใหม่";
     setWitchStatus("กำลังดูประวัติเดิม", "ready");
@@ -763,6 +859,7 @@ function startNewReading() {
   state.failedQuestion = "";
   state.failedErrorCode = "";
   state.failedRequestId = "";
+  state.fanPhase = "ready";
   $("#ai-question").value = "";
   clearAnswer();
   syncHistory();
@@ -779,6 +876,7 @@ async function answerCurrentRound(roundId) {
   const round = state.rounds.find((item) => item.id === roundId);
   if (!round) return;
   state.busy = true;
+  setFanPhase("answering");
   state.failedQuestion = "";
   state.failedErrorCode = "";
   state.failedRequestId = "";
@@ -797,6 +895,7 @@ async function answerCurrentRound(roundId) {
     state.drawn = [...answered.cards];
     syncHistory();
     saveState();
+    setFanPhase("revealed");
     renderAnswer(answered.answer, answered.structured, answered);
     void loadServerReadingHistory().catch(() => {});
     $("#ai-question").value = "";
@@ -817,6 +916,7 @@ async function answerCurrentRound(roundId) {
       state.failedRequestId = error.requestId || "";
       $("#request-status").textContent = messageForError(error.code, error.requestId);
       $("#retry-ai-button").hidden = !["AI_TIMEOUT", "AI_UPSTREAM_ERROR", "AI_RATE_LIMITED", "EMPTY_AI_RESPONSE", "OFFLINE"].includes(error.code);
+      setFanPhase("revealed");
       setWitchStatus("ยังอ่านคำทำนายไม่ได้ · กดลองอีกครั้ง");
     }
   } finally {
@@ -845,6 +945,7 @@ async function drawCards() {
   if ($("#draw-button").disabled) return;
   const version = ++state.requestVersion;
   state.busy = true;
+  setFanPhase("shuffling");
   $("#draw-button").classList.add("is-busy");
   setWitchStatus("กำลังสับไพ่...", "reading");
   renderProgress();
@@ -886,6 +987,7 @@ async function drawCards() {
     $("#ai-question").value = hasAiAccess() ? question : $("#ai-question").value;
     state.busy = false;
     $("#draw-button").classList.remove("is-busy");
+    setFanPhase(hasAiAccess() ? "answering" : "revealed");
     renderProgress();
     renderCards();
     renderMemory();
@@ -894,6 +996,7 @@ async function drawCards() {
     if (version !== state.requestVersion) return;
     state.busy = false;
     $("#draw-button").classList.remove("is-busy");
+    setFanPhase(currentRound()?.cards?.length ? "revealed" : "ready");
     $("#request-status").textContent = messageForError(error.code, error.requestId) || error.message;
     setWitchStatus("ยังเปิดไพ่ไม่ได้ · กดลองอีกครั้ง");
     renderProgress();
@@ -919,6 +1022,7 @@ async function resetCards() {
   state.failedQuestion = "";
   state.failedErrorCode = "";
   state.failedRequestId = "";
+  state.fanPhase = "ready";
   $("#ai-question").value = "";
   clearAnswer();
   syncHistory();

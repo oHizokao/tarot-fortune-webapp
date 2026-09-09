@@ -141,6 +141,23 @@ test("guest can open cards on the AI reader without a question", async ({ page }
   expect(readingSetStyle.boxShadow).toBe("none");
 });
 
+test("card fan turns the selected cards into a clear game-like reveal", async ({ page }) => {
+  await page.goto("/ai/");
+  const fan = page.locator("#tarot-fan-board");
+  await expect(fan).toBeVisible();
+  await expect(fan.locator(".tarot-fan-card")).toHaveCount(7);
+  await expect(fan).toHaveAttribute("data-fan-state", "ready");
+  await expect(fan.locator(".tarot-fan-card.is-revealed")).toHaveCount(0);
+
+  await page.locator('.choice-button[data-count="2"]').click();
+  await page.locator("#draw-button").click();
+  await expect(page.locator("#reading-sets .reading-set")).toHaveCount(1);
+  await expect(fan).toHaveAttribute("data-fan-state", "revealed");
+  await expect(fan.locator(".tarot-fan-card.is-revealed")).toHaveCount(2);
+  await expect(fan.locator(".tarot-fan-card.is-revealed img")).toHaveCount(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
 test("witch ritual wheel is visible and continuously animates", async ({ page }) => {
   await page.goto("/ai/");
   const wheel = page.locator(".witch-motion-wheel");
@@ -259,12 +276,15 @@ test("member keeps opened cards visible behind a clear ritual while AI is answer
   await page.getByLabel("คำถามของคุณ").fill("เรื่องงานของฉันควรเดินหน้าต่ออย่างไร?");
   await page.locator("#draw-button").click();
   await expect(page.locator(".tarot-card-card")).toHaveCount(1, { timeout: 5_000 });
+  await expect(page.locator("#tarot-fan-board")).toHaveAttribute("data-fan-state", "answering");
+  await expect(page.locator("#tarot-fan-board .tarot-fan-card.is-revealed")).toHaveCount(1);
   await expect(page.locator("#tarot-waiting-ritual")).toBeVisible();
   await expect(page.locator("#tarot-waiting-ritual .tarot-waiting-ritual__ring")).toHaveCSS("animation-name", "tarotWaitingSpin");
   await expect(page.locator("#tarot-waiting-ritual")).toContainText("กำลังอ่านคำบนไพ่");
   await expect(page.locator("#tarot-waiting-ritual")).toContainText("กำลังเชื่อมโยงกับคำถามของคุณ");
   await expect(page.locator("#ai-answer-stage")).toBeHidden();
   await expect(page.locator("#tarot-waiting-ritual")).toBeHidden({ timeout: 5_000 });
+  await expect(page.locator("#tarot-fan-board")).toHaveAttribute("data-fan-state", "revealed");
   await expect(page.locator("#ai-answer")).toContainText("สรุปคำทำนาย", { timeout: 5_000 });
 });
 

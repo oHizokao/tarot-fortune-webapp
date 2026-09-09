@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./ai.css?v=20260908-ai-follow-up-v33" />
+    <link rel="stylesheet" href="./ai.css?v=20260909-ai-fan-v34" />
   </head>
   <body>
     <div class="ai-bg ai-bg--one" aria-hidden="true"></div>
@@ -110,6 +110,13 @@
             <div><p class="panel-kicker" id="reveal-kicker">02 / THE REVEAL</p><h2 id="cards-title">ไพ่ที่เปิดได้</h2></div>
             <span class="spread-count" id="spread-count">ยังไม่ได้เปิด</span>
           </div>
+          <div class="tarot-fan-board" id="tarot-fan-board" data-fan-state="ready" data-card-count="0" role="status" aria-live="polite">
+            <div class="tarot-fan" id="tarot-fan" aria-hidden="true"></div>
+            <div class="tarot-fan-board__copy">
+              <strong id="tarot-fan-title">สำรับพร้อมแล้ว</strong>
+              <p id="tarot-fan-message">เลือกจำนวนไพ่ แล้วกด “เปิดไพ่”</p>
+            </div>
+          </div>
           <div class="witch-scene" data-motion="ambient" aria-hidden="true">
             <div class="witch-moon"></div>
             <div class="witch-orbit witch-orbit--one"></div>
@@ -151,6 +158,6 @@
 
       <footer class="ai-footer"><span>✦ TAROT DAILY</span><span>คำทำนายเป็นแนวทาง ไม่ใช่คำตัดสินชีวิต</span><a href="../privacy/">ความเป็นส่วนตัว</a><a href="../terms/">ข้อกำหนด</a><a href="../admin/">สำหรับผู้ดูแล</a></footer>
     </main>
-    <script type="module" src="./ai.js?v=20260908-ai-flow-v32" defer></script>
+    <script type="module" src="./ai.js?v=20260909-ai-fan-v34" defer></script>
   </body>
 </html>
