@@ -40,7 +40,7 @@
           <div class="auth-card-heading">
             <p class="eyebrow">WELCOME BACK</p>
             <h2 id="auth-title">เข้าใช้งานห้องอ่านไพ่</h2>
-            <p id="auth-subtitle">ใช้ username และรหัสผ่านเพื่อเข้าใช้งาน</p>
+            <p id="auth-subtitle">ใช้ username กับรหัสผ่าน หรือ Beta Access Code</p>
           </div>
           <div class="auth-tabs" role="tablist" aria-label="บัญชี Tarot Daily">
             <button class="auth-tab is-active" id="login-tab" type="button" role="tab" aria-selected="true" aria-controls="login-panel">เข้าใช้งาน</button>
@@ -54,6 +54,18 @@
               <button class="primary-button" type="submit"><span>เข้าใช้งาน</span><span aria-hidden="true">→</span></button>
             </form>
             <p class="form-status" id="login-status" role="status" aria-live="polite"></p>
+            <div class="beta-login-card">
+              <div class="beta-login-heading">
+                <p class="eyebrow">BETA ACCESS</p>
+                <h3>เข้าใช้งานด้วย Access Code</h3>
+                <p>ใช้ Code ที่ผู้ดูแลออกให้สำหรับการทดสอบ ไม่ต้องมี username หรือรหัสผ่าน</p>
+              </div>
+              <form class="auth-form" id="beta-login-form">
+                <label>Beta Access Code<input id="beta-code" type="password" autocomplete="one-time-code" autocapitalize="none" spellcheck="false" required placeholder="เช่น TF-..." /></label>
+                <button class="primary-button" type="submit"><span>เข้าใช้งานด้วย Code</span><span aria-hidden="true">→</span></button>
+              </form>
+              <p class="form-status" id="beta-login-status" role="status" aria-live="polite"></p>
+            </div>
             <p class="auth-note">ยังไม่มีบัญชี? กด “สมัครสมาชิก” ได้เลย สมัครแล้วรอผู้ดูแลเปิดสิทธิ์ก่อนใช้ AI</p>
           </div>
 
