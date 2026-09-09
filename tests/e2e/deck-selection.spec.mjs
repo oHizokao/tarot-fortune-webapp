@@ -15,6 +15,17 @@ test("guest selects up to three cards from the full deck and sees a concise resu
   await expect(deckCards.nth(3)).toBeDisabled();
 
   await expect(page.locator("#tarot-deck-card-list .tarot-deck-card.is-selected")).toHaveCount(3);
+  await expect(deckCards.nth(0)).toHaveClass(/is-selected/);
+  await expect(deckCards.nth(0)).not.toHaveClass(/is-disabled/);
+  await expect(deckCards.nth(3)).toHaveClass(/is-disabled/);
+  const selectionStyles = await page.evaluate(() => ({
+    selectedBorderWidth: getComputedStyle(document.querySelector(".tarot-deck-card.is-selected .tarot-deck-card__back")).borderTopWidth,
+    selectedBorderColor: getComputedStyle(document.querySelector(".tarot-deck-card.is-selected .tarot-deck-card__back")).borderTopColor,
+    disabledFilter: getComputedStyle(document.querySelector(".tarot-deck-card.is-disabled")).filter,
+  }));
+  expect(selectionStyles.selectedBorderWidth).toBe("2px");
+  expect(selectionStyles.selectedBorderColor).toBe("rgb(141, 232, 202)");
+  expect(selectionStyles.disabledFilter).toContain("grayscale");
   await expect(page.locator("#draw-button")).toBeEnabled();
 
   await page.locator("#draw-button").click();
