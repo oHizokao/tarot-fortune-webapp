@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./ai.css?v=20260909-ai-wheel-v35" />
+    <link rel="stylesheet" href="./ai.css?v=20260909-ai-deck-v36" />
   </head>
   <body>
     <div class="ai-bg ai-bg--one" aria-hidden="true"></div>
@@ -33,7 +33,7 @@
         <div class="ai-hero-copy">
           <p class="eyebrow" id="hero-eyebrow">FREE READING · NO LOGIN</p>
           <h1 id="ai-page-title"><span id="hero-title-primary">เปิดไพ่ด้วยตัวเอง</span><br /><span id="hero-title-secondary">ให้ไพ่เล่าเรื่องของคุณ</span></h1>
-          <p id="hero-description">เลือกจำนวนไพ่ เปิดทีละใบ แล้วอ่านภาพและคำบนไพ่ด้วยสัญชาตญาณของคุณเอง ไม่ต้องสมัครสมาชิก</p>
+          <p id="hero-description">คลิกไพ่จากสำรับได้สูงสุด 3 ใบ แล้วดูผลการเปิดไพ่เป็นชุด อ่านง่ายในหน้าเดียว</p>
         </div>
         <div class="hero-seal" aria-hidden="true"><span>✦</span><small id="hero-seal-label">FREE<br />READING</small></div>
       </section>
@@ -43,7 +43,7 @@
         <div>
           <p class="panel-kicker">FREE MODE / NO LOGIN</p>
           <h2>เปิดไพ่ได้เลย</h2>
-          <p>เลือกจำนวนไพ่ แล้วกดวงล้อไพ่เพื่อเปิดและอ่านภาพกับคำบนไพ่ด้วยตัวเอง</p>
+          <p>คลิกไพ่จากสำรับได้เลย สูงสุด 3 ใบ แล้วกด “ทำนาย” เพื่อดูผล</p>
         </div>
         <a class="guest-mode-banner__action" href="../login/?next=/ai/">เข้าใช้งานเพื่อถามไพ่ AI <span aria-hidden="true">→</span></a>
       </section>
@@ -63,8 +63,8 @@
       <section class="ai-reading-stage ai-reading-stage--sequential" data-reader-order="question spread reveal answer" aria-label="ขั้นตอนถามแม่มด AI">
         <div class="flow-steps" aria-label="ขั้นตอนการอ่านไพ่">
           <div class="flow-step member-only" id="flow-step-question" data-step="question" hidden><span id="flow-number-question">01</span><div><strong>พิมพ์คำถาม</strong><small>เริ่มจากเรื่องที่อยากสะท้อน</small></div></div>
-          <div class="flow-step" id="flow-step-spread" data-step="spread"><span id="flow-number-spread">01</span><div><strong>เลือกจำนวนไพ่</strong><small>เลือก 1, 2 หรือ 3 ใบ</small></div></div>
-          <div class="flow-step" id="flow-step-draw" data-step="draw"><span id="flow-number-draw">02</span><div><strong>หมุนวงล้อไพ่</strong><small>เปิดตามจำนวนที่เลือก · ไพ่ไม่ซ้ำกัน</small></div></div>
+          <div class="flow-step" id="flow-step-spread" data-step="spread"><span id="flow-number-spread">01</span><div><strong>เลือกไพ่</strong><small>คลิกจากสำรับได้สูงสุด 3 ใบ</small></div></div>
+          <div class="flow-step" id="flow-step-draw" data-step="draw"><span id="flow-number-draw">02</span><div><strong>กดทำนาย</strong><small>เปิดผลไพ่ชุดนี้</small></div></div>
           <div class="flow-step member-only" id="flow-step-answer" data-step="answer" hidden><span id="flow-number-answer">04</span><div><strong>รับคำตอบ</strong><small>AI อ่านจากคำบนไพ่</small></div></div>
         </div>
 
@@ -80,42 +80,55 @@
           </div>
           <label class="question-label" id="question-label" for="ai-question">คำถามของคุณ</label>
           <textarea id="ai-question" maxlength="2000" rows="4" required aria-describedby="request-status" placeholder="เช่น ตอนนี้ฉันควรเริ่มจัดการความกังวลเรื่องงานจากตรงไหนดี?"></textarea>
-          <p class="question-hint" id="question-hint">ยิ่งระบุเรื่องที่อยากรู้ชัด คำทำนายจากไพ่ก็จะตรงกับคำถามมากขึ้น</p>
+          <p class="question-hint" id="question-hint">พิมพ์คำถามก่อน แล้วจึงเลือกไพ่ · ยิ่งระบุเรื่องที่อยากรู้ชัด คำทำนายจากไพ่ก็จะตรงกับคำถามมากขึ้น</p>
         </section>
 
         <section class="ai-spread-stage panel" aria-labelledby="spread-title">
           <div class="stage-heading">
-            <div><p class="panel-kicker" id="spread-kicker">01 / CHOOSE CARDS</p><h2 id="spread-title">เลือกจำนวนไพ่</h2><p id="spread-description">เลือก 1, 2 หรือ 3 ใบ แล้วกดวงล้อไพ่เพื่ออ่านด้วยตัวเอง</p></div>
+            <div><p class="panel-kicker" id="spread-kicker">01 / CHOOSE CARDS</p><h2 id="spread-title">เลือกไพ่จากสำรับ</h2><p id="spread-description">คลิกไพ่ที่อยากหยิบได้สูงสุด 3 ใบ แล้วกดทำนาย</p></div>
             <span class="deck-status"><i></i><strong id="remaining-count">78</strong> ใบเหลือ</span>
           </div>
-          <div class="choice-row" role="group" aria-label="จำนวนไพ่ที่ต้องการเปิด">
-            <button class="choice-button is-selected" data-count="1" type="button" aria-pressed="true"><span class="choice-visual choice-visual--one" aria-hidden="true"><i></i></span><span class="choice-copy"><b>01</b><strong>จับไพ่ 1 ใบ</strong><small>ภาพรวม</small></span></button>
-            <button class="choice-button" data-count="2" type="button" aria-pressed="false"><span class="choice-visual choice-visual--two" aria-hidden="true"><i></i></span><span class="choice-copy"><b>02</b><strong>จับไพ่ 2 ใบ</strong><small>สถานการณ์ · ก้าวต่อไป</small></span></button>
-            <button class="choice-button" data-count="3" type="button" aria-pressed="false"><span class="choice-visual choice-visual--three" aria-hidden="true"><i></i></span><span class="choice-copy"><b>03</b><strong>จับไพ่ 3 ใบ</strong><small>อดีต · ปัจจุบัน · แนวทาง</small></span></button>
+          <div class="tarot-deck-zone" id="tarot-deck-zone" data-deck-state="ready" role="group" aria-label="สำรับไพ่สำหรับเลือก">
+            <div class="tarot-deck-orbit" id="tarot-deck-card-list" aria-label="ไพ่ในสำรับ"></div>
+            <div class="tarot-deck-center" aria-hidden="true">
+              <span class="tarot-deck-center__sigil">✦</span>
+              <strong id="deck-center-title">เลือกไพ่จากสำรับ</strong>
+              <small id="deck-center-message">คลิกไพ่ทีละใบ · สูงสุด 3 ใบ</small>
+            </div>
           </div>
+          <div class="selected-cards" id="selected-cards" aria-live="polite" aria-label="ไพ่ที่เลือกไว้">
+            <div class="selected-card-slot is-empty" data-slot="1"><span>01</span><small>เลือกใบที่ 1</small></div>
+            <div class="selected-card-slot is-empty" data-slot="2"><span>02</span><small>เลือกใบที่ 2</small></div>
+            <div class="selected-card-slot is-empty" data-slot="3"><span>03</span><small>เลือกใบที่ 3</small></div>
+          </div>
+          <div class="selection-status"><span>เลือกแล้ว</span><strong id="selected-count">0 / 3</strong></div>
           <div class="progress-wrap">
             <div class="progress-label"><span>สำรับรอบนี้</span><strong><span id="opened-count">0</span> / 78</strong></div>
             <div class="progress-track" role="progressbar" aria-label="เปิดไพ่ไปแล้ว" aria-valuemin="0" aria-valuemax="78" aria-valuenow="0"><span id="progress-bar"></span></div>
-            <p id="deck-message">ไพ่จะไม่ซ้ำกันจนกว่าจะครบทั้งสำรับ</p>
+            <p id="deck-message">คลิกไพ่จากสำรับเพื่อเริ่มเลือก · ไพ่จะไม่ซ้ำกันจนกว่าจะครบสำรับ</p>
           </div>
           <div class="spread-actions">
+            <button class="draw-button predict-button" id="draw-button" data-action="predict" type="button" disabled aria-label="ทำนาย"><span>✦</span><b id="draw-label">ทำนาย</b><span aria-hidden="true">→</span></button>
             <button class="reset-button" id="reset-button" type="button"><span class="reset-icon" aria-hidden="true">↻</span><span class="reset-label">ล้างไพ่</span><small>เริ่มสำรับใหม่</small></button>
           </div>
-          <p class="request-status request-status--main" id="request-status" role="status" aria-live="polite">ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงเลือกจำนวนไพ่</p>
+          <p class="request-status request-status--main" id="request-status" role="status" aria-live="polite">เลือกไพ่จากสำรับก่อน แล้วกดทำนาย</p>
+          <div class="witch-scene witch-scene--selection" data-motion="ambient" aria-hidden="true">
+            <div class="witch-moon"></div>
+            <div class="witch-orbit witch-orbit--one"></div>
+            <div class="witch-orbit witch-orbit--two"></div>
+            <div class="witch-motion-wheel" data-motion-layer="sigil"><span class="witch-motion-wheel__spark">✦</span></div>
+            <img class="witch-art" src="../assets/witch/witch-reader.webp" alt="" width="720" height="720" />
+            <div class="witch-crystal"><span>✦</span></div>
+            <span class="witch-spark witch-spark--one">✦</span>
+            <span class="witch-spark witch-spark--two">✧</span>
+            <span class="witch-status">พร้อมเลือกไพ่</span>
+          </div>
         </section>
 
-        <section class="ai-reveal-stage panel" aria-labelledby="cards-title">
+        <section class="ai-reveal-stage panel" id="reading-result-stage" aria-labelledby="reading-result-title" hidden>
           <div class="stage-heading stage-heading--compact">
-            <div><p class="panel-kicker" id="reveal-kicker">02 / THE REVEAL</p><h2 id="cards-title">ไพ่ที่เปิดได้</h2></div>
+            <div><p class="panel-kicker" id="reveal-kicker">02 / THE REVEAL</p><h2 id="reading-result-title">ผลการเปิดไพ่</h2><p id="result-status">ไพ่ที่เปิดได้จะแสดงเป็นชุดด้านล่าง</p></div>
             <span class="spread-count" id="spread-count">ยังไม่ได้เปิด</span>
-          </div>
-          <div class="tarot-fan-board" id="tarot-fan-board" data-fan-state="ready" data-card-count="0" role="status" aria-live="polite">
-            <div class="tarot-fan" id="tarot-fan" role="button" tabindex="0" aria-label="หมุนวงล้อไพ่" aria-disabled="false"></div>
-            <div class="tarot-fan-board__copy">
-              <strong id="tarot-fan-title">สำรับพร้อมแล้ว</strong>
-              <p id="tarot-fan-message">เลือกจำนวนไพ่ก่อน แล้วกดวงล้อไพ่เพื่อเปิด</p>
-              <button class="draw-button tarot-wheel-button" id="draw-button" type="button" aria-label="หมุนวงล้อไพ่ · 1 ใบ"><span>✦</span><b id="draw-label">เปิดไพ่</b><span aria-hidden="true">↻</span></button>
-            </div>
           </div>
           <div class="witch-scene" data-motion="ambient" aria-hidden="true">
             <div class="witch-moon"></div>
@@ -137,13 +150,13 @@
               <p>กำลังเชื่อมโยงกับคำถามของคุณ</p>
             </div>
           </div>
-          <div class="reading-sets is-empty" id="reading-sets" aria-live="polite"><div class="empty-card"><span>?</span><p>เลือกจำนวนไพ่<br />แล้วกดวงล้อไพ่</p></div></div>
+          <div class="reading-sets is-empty" id="reading-sets" aria-live="polite"><div class="empty-card"><span>?</span><p>เลือกไพ่จากสำรับ<br />แล้วกดทำนาย</p></div></div>
           <p class="reading-note" id="reading-note">เปิดไพ่แล้วอ่านภาพและคำบนไพ่ด้วยตัวเองได้เลย</p>
         </section>
 
         <section class="ai-answer-stage panel member-only" id="ai-answer-stage" aria-labelledby="ai-answer-title" hidden>
           <div class="stage-heading stage-heading--compact">
-            <div><p class="panel-kicker">04 / THE ANSWER</p><h2 id="ai-answer-title" tabindex="-1">คำตอบจากไพ่</h2><p>คำทำนายเริ่มจากคำฟันธง แล้วแยกความหมายของไพ่แต่ละใบให้เห็นชัดเจน</p></div>
+            <div><p class="panel-kicker">03 / THE ANSWER</p><h2 id="ai-answer-title" tabindex="-1">คำทำนายจาก AI</h2><p>คำตอบสั้น กระชับ แยกตามไพ่ แล้วสรุปให้ตรงกับคำถามด้านล่าง</p></div>
             <span class="answer-orbit" aria-hidden="true">✧</span>
           </div>
           <div class="answer-box" id="ai-answer" aria-live="polite" aria-label="คำตอบจาก AI"></div>
@@ -158,6 +171,6 @@
 
       <footer class="ai-footer"><span>✦ TAROT DAILY</span><span>คำทำนายเป็นแนวทาง ไม่ใช่คำตัดสินชีวิต</span><a href="../privacy/">ความเป็นส่วนตัว</a><a href="../terms/">ข้อกำหนด</a><a href="../admin/">สำหรับผู้ดูแล</a></footer>
     </main>
-    <script type="module" src="./ai.js?v=20260909-ai-wheel-v35" defer></script>
+    <script type="module" src="./ai.js?v=20260909-ai-deck-v36" defer></script>
   </body>
 </html>

@@ -6,9 +6,10 @@ const STORAGE_KEY = "tarot-daily-ai-reading-v3";
 const LEGACY_STORAGE_KEY = "tarot-daily-ai-reading-v2";
 const MAX_HISTORY = 78;
 const DECK_SIZE = 78;
-const FAN_CARD_COUNT = 7;
+const MAX_SELECTED_CARDS = 3;
 const state = {
-  count: 1,
+  count: 0,
+  selectedCards: [],
   localSession: null,
   savedServerSessionId: "",
   sessionId: "",
@@ -32,7 +33,7 @@ const state = {
 };
 
 const $ = (selector) => document.querySelector(selector);
-const choiceButtons = [...document.querySelectorAll(".choice-button")];
+const choiceButtons = [];
 
 function randomId(prefix = "request") {
   return globalThis.crypto?.randomUUID?.() || `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -93,7 +94,7 @@ function renderQuestionComposer() {
   $("#question-kicker")?.replaceChildren(document.createTextNode(answered ? "คำถามรอบใหม่" : "01 / YOUR QUESTION"));
   $("#question-title")?.replaceChildren(document.createTextNode(answered ? "ถามคำถามใหม่" : "พิมพ์คำถามของคุณ"));
   $("#question-description")?.replaceChildren(document.createTextNode(answered
-    ? "พิมพ์คำถามใหม่ แล้วเลือกจำนวนไพ่เพื่อเปิดรอบถัดไปจากสำรับเดิม"
+    ? "พิมพ์คำถามใหม่ แล้วคลิกไพ่จากสำรับเพื่อเปิดรอบถัดไป"
     : "เขียนเรื่องที่ต้องการถามให้ชัดเจน คำถามนี้จะเป็นแกนหลักของคำทำนาย"));
   $("#question-label")?.replaceChildren(document.createTextNode(answered ? "คำถามรอบถัดไป" : "คำถามของคุณ"));
   const field = $("#ai-question");
@@ -102,7 +103,7 @@ function renderQuestionComposer() {
     field.setAttribute("aria-label", answered ? "คำถามรอบถัดไป" : "คำถามของคุณ");
   }
   $("#question-hint")?.replaceChildren(document.createTextNode(answered
-    ? "คำถามนี้จะใช้เปิดไพ่ชุดใหม่ และระบบจะจำบริบทจากรอบก่อนหน้าไว้"
+    ? "คำถามนี้จะใช้เปิดไพ่ชุดใหม่ และระบบจะจำบริบทจากรอบก่อนหน้าไว้ให้"
     : "ยิ่งระบุเรื่องที่อยากรู้ชัด คำทำนายจากไพ่ก็จะตรงกับคำถามมากขึ้น"));
   $("#account-callout")?.classList.toggle("is-follow-up", answered);
   setReadingState();
@@ -117,12 +118,7 @@ function initMotion() {
 }
 
 function setCount(count) {
-  state.count = Number(count);
-  choiceButtons.forEach((button) => {
-    const selected = Number(button.dataset.count) === state.count;
-    button.classList.toggle("is-selected", selected);
-    button.setAttribute("aria-pressed", String(selected));
-  });
+  state.count = Math.max(0, Math.min(MAX_SELECTED_CARDS, Number(count) || 0));
   renderProgress();
 }
 
@@ -142,8 +138,8 @@ function setReaderMode(user) {
       eyebrow: "AI TAROT · QUESTION FIRST",
       primary: "ถามไพ่ในเรื่องที่อยู่ใจ",
       secondary: "แล้วรับคำตอบให้ชัดเจน",
-      description: "พิมพ์คำถาม เลือกจำนวนไพ่ แล้วกดวงล้อไพ่ คำตอบจะอ่านจากคำบนไพ่และตอบตรงกับเรื่องที่คุณถาม",
-      spread: "เลือก 1, 2 หรือ 3 ใบ · ทุกครั้งจะหยิบต่อจากสำรับเดิม",
+      description: "พิมพ์คำถาม คลิกไพ่จากสำรับได้สูงสุด 3 ใบ แล้วกดทำนาย คำตอบจะอ่านจากคำบนไพ่และตอบตรงกับเรื่องที่คุณถาม",
+      spread: "คลิกไพ่จากสำรับได้สูงสุด 3 ใบ · ทุกครั้งจะหยิบต่อจากสำรับเดิม",
       cards: "ไพ่ที่เปิดได้",
       seal: "AI\nREADING",
     }
@@ -152,8 +148,8 @@ function setReaderMode(user) {
       eyebrow: "FREE READING · NO LOGIN",
       primary: "เปิดไพ่ด้วยตัวเอง",
       secondary: "ให้ไพ่เล่าเรื่องของคุณ",
-      description: "เลือกจำนวนไพ่ แล้วกดวงล้อไพ่เพื่อเปิดและอ่านภาพกับคำบนไพ่ด้วยตัวเอง ไม่ต้องสมัครสมาชิก",
-      spread: "เลือก 1, 2 หรือ 3 ใบ · เปิดต่อได้จนกว่าจะครบสำรับ",
+      description: "คลิกไพ่จากสำรับได้สูงสุด 3 ใบ แล้วดูภาพกับคำบนไพ่ด้วยตัวเอง ไม่ต้องสมัครสมาชิก",
+      spread: "คลิกไพ่จากสำรับได้สูงสุด 3 ใบ · เปิดต่อได้จนกว่าจะครบสำรับ",
       cards: "ไพ่ที่เปิดได้",
       seal: "FREE\nREADING",
     };
@@ -171,8 +167,8 @@ function setReaderMode(user) {
   Object.entries(stepNumbers).forEach(([step, number]) => { $(`#flow-number-${step}`)?.replaceChildren(document.createTextNode(number)); });
   $("#account-title")?.replaceChildren(document.createTextNode(member ? (user.ai_enabled ? `พร้อมอ่านไพ่ให้ ${user.name || user.username}` : "บัญชีนี้ยังรอสิทธิ์ AI") : "เปิดไพ่ได้เลย"));
   $("#account-message")?.replaceChildren(document.createTextNode(member
-    ? user.ai_enabled ? "พิมพ์คำถามก่อน เลือกจำนวนไพ่ แล้วกดวงล้อไพ่ ระบบจะอ่านคำตอบให้ตรงกับคำถามและจำรอบก่อนหน้าไว้" : "บัญชีเข้าใช้งานแล้ว แต่ผู้ดูแลยังไม่ได้เปิดสิทธิ์ AI ให้บัญชีนี้"
-    : "เลือกจำนวนไพ่แล้วกดวงล้อไพ่ได้ทันที ถ้าอยากให้ AI ตอบคำถาม ให้เข้าใช้งานก่อน"));
+    ? user.ai_enabled ? "พิมพ์คำถามก่อน คลิกไพ่ไม่เกิน 3 ใบ แล้วกดทำนาย ระบบจะอ่านคำตอบให้ตรงกับเรื่องที่ถามและจำรอบก่อนหน้าไว้" : "บัญชีเข้าใช้งานแล้ว แต่ผู้ดูแลยังไม่ได้เปิดสิทธิ์ AI ให้บัญชีนี้"
+    : "คลิกไพ่จากสำรับได้ทันที ถ้าอยากให้ AI ตอบคำถาม ให้เข้าใช้งานก่อน"));
   const accountAction = $("#account-action");
   if (accountAction) {
     accountAction.textContent = member ? "ออกจากระบบ" : "เข้าใช้งาน";
@@ -189,110 +185,96 @@ function setReaderMode(user) {
 }
 
 function setWitchStatus(message, mode = "") {
-  const element = $("#witch-status");
-  if (!element) return;
-  element.textContent = message;
-  element.classList.toggle("is-reading", mode === "reading");
-  element.classList.toggle("is-ready", mode === "ready");
+  const elements = [...document.querySelectorAll(".witch-status")];
+  elements.forEach((element) => {
+    element.textContent = message;
+    element.classList.toggle("is-reading", mode === "reading");
+    element.classList.toggle("is-ready", mode === "ready");
+  });
 }
 
-function ensureFanCards() {
-  const fan = $("#tarot-fan");
-  if (!fan) return [];
-  if (fan.children.length === FAN_CARD_COUNT) return [...fan.children];
-
-  fan.replaceChildren(...Array.from({ length: FAN_CARD_COUNT }, (_, index) => {
-    const card = document.createElement("div");
-    card.className = "tarot-fan-card";
-    card.dataset.slot = String(index + 1);
-    card.style.setProperty("--fan-slot", String(index + 1));
-
-    const inner = document.createElement("div");
-    inner.className = "tarot-fan-card__inner";
-
-    const back = document.createElement("div");
-    back.className = "tarot-fan-card__back";
-    back.innerHTML = '<span aria-hidden="true">✦</span><small>เปิดไพ่</small>';
-
-    const front = document.createElement("div");
-    front.className = "tarot-fan-card__front";
-    const image = document.createElement("img");
-    image.loading = "eager";
-    image.decoding = "async";
-    const label = document.createElement("span");
-    label.className = "tarot-fan-card__label";
-    front.append(image, label);
-
-    inner.append(back, front);
-    card.append(inner);
+function ensureDeckCards() {
+  const deck = $("#tarot-deck-card-list");
+  if (!deck) return [];
+  if (deck.children.length === DECK_SIZE) return [...deck.children];
+  deck.replaceChildren(...Array.from({ length: DECK_SIZE }, (_, index) => {
+    const card = document.createElement("button");
+    card.className = "tarot-deck-card";
+    card.type = "button";
+    card.dataset.deckIndex = String(index);
+    card.style.setProperty("--deck-index", String(index));
+    card.style.setProperty("--deck-angle", `${(index / DECK_SIZE) * 360}deg`);
+    card.setAttribute("aria-label", `เลือกไพ่จากสำรับ ใบที่ ${index + 1}`);
+    card.innerHTML = '<span class="tarot-deck-card__back" aria-hidden="true"><i>✦</i></span>';
+    card.addEventListener("click", () => selectDeckCard(card));
     return card;
   }));
-  return [...fan.children];
+  return [...deck.children];
 }
 
-function renderFanBoard() {
-  const board = $("#tarot-fan-board");
-  if (!board) return;
-  const fanCards = ensureFanCards();
-  const drawButton = $("#draw-button");
-  const fan = $("#tarot-fan");
-  const round = currentRound();
-  const hasCards = Boolean(round?.cards?.length);
-  const phase = state.fanPhase === "ready" && hasCards && !isViewingHistory() ? "revealed" : state.fanPhase;
-  const files = phase === "answering" || phase === "revealed" ? [...(round?.cards || [])] : [];
-  const history = isViewingHistory();
-  board.dataset.fanState = phase;
-  board.dataset.cardCount = String(files.length);
-  if (fan) {
-    const disabled = Boolean(drawButton?.disabled);
-    fan.classList.toggle("is-disabled", disabled);
-    fan.setAttribute("aria-disabled", String(disabled));
-    fan.setAttribute("aria-label", `หมุนวงล้อไพ่ · ${state.count} ใบ`);
-  }
-  const selectedStart = Math.floor((FAN_CARD_COUNT - files.length) / 2);
-
-  fanCards.forEach((card, index) => {
-    const fileIndex = index - selectedStart;
-    const file = fileIndex >= 0 && fileIndex < files.length ? files[fileIndex] : "";
-    const image = card.querySelector("img");
-    const label = card.querySelector(".tarot-fan-card__label");
-    card.classList.toggle("is-revealed", Boolean(file));
-    card.classList.toggle("is-selected", Boolean(file));
-    card.setAttribute("aria-label", file ? `ไพ่ทำนายใบที่ ${fileIndex + 1}` : `ไพ่คว่ำใบที่ ${index + 1}`);
-    if (file) {
-      image.src = `../tarot-cards/${file}`;
-      image.alt = `ไพ่ทำนายใบที่ ${fileIndex + 1}`;
-      label.textContent = `ไพ่ใบที่ ${fileIndex + 1}`;
-    } else {
-      image.removeAttribute("src");
-      image.alt = "";
-      label.textContent = "";
-    }
+function renderSelectedCards() {
+  const slots = [...document.querySelectorAll(".selected-card-slot")];
+  slots.forEach((slot, index) => {
+    const selected = state.selectedCards[index];
+    slot.classList.toggle("is-empty", !selected);
+    slot.classList.toggle("selected-card", Boolean(selected));
+    slot.dataset.selected = selected ? "true" : "false";
+    const number = slot.querySelector("span");
+    const label = slot.querySelector("small");
+    if (number) number.textContent = String(index + 1).padStart(2, "0");
+    if (label) label.textContent = selected ? "เลือกแล้ว" : `เลือกใบที่ ${index + 1}`;
   });
+  $("#selected-count")?.replaceChildren(document.createTextNode(`${state.selectedCards.length} / ${MAX_SELECTED_CARDS}`));
+}
 
-  const title = $("#tarot-fan-title");
-  const message = $("#tarot-fan-message");
+function renderDeckZone() {
+  const zone = $("#tarot-deck-zone");
+  if (!zone) return;
+  const cards = ensureDeckCards();
+  const phase = state.fanPhase;
+  const selectedIndexes = new Set(state.selectedCards.map((item) => Number(item.deckIndex)));
+  zone.dataset.deckState = phase;
+  zone.dataset.selectedCount = String(state.selectedCards.length);
+  cards.forEach((card, index) => {
+    const selected = selectedIndexes.has(index);
+    const unavailable = selected || state.selectedCards.length >= MAX_SELECTED_CARDS || state.busy || isViewingHistory();
+    card.classList.toggle("is-selected", selected);
+    card.classList.toggle("is-disabled", unavailable && !selected);
+    card.disabled = unavailable && !selected;
+    card.setAttribute("aria-pressed", String(selected));
+  });
+  renderSelectedCards();
+  const title = $("#deck-center-title");
+  const message = $("#deck-center-message");
   if (phase === "shuffling") {
     title && (title.textContent = "กำลังสับไพ่…");
-    message && (message.textContent = `วงล้อกำลังหมุน · เตรียมเปิด ${state.count} ใบ`);
+    message && (message.textContent = "รอสักครู่ แล้วผลจะเปิดให้ดู");
   } else if (phase === "answering") {
-    title && (title.textContent = `ไพ่เปิดแล้ว · ${files.length} ใบ`);
-    message && (message.textContent = "กำลังอ่านคำบนไพ่ให้ตรงกับคำถามของคุณ");
-  } else if (phase === "revealed" && history) {
-    title && (title.textContent = `ประวัติการเปิดไพ่ · ${files.length} ใบ`);
-    message && (message.textContent = "กำลังดูผลของรอบก่อนหน้า");
+    title && (title.textContent = "กำลังอ่านไพ่…");
+    message && (message.textContent = "กำลังเชื่อมโยงคำบนไพ่กับคำถาม");
   } else if (phase === "revealed") {
-    title && (title.textContent = `ไพ่ของรอบนี้ · ${files.length} ใบ`);
-    message && (message.textContent = "เลื่อนลงเพื่ออ่านความหมายและคำทำนาย");
+    title && (title.textContent = "เปิดไพ่แล้ว");
+    message && (message.textContent = "ดูผลการเปิดไพ่ด้านล่าง");
+  } else if (state.selectedCards.length) {
+    title && (title.textContent = `เลือกแล้ว ${state.selectedCards.length} ใบ`);
+    message && (message.textContent = state.selectedCards.length === MAX_SELECTED_CARDS ? "พร้อมทำนายแล้ว" : "เลือกเพิ่มได้ หรือกดทำนายเลย");
   } else {
-    title && (title.textContent = "สำรับพร้อมแล้ว");
-    message && (message.textContent = `เลือกจำนวนไพ่ แล้วกดวงล้อเพื่อเปิด ${state.count} ใบ`);
+    title && (title.textContent = "เลือกไพ่จากสำรับ");
+    message && (message.textContent = "คลิกไพ่ทีละใบ · สูงสุด 3 ใบ");
   }
+}
+
+function selectDeckCard(card) {
+  if (state.busy || isViewingHistory() || state.selectedCards.length >= MAX_SELECTED_CARDS || card.classList.contains("is-selected")) return;
+  state.selectedCards = [...state.selectedCards, { deckIndex: Number(card.dataset.deckIndex), slot: state.selectedCards.length + 1 }];
+  state.count = state.selectedCards.length;
+  renderProgress();
+  setWitchStatus(`เลือกแล้ว ${state.selectedCards.length} ใบ · กดทำนายเมื่อพร้อม`, "ready");
 }
 
 function setFanPhase(phase) {
   state.fanPhase = phase;
-  renderFanBoard();
+  renderDeckZone();
 }
 
 function renderWaitingRitual() {
@@ -306,13 +288,14 @@ function renderFlow() {
   const questionReady = !isMemberMode() || hasQuestion();
   const hasSpread = Boolean(state.currentRoundId);
   const answered = hasAnswer();
+  const hasSelection = state.selectedCards.length > 0;
   const current = hasAiAccess()
-    ? !questionReady ? "question" : !hasSpread ? "spread" : !answered ? "draw" : "answer"
-    : !hasSpread ? "spread" : "draw";
+    ? !questionReady ? "question" : answered ? "answer" : hasSelection ? "draw" : "spread"
+    : hasSelection ? "draw" : "spread";
   const steps = [
-    ["question", hasAiAccess() && questionReady],
-    ["spread", hasSpread],
-    ["draw", hasSpread],
+    ["question", hasAiAccess() && (questionReady || answered)],
+    ["spread", hasSelection || hasSpread],
+    ["draw", answered],
     ["answer", isMemberMode() && answered],
   ];
   steps.forEach(([step, complete]) => {
@@ -339,37 +322,37 @@ function renderProgress() {
   const answered = hasAnswer();
   const question = currentQuestionValue();
   const historyView = isViewingHistory();
-  const aiQuestionBlocked = hasAiAccess() && hasSpread && (!answered || !question || duplicateCurrentQuestion(question));
+  const selected = state.selectedCards.length;
+  const aiQuestionBlocked = hasAiAccess() && answered && (!question || duplicateCurrentQuestion(question));
   const questionReady = !hasAiAccess() || Boolean(question);
-  $("#draw-button").disabled = empty || state.busy || historyView || aiQuestionBlocked || !questionReady;
+  $("#draw-button").disabled = empty || state.busy || historyView || selected < 1 || aiQuestionBlocked || !questionReady;
   $("#reset-button").disabled = state.busy || historyView;
-  choiceButtons.forEach((button) => { button.disabled = state.busy || historyView || (hasAiAccess() && hasSpread && !answered); });
-  $("#draw-label").textContent = empty ? "สำรับหมดแล้ว" : "เปิดไพ่";
-  $("#draw-button")?.setAttribute("aria-label", empty ? "สำรับหมดแล้ว" : `หมุนวงล้อไพ่ · ${state.count} ใบ`);
+  $("#draw-label").textContent = empty ? "สำรับหมดแล้ว" : "ทำนาย";
+  $("#draw-button")?.setAttribute("aria-label", empty ? "สำรับหมดแล้ว" : `ทำนาย · ${selected || 0} ใบ`);
+  $("#selected-count")?.replaceChildren(document.createTextNode(`${selected} / ${MAX_SELECTED_CARDS}`));
   $("#deck-message").textContent = historyView
     ? "กำลังดูประวัติเดิม · กดเริ่มดูดวงใหม่ด้านบนเมื่อต้องการเปิดรอบใหม่"
     : empty
     ? "เปิดครบทั้ง 78 ใบแล้ว กดล้างไพ่และสับใหม่เพื่อเริ่มต้นอีกครั้ง"
-    : !hasAiAccess()
-      ? `เปิดแล้ว ${opened} ใบ · กดวงล้อต่อได้ ไพ่จะไม่ซ้ำกัน`
-      : !hasSpread
-        ? questionReady ? `คำถามพร้อมแล้ว · กดวงล้อไพ่ (เหลือ ${remaining} ใบ)` : "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงกดวงล้อไพ่"
-        : !answered
-          ? "ไพ่เปิดแล้ว · กำลังเตรียมคำทำนาย"
-          : duplicateCurrentQuestion(question)
-            ? "พิมพ์คำถามใหม่เพื่อเปิดไพ่รอบถัดไป"
-            : question ? `คำถามรอบใหม่พร้อมแล้ว · กดวงล้อไพ่ (เหลือ ${remaining} ใบ)` : "คำตอบพร้อมแล้ว · พิมพ์คำถามรอบถัดไป";
+    : selected >= MAX_SELECTED_CARDS
+      ? (hasAiAccess() && !questionReady ? "พิมพ์คำถามก่อน แล้วกดทำนาย" : "เลือกครบ 3 ใบแล้ว · กดทำนายได้เลย")
+      : selected
+        ? `เลือกแล้ว ${selected} ใบ · เลือกเพิ่มได้อีก ${MAX_SELECTED_CARDS - selected} ใบ หรือกดทำนาย`
+        : hasAiAccess() && !questionReady
+          ? "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วคลิกไพ่จากสำรับ"
+          : `คลิกไพ่จากสำรับเพื่อเลือก · เหลือ ${remaining} ใบ`;
   if (empty) setWitchStatus("เปิดครบทั้งสำรับแล้ว · เริ่มสำรับใหม่ได้เลย");
   else if (state.busy) setWitchStatus(hasAnswer() ? "กำลังอ่านคำทำนาย..." : "กำลังสับไพ่...", "reading");
-  else if (hasAnswer()) setWitchStatus(question && !duplicateCurrentQuestion(question) ? "คำถามใหม่พร้อมแล้ว · กดวงล้อไพ่" : "คำตอบพร้อมแล้ว · พิมพ์คำถามใหม่", "ready");
-  else if (hasSpread) setWitchStatus(isMemberMode() ? "ไพ่เปิดแล้ว · กำลังเตรียมคำตอบ" : "ไพ่เปิดแล้ว · เปิดต่อได้เลย", "ready");
-  else if (hasAiAccess() && questionReady) setWitchStatus("คำถามพร้อมแล้ว · กดวงล้อไพ่");
+  else if (selected) setWitchStatus(`เลือกแล้ว ${selected} ใบ · ${selected === MAX_SELECTED_CARDS ? "พร้อมทำนาย" : "เลือกเพิ่มได้"}`, "ready");
+  else if (hasAnswer()) setWitchStatus(question && !duplicateCurrentQuestion(question) ? "คำถามใหม่พร้อมแล้ว · เลือกไพ่" : "คำตอบพร้อมแล้ว · พิมพ์คำถามใหม่", "ready");
+  else if (hasSpread) setWitchStatus(isMemberMode() ? "พร้อมเปิดรอบใหม่" : "พร้อมเปิดไพ่ต่อ", "ready");
+  else if (hasAiAccess() && questionReady) setWitchStatus("คำถามพร้อมแล้ว · เลือกไพ่");
   else if (hasAiAccess()) setWitchStatus("รอคำถามของคุณ");
-  else setWitchStatus("พร้อมเปิดไพ่");
+  else setWitchStatus("พร้อมเลือกไพ่");
   renderWaitingRitual();
   renderQuestionComposer();
   renderFlow();
-  renderFanBoard();
+  renderDeckZone();
 }
 
 function getNumber(file) { return String(file).match(/card-(\d{3})/)?.[1] || "—"; }
@@ -440,17 +423,20 @@ function syncHistory() {
 
 function renderCards() {
   const setsContainer = $("#reading-sets");
+  const resultStage = $("#reading-result-stage");
   const readingSets = groupReadingHistory(state.history);
   if (!readingSets.length) {
+    if (resultStage) resultStage.hidden = true;
     setsContainer.dataset.setCount = "0";
     setsContainer.classList.add("is-empty");
     setsContainer.innerHTML = hasAiAccess()
-      ? '<div class="empty-card"><span>?</span><p>พิมพ์คำถามก่อน<br />แล้วกดวงล้อไพ่</p></div>'
-      : '<div class="empty-card"><span>?</span><p>เลือกจำนวนไพ่<br />แล้วกดวงล้อไพ่</p></div>';
+      ? '<div class="empty-card"><span>?</span><p>พิมพ์คำถาม แล้วคลิกไพ่<br />จากสำรับเพื่อเริ่ม</p></div>'
+      : '<div class="empty-card"><span>?</span><p>คลิกไพ่จากสำรับ<br />แล้วกดทำนาย</p></div>';
     $("#spread-count").textContent = "ยังไม่ได้เปิด";
     $("#reading-note").textContent = hasAiAccess() ? "คำตอบจะอ่านจากคำบนไพ่ของรอบล่าสุด" : "เปิดไพ่แล้วอ่านภาพและคำบนไพ่ด้วยตัวเองได้เลย";
     return;
   }
+  if (resultStage) resultStage.hidden = false;
   setsContainer.dataset.setCount = String(readingSets.length);
   setsContainer.classList.remove("is-empty");
   let cardOffset = 0;
@@ -462,6 +448,7 @@ function renderCards() {
   setsContainer.replaceChildren(...setElements);
   const totalCards = readingSets.reduce((sum, entry) => sum + entry.cardCount, 0);
   $("#spread-count").textContent = `${readingSets.length} ชุด · ${totalCards} ใบ`;
+  $("#result-status")?.replaceChildren(document.createTextNode(hasAiAccess() ? "ไพ่ชุดนี้จะอยู่ด้านบน และคำทำนายจาก AI จะสรุปต่อด้านล่าง" : "ไพ่ชุดนี้เปิดแล้ว · อ่านคำบนไพ่และความหมายด้วยตัวเองได้เลย"));
   $("#reading-note").textContent = hasAiAccess() ? "แต่ละชุดแสดงแยกกัน · รอบล่าสุดคือชุดที่ใช้ตอบคำถามปัจจุบัน" : `เปิดแล้ว ${readingSets.length} ชุด · เลื่อนดูไพ่รอบก่อนหน้าได้`;
 }
 
@@ -659,7 +646,7 @@ function renderAnswer(answer, structured = null, round = currentRound()) {
   if (reading.safety_note) appendCopy(overall, "หมายเหตุ", reading.safety_note);
   box.append(overall);
   $("#ai-answer-stage").hidden = false;
-  $("#request-status").textContent = "คำตอบพร้อมแล้ว · พิมพ์คำถามใหม่ด้านบน แล้วกดวงล้อไพ่";
+  $("#request-status").textContent = "คำตอบพร้อมแล้ว · พิมพ์คำถามใหม่ด้านบน แล้วเลือกไพ่ชุดใหม่";
   renderQuestionComposer();
   setWitchStatus("คำตอบพร้อมแล้ว · ถามไพ่รอบใหม่ได้", "ready");
   renderWaitingRitual();
@@ -724,7 +711,7 @@ function renderAll() {
   renderProgress();
   renderServerHistory();
   renderCards();
-  renderFanBoard();
+  renderDeckZone();
   renderMemory();
   renderAnswerFromCurrent();
   renderQuestionComposer();
@@ -745,13 +732,13 @@ function syncQuestion() {
   if (!hasAiAccess()) {
     $("#request-status").textContent = isMemberMode() ? "บัญชีนี้ยังไม่ได้รับสิทธิ์ AI · เปิดไพ่ดูเองได้เลย" : "โหมดเปิดไพ่ฟรี · เข้าใช้งานเพื่อพิมพ์คำถามถาม AI";
   } else if (!question && !answer) {
-    $("#request-status").textContent = "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงเลือกจำนวนไพ่";
+    $("#request-status").textContent = "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงเลือกไพ่";
   } else if (answer && !question) {
     $("#request-status").textContent = "คำตอบพร้อมแล้ว · พิมพ์คำถามใหม่เพื่อเปิดไพ่รอบถัดไป";
   } else if (answer && duplicateCurrentQuestion(question)) {
     $("#request-status").textContent = "คำถามซ้ำกับรอบก่อน · พิมพ์คำถามใหม่ก่อนเปิดไพ่";
   } else if (!answer && !state.busy && !state.failedQuestion) {
-    $("#request-status").textContent = question ? "คำถามพร้อมแล้ว · กดวงล้อไพ่" : "พิมพ์คำถามเพื่อเริ่มอ่าน";
+    $("#request-status").textContent = question ? "คำถามพร้อมแล้ว · เลือกไพ่จากสำรับ" : "พิมพ์คำถามเพื่อเริ่มอ่าน";
   }
   renderProgress();
 }
@@ -764,12 +751,16 @@ function clearPrivateMemory() {
   state.rounds = [];
   state.currentRoundId = "";
   state.drawn = [];
+  state.selectedCards = [];
+  state.count = 0;
   state.viewingHistorySessionId = "";
   state.historyBusy = false;
   state.failedQuestion = "";
   state.failedErrorCode = "";
   state.failedRequestId = "";
   state.fanPhase = "ready";
+  state.selectedCards = [];
+  state.count = 0;
   $("#ai-question").value = "";
   clearAnswer();
   syncHistory();
@@ -866,6 +857,8 @@ function startNewReading() {
   state.rounds = [];
   state.currentRoundId = "";
   state.drawn = [];
+  state.selectedCards = [];
+  state.count = 0;
   state.failedQuestion = "";
   state.failedErrorCode = "";
   state.failedRequestId = "";
@@ -875,7 +868,7 @@ function startNewReading() {
   syncHistory();
   saveState();
   renderAll();
-  $("#request-status").textContent = "พร้อมเริ่มดูดวงใหม่ · พิมพ์คำถามแล้วเลือกจำนวนไพ่";
+  $("#request-status").textContent = "พร้อมเริ่มดูดวงใหม่ · พิมพ์คำถามแล้วเลือกไพ่จากสำรับ";
   setWitchStatus("พร้อมเริ่มดูดวงใหม่");
   if (hasAiAccess()) window.requestAnimationFrame(() => $("#ai-question")?.focus());
 }
@@ -939,34 +932,46 @@ async function answerCurrentRound(roundId) {
   }
 }
 
-async function drawCards() {
+function goToReadingResult() {
+  window.location.hash = "reading-result";
+  window.requestAnimationFrame(() => $("#reading-result-stage")?.scrollIntoView?.({ behavior: "smooth", block: "start" }));
+}
+
+async function predictSelectedCards() {
   if (state.busy) return;
   const question = hasAiAccess() ? textValue($("#ai-question")?.value) : "";
+  if (!state.selectedCards.length) {
+    $("#request-status").textContent = hasAiAccess() ? "พิมพ์คำถาม แล้วคลิกไพ่จากสำรับอย่างน้อย 1 ใบ" : "คลิกไพ่จากสำรับอย่างน้อย 1 ใบก่อนกดทำนาย";
+    if (hasAiAccess() && !question) $("#ai-question")?.focus();
+    return;
+  }
   if (hasAiAccess() && !question) {
-    $("#request-status").textContent = "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงกดวงล้อไพ่";
+    $("#request-status").textContent = "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงกดทำนาย";
     $("#ai-question")?.focus();
     return;
   }
   if (hasAiAccess() && duplicateCurrentQuestion(question)) {
-    $("#request-status").textContent = "คำถามซ้ำกับรอบก่อน · พิมพ์คำถามใหม่ก่อนเปิดไพ่";
+    $("#request-status").textContent = "คำถามซ้ำกับรอบก่อน · พิมพ์คำถามใหม่ก่อนทำนาย";
     $("#ai-question")?.focus();
     return;
   }
   if ($("#draw-button").disabled) return;
+  state.count = state.selectedCards.length;
   const version = ++state.requestVersion;
   state.busy = true;
   setFanPhase("shuffling");
   $("#draw-button").classList.add("is-busy");
   setWitchStatus("กำลังสับไพ่...", "reading");
+  $("#request-status").textContent = "กำลังสับไพ่ · รอสักครู่เพื่อดูผล";
   renderProgress();
   try {
-    await sleep(420);
+    await sleep(650);
     let round;
     if (hasAiAccess()) {
       if (!state.sessionId) await createServerSession();
       const sessionId = textValue(state.sessionId, 120);
       if (!sessionId) {
-        const error = new Error("ไม่พบสำรับไพ่ของบัญชีนี้");
+        const error = new Error("ไม่พบรหัสสำรับไพ่ของบัญชีนี้");
         error.code = "SESSION_CREATE_FAILED";
         throw error;
       }
@@ -993,6 +998,8 @@ async function drawCards() {
       syncHistory();
       saveState();
     }
+    state.selectedCards = [];
+    state.count = 0;
     clearAnswer();
     $("#ai-question").value = hasAiAccess() ? question : $("#ai-question").value;
     state.busy = false;
@@ -1001,6 +1008,7 @@ async function drawCards() {
     renderProgress();
     renderCards();
     renderMemory();
+    goToReadingResult();
     if (hasAiAccess()) await answerCurrentRound(round.id);
   } catch (error) {
     if (version !== state.requestVersion) return;
@@ -1008,10 +1016,12 @@ async function drawCards() {
     $("#draw-button").classList.remove("is-busy");
     setFanPhase(currentRound()?.cards?.length ? "revealed" : "ready");
     $("#request-status").textContent = messageForError(error.code, error.requestId) || error.message;
-    setWitchStatus("ยังเปิดไพ่ไม่ได้ · กดลองอีกครั้ง");
+    setWitchStatus("ยังทำนายไม่ได้ · กดลองอีกครั้ง");
     renderProgress();
   }
 }
+
+const drawCards = predictSelectedCards;
 
 async function resetCards() {
   if (state.busy) return;
@@ -1029,6 +1039,8 @@ async function resetCards() {
   state.rounds = [];
   state.currentRoundId = "";
   state.drawn = [];
+  state.selectedCards = [];
+  state.count = 0;
   state.failedQuestion = "";
   state.failedErrorCode = "";
   state.failedRequestId = "";
@@ -1096,12 +1108,6 @@ function retryAi() {
 }
 
 $("#draw-button")?.addEventListener("click", drawCards);
-$("#tarot-fan")?.addEventListener("click", () => { void drawCards(); });
-$("#tarot-fan")?.addEventListener("keydown", (event) => {
-  if (event.key !== "Enter" && event.key !== " ") return;
-  event.preventDefault();
-  void drawCards();
-});
 $("#reset-button")?.addEventListener("click", resetCards);
 $("#new-reading-button")?.addEventListener("click", resetCards);
 $("#start-new-reading-button")?.addEventListener("click", startNewReading);
@@ -1109,7 +1115,6 @@ $("#retry-ai-button")?.addEventListener("click", retryAi);
 $("#ai-question")?.addEventListener("input", handleQuestionInput);
 $("#account-action")?.addEventListener("click", logoutMember);
 $("#account-link")?.addEventListener("click", logoutMember);
-choiceButtons.forEach((button) => button.addEventListener("click", () => setCount(button.dataset.count)));
 
 initMotion();
 setReaderMode(null);
