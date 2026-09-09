@@ -40,6 +40,12 @@ async function installMemberApi(page) {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, session: sessionPayload() }) });
       return;
     }
+    if (route.request().method() === "DELETE") {
+      api.session = false;
+      api.rounds = [];
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, deleted: 1 }) });
+      return;
+    }
     if (route.request().method() === "GET") {
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, sessions: api.session ? [sessionPayload()] : [] }) });
       return;
@@ -74,7 +80,7 @@ async function installMemberApi(page) {
 }
 
 async function selectCards(page, count) {
-  const cards = page.locator("#tarot-deck-card-list .tarot-deck-card");
+  const cards = page.locator("#tarot-deck-card-list .tarot-deck-card:not(.is-used)");
   for (let index = 0; index < count; index += 1) await cards.nth(index).click();
 }
 
@@ -100,7 +106,7 @@ test("guest selects up to three cards, predicts, and resets the 78-card deck", a
   await expect(page.locator(".choice-row")).toHaveCount(0);
   await expect(page.locator("#draw-button")).toBeDisabled();
   await selectCards(page, 3);
-  await expect(page.locator("#selected-count")).toHaveText("3 / 3");
+  await expect(page.locator("#tarot-deck-card-list .tarot-deck-card.is-selected")).toHaveCount(3);
   await expect(page.locator("#tarot-deck-card-list .tarot-deck-card").nth(3)).toBeDisabled();
   await expect(page.locator("#draw-button")).toBeEnabled();
   await page.locator("#draw-button").click();
@@ -120,6 +126,8 @@ test("guest can keep opening separate rounds without repeating cards", async ({ 
   await page.goto("/ai/");
   await predict(page, 3);
   await expect(page.locator("#reading-sets .reading-set")).toHaveCount(1);
+  await page.reload();
+  await expect(page.locator("#tarot-deck-card-list .tarot-deck-card.is-used")).toHaveCount(3);
   await predict(page, 2);
   await expect(page.locator("#reading-sets .reading-set")).toHaveCount(2);
   await expect(page.locator("#reading-sets .tarot-card-card")).toHaveCount(5);
@@ -208,6 +216,33 @@ test("member opens old history only when requested and starts with a fresh readi
   await expect(page.locator("#question-stage")).toBeVisible();
   await expect(page.locator("#reading-result-stage")).toBeHidden();
   await expect(page.locator("#ai-answer-stage")).toBeHidden();
+});
+
+test("member can delete one saved history item", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  const api = await installMemberApi(page);
+  api.session = true;
+  api.rounds = [{ id: "round-delete-1", round_number: 1, question: "รายการที่ต้องลบ", cards: ["card-001.webp"], status: "answered", answer_json: null, answer_text: "" }];
+  await page.goto("/ai/");
+  await expect(page.locator("#reading-history-panel")).toBeVisible();
+  await expect(page.locator(".history-delete-button")).toHaveCount(1);
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.locator(".history-delete-button").click();
+  await expect(page.locator("#reading-history-panel")).toBeHidden();
+  expect(api.session).toBe(false);
+});
+
+test("member can delete all saved history items", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  const api = await installMemberApi(page);
+  api.session = true;
+  api.rounds = [{ id: "round-delete-all-1", round_number: 1, question: "รายการทั้งหมด", cards: ["card-002.webp"], status: "answered", answer_json: null, answer_text: "" }];
+  await page.goto("/ai/");
+  await expect(page.locator("#delete-all-history-button")).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.locator("#delete-all-history-button").click();
+  await expect(page.locator("#reading-history-panel")).toBeHidden();
+  expect(api.session).toBe(false);
 });
 
 test("mobile reader keeps the deck and result stages in one readable vertical path", async ({ page }) => {

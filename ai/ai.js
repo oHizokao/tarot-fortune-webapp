@@ -4,12 +4,17 @@ import { groupReadingHistory } from "./reading-sets.mjs";
 
 const STORAGE_KEY = "tarot-daily-ai-reading-v3";
 const LEGACY_STORAGE_KEY = "tarot-daily-ai-reading-v2";
+const VISUAL_DECK_STORAGE_KEY = "tarot-daily-ai-visual-deck-v1";
 const MAX_HISTORY = 78;
 const DECK_SIZE = 78;
 const MAX_SELECTED_CARDS = 3;
 const state = {
   count: 0,
   selectedCards: [],
+  usedDeckIndexes: [],
+  visualDeckKey: "",
+  savedVisualDeckKey: "",
+  savedVisualDeckIndexes: [],
   localSession: null,
   savedServerSessionId: "",
   sessionId: "",
@@ -44,6 +49,36 @@ function sleep(milliseconds) {
 }
 
 function textValue(value, maxLength = 2_000) { return String(value ?? "").trim().slice(0, maxLength); }
+
+function normalizeDeckIndexes(value) {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.map((index) => Number(index)).filter((index) => Number.isInteger(index) && index >= 0 && index < DECK_SIZE))].sort((a, b) => a - b);
+}
+
+function visualDeckKey() {
+  if (isMemberMode()) return state.sessionId ? `member:${state.sessionId}` : "member:new";
+  return state.localSession?.createdAt ? `guest:${state.localSession.createdAt}` : "";
+}
+
+function syncVisualDeckState() {
+  const key = visualDeckKey();
+  if (!key || state.visualDeckKey === key) return;
+  state.visualDeckKey = key;
+  const saved = state.savedVisualDeckKey === key ? state.savedVisualDeckIndexes : [];
+  const fallbackCount = Math.min(openedCount(), DECK_SIZE);
+  state.usedDeckIndexes = normalizeDeckIndexes(saved.length ? saved : Array.from({ length: fallbackCount }, (_, index) => index));
+}
+
+function saveVisualDeckState() {
+  const key = visualDeckKey();
+  if (!key) return;
+  state.visualDeckKey = key;
+  state.savedVisualDeckKey = key;
+  state.savedVisualDeckIndexes = normalizeDeckIndexes(state.usedDeckIndexes);
+  try {
+    localStorage.setItem(VISUAL_DECK_STORAGE_KEY, JSON.stringify({ key, indexes: state.savedVisualDeckIndexes }));
+  } catch { /* storage may be disabled */ }
+}
 
 function currentRound() {
   return state.rounds.find((round) => round.id === state.currentRoundId) || null;
@@ -212,38 +247,27 @@ function ensureDeckCards() {
   return [...deck.children];
 }
 
-function renderSelectedCards() {
-  const slots = [...document.querySelectorAll(".selected-card-slot")];
-  slots.forEach((slot, index) => {
-    const selected = state.selectedCards[index];
-    slot.classList.toggle("is-empty", !selected);
-    slot.classList.toggle("selected-card", Boolean(selected));
-    slot.dataset.selected = selected ? "true" : "false";
-    const number = slot.querySelector("span");
-    const label = slot.querySelector("small");
-    if (number) number.textContent = String(index + 1).padStart(2, "0");
-    if (label) label.textContent = selected ? "เลือกแล้ว" : `เลือกใบที่ ${index + 1}`;
-  });
-  $("#selected-count")?.replaceChildren(document.createTextNode(`${state.selectedCards.length} / ${MAX_SELECTED_CARDS}`));
-}
-
 function renderDeckZone() {
   const zone = $("#tarot-deck-zone");
   if (!zone) return;
+  syncVisualDeckState();
   const cards = ensureDeckCards();
   const phase = state.fanPhase;
   const selectedIndexes = new Set(state.selectedCards.map((item) => Number(item.deckIndex)));
+  const usedIndexes = new Set(state.usedDeckIndexes);
   zone.dataset.deckState = phase;
   zone.dataset.selectedCount = String(state.selectedCards.length);
   cards.forEach((card, index) => {
     const selected = selectedIndexes.has(index);
-    const unavailable = selected || state.selectedCards.length >= MAX_SELECTED_CARDS || state.busy || isViewingHistory();
+    const used = usedIndexes.has(index);
+    const unavailable = used || selected || state.selectedCards.length >= MAX_SELECTED_CARDS || state.busy || isViewingHistory();
     card.classList.toggle("is-selected", selected);
+    card.classList.toggle("is-used", used);
     card.classList.toggle("is-disabled", unavailable && !selected);
     card.disabled = unavailable && !selected;
     card.setAttribute("aria-pressed", String(selected));
+    card.setAttribute("aria-label", used ? `ไพ่จากสำรับ ใบที่ ${index + 1} เปิดไปแล้ว` : `เลือกไพ่จากสำรับ ใบที่ ${index + 1}`);
   });
-  renderSelectedCards();
   const title = $("#deck-center-title");
   const message = $("#deck-center-message");
   if (phase === "shuffling") {
@@ -265,7 +289,7 @@ function renderDeckZone() {
 }
 
 function selectDeckCard(card) {
-  if (state.busy || isViewingHistory() || state.selectedCards.length >= MAX_SELECTED_CARDS || card.classList.contains("is-selected")) return;
+  if (state.busy || isViewingHistory() || state.selectedCards.length >= MAX_SELECTED_CARDS || card.classList.contains("is-selected") || card.classList.contains("is-used")) return;
   state.selectedCards = [...state.selectedCards, { deckIndex: Number(card.dataset.deckIndex), slot: state.selectedCards.length + 1 }];
   state.count = state.selectedCards.length;
   renderProgress();
@@ -329,7 +353,6 @@ function renderProgress() {
   $("#reset-button").disabled = state.busy || historyView;
   $("#draw-label").textContent = empty ? "สำรับหมดแล้ว" : "ทำนาย";
   $("#draw-button")?.setAttribute("aria-label", empty ? "สำรับหมดแล้ว" : `ทำนาย · ${selected || 0} ใบ`);
-  $("#selected-count")?.replaceChildren(document.createTextNode(`${selected} / ${MAX_SELECTED_CARDS}`));
   $("#deck-message").textContent = historyView
     ? "กำลังดูประวัติเดิม · กดเริ่มดูดวงใหม่ด้านบนเมื่อต้องการเปิดรอบใหม่"
     : empty
@@ -459,11 +482,16 @@ function historySessionTitle(session, index = 0) {
 function renderServerHistory() {
   const panel = $("#reading-history-panel");
   const list = $("#reading-history-list");
+  const deleteAll = $("#delete-all-history-button");
   if (!panel || !list) return;
   const sessions = isMemberMode()
     ? state.serverHistory.filter((session) => Number(session?.opened_count ?? session?.draw_cursor ?? 0) > 0)
     : [];
   panel.hidden = sessions.length === 0;
+  if (deleteAll) {
+    deleteAll.hidden = sessions.length === 0;
+    deleteAll.disabled = state.historyBusy;
+  }
   list.replaceChildren(...sessions.map((session, index) => {
     const item = document.createElement("article");
     const selected = String(session.id) === state.viewingHistorySessionId;
@@ -483,15 +511,78 @@ function renderServerHistory() {
     meta.textContent = `${status} · เปิดแล้ว ${opened} ใบ · ${formatReadingSetTime(session.updated_at || session.created_at)}`;
     copy.append(label, title, meta);
 
+    const actions = document.createElement("div");
+    actions.className = "reading-history-item-actions";
     const action = document.createElement("button");
     action.className = "history-open-button";
     action.type = "button";
     action.textContent = selected ? "กำลังดู" : "ดูย้อนหลัง";
     action.disabled = state.historyBusy || selected;
     action.addEventListener("click", () => { void openHistorySession(session.id); });
-    item.append(copy, action);
+    const remove = document.createElement("button");
+    remove.className = "history-delete-button";
+    remove.type = "button";
+    remove.textContent = "ลบ";
+    remove.setAttribute("aria-label", `ลบประวัติ ${historySessionTitle(session, index)}`);
+    remove.disabled = state.historyBusy;
+    remove.addEventListener("click", () => { void deleteDeckHistory(session.id); });
+    actions.append(action, remove);
+    item.append(copy, actions);
     return item;
   }));
+}
+
+async function deleteDeckHistory(sessionId) {
+  if (!hasAiAccess() || state.busy || state.historyBusy || !sessionId) return;
+  if (!window.confirm("ลบประวัติการดูดวงรายการนี้หรือไม่? การลบจะย้อนกลับไม่ได้")) return;
+  state.historyBusy = true;
+  renderServerHistory();
+  try {
+    await api(deckSessionUrl(sessionId), { method: "DELETE", headers: { "X-CSRF-Token": state.csrf } });
+    state.serverHistory = state.serverHistory.filter((session) => String(session.id) !== String(sessionId));
+    const isCurrent = String(state.sessionId) === String(sessionId) || String(state.viewingHistorySessionId) === String(sessionId);
+    if (isCurrent) {
+      state.savedServerSessionId = "";
+      state.serverSession = null;
+      state.sessionId = "";
+      state.viewingHistorySessionId = "";
+      state.rounds = [];
+      state.currentRoundId = "";
+      state.drawn = [];
+      state.selectedCards = [];
+      state.usedDeckIndexes = [];
+      state.visualDeckKey = "";
+      state.count = 0;
+      clearAnswer();
+      syncHistory();
+      saveState();
+    }
+    renderAll();
+    $("#request-status").textContent = "ลบประวัติแล้ว · พร้อมเริ่มดูดวงใหม่";
+  } catch (error) {
+    $("#request-status").textContent = messageForError(error.code, error.requestId) || error.message;
+  } finally {
+    state.historyBusy = false;
+    renderAll();
+  }
+}
+
+async function deleteAllDeckHistory() {
+  if (!hasAiAccess() || state.busy || state.historyBusy) return;
+  if (!window.confirm("ลบประวัติการดูดวงทั้งหมดหรือไม่? การลบจะย้อนกลับไม่ได้")) return;
+  state.historyBusy = true;
+  renderServerHistory();
+  try {
+    await api("/api/ai/deck-sessions", { method: "DELETE", headers: { "X-CSRF-Token": state.csrf } });
+    clearPrivateMemory();
+    renderAll();
+    $("#request-status").textContent = "ลบประวัติทั้งหมดแล้ว · พร้อมเริ่มดูดวงใหม่";
+  } catch (error) {
+    $("#request-status").textContent = messageForError(error.code, error.requestId) || error.message;
+  } finally {
+    state.historyBusy = false;
+    renderAll();
+  }
 }
 
 function renderMemoryHistory() {
@@ -677,6 +768,7 @@ function applyServerSession(session) {
   const latest = state.rounds[state.rounds.length - 1];
   state.currentRoundId = latest?.id || "";
   state.drawn = latest ? [...latest.cards] : [];
+  syncVisualDeckState();
   syncHistory();
   saveState();
 }
@@ -689,6 +781,7 @@ function applyLocalSession(session) {
   const latest = state.rounds[state.rounds.length - 1];
   state.currentRoundId = latest?.id || "";
   state.drawn = latest ? [...latest.cards] : [];
+  syncVisualDeckState();
   syncHistory();
   saveState();
 }
@@ -697,13 +790,25 @@ function savedLocalSession() {
   try {
     const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY) || "null");
     state.savedServerSessionId = textValue(value?.serverSessionId, 120);
+    state.savedVisualDeckKey = textValue(value?.visualDeckKey, 160);
+    state.savedVisualDeckIndexes = normalizeDeckIndexes(value?.usedDeckIndexes);
+    if (!state.savedVisualDeckKey) {
+      const visual = JSON.parse(localStorage.getItem(VISUAL_DECK_STORAGE_KEY) || "null");
+      state.savedVisualDeckKey = textValue(visual?.key, 160);
+      state.savedVisualDeckIndexes = normalizeDeckIndexes(visual?.indexes);
+    }
     return normalizeLocalDeckSession(value?.localSession || value);
   } catch { return null; }
 }
 
 function saveState() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ serverSessionId: state.sessionId || state.savedServerSessionId, localSession: state.localSession }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      serverSessionId: state.sessionId || state.savedServerSessionId,
+      localSession: state.localSession,
+      visualDeckKey: state.visualDeckKey || visualDeckKey(),
+      usedDeckIndexes: normalizeDeckIndexes(state.usedDeckIndexes),
+    }));
   } catch { /* private browsing can disable storage */ }
 }
 
@@ -752,6 +857,8 @@ function clearPrivateMemory() {
   state.currentRoundId = "";
   state.drawn = [];
   state.selectedCards = [];
+  state.usedDeckIndexes = [];
+  state.visualDeckKey = "";
   state.count = 0;
   state.viewingHistorySessionId = "";
   state.historyBusy = false;
@@ -858,6 +965,8 @@ function startNewReading() {
   state.currentRoundId = "";
   state.drawn = [];
   state.selectedCards = [];
+  state.usedDeckIndexes = [];
+  state.visualDeckKey = "";
   state.count = 0;
   state.failedQuestion = "";
   state.failedErrorCode = "";
@@ -998,6 +1107,9 @@ async function predictSelectedCards() {
       syncHistory();
       saveState();
     }
+    state.usedDeckIndexes = normalizeDeckIndexes([...state.usedDeckIndexes, ...state.selectedCards.map((item) => item.deckIndex)]);
+    saveVisualDeckState();
+    saveState();
     state.selectedCards = [];
     state.count = 0;
     clearAnswer();
@@ -1040,6 +1152,10 @@ async function resetCards() {
   state.currentRoundId = "";
   state.drawn = [];
   state.selectedCards = [];
+  state.usedDeckIndexes = [];
+  state.visualDeckKey = "";
+  state.savedVisualDeckKey = "";
+  state.savedVisualDeckIndexes = [];
   state.count = 0;
   state.failedQuestion = "";
   state.failedErrorCode = "";
@@ -1111,6 +1227,7 @@ $("#draw-button")?.addEventListener("click", drawCards);
 $("#reset-button")?.addEventListener("click", resetCards);
 $("#new-reading-button")?.addEventListener("click", resetCards);
 $("#start-new-reading-button")?.addEventListener("click", startNewReading);
+$("#delete-all-history-button")?.addEventListener("click", () => { void deleteAllDeckHistory(); });
 $("#retry-ai-button")?.addEventListener("click", retryAi);
 $("#ai-question")?.addEventListener("input", handleQuestionInput);
 $("#account-action")?.addEventListener("click", logoutMember);

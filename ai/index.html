@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./ai.css?v=20260909-ai-deck-v36" />
+    <link rel="stylesheet" href="./ai.css?v=20260909-ai-deck-v37" />
   </head>
   <body>
     <div class="ai-bg ai-bg--one" aria-hidden="true"></div>
@@ -55,7 +55,10 @@
             <h2 id="reading-history-title">ประวัติการดูดวง</h2>
             <p>รอบเก่าจะอยู่ที่นี่ เลือกเปิดดูย้อนหลังได้ทุกเมื่อ หรือเริ่มดูดวงรอบใหม่ได้ทันที</p>
           </div>
-          <button class="history-new-button" id="start-new-reading-button" type="button">เริ่มดูดวงใหม่ <span aria-hidden="true">→</span></button>
+          <div class="reading-history-actions">
+            <button class="history-new-button" id="start-new-reading-button" type="button">เริ่มดูดวงใหม่ <span aria-hidden="true">→</span></button>
+            <button class="history-delete-all-button" id="delete-all-history-button" type="button">ลบประวัติทั้งหมด</button>
+          </div>
         </div>
         <div class="reading-history-list" id="reading-history-list" aria-live="polite"></div>
       </section>
@@ -96,12 +99,6 @@
               <small id="deck-center-message">คลิกไพ่ทีละใบ · สูงสุด 3 ใบ</small>
             </div>
           </div>
-          <div class="selected-cards" id="selected-cards" aria-live="polite" aria-label="ไพ่ที่เลือกไว้">
-            <div class="selected-card-slot is-empty" data-slot="1"><span>01</span><small>เลือกใบที่ 1</small></div>
-            <div class="selected-card-slot is-empty" data-slot="2"><span>02</span><small>เลือกใบที่ 2</small></div>
-            <div class="selected-card-slot is-empty" data-slot="3"><span>03</span><small>เลือกใบที่ 3</small></div>
-          </div>
-          <div class="selection-status"><span>เลือกแล้ว</span><strong id="selected-count">0 / 3</strong></div>
           <div class="progress-wrap">
             <div class="progress-label"><span>สำรับรอบนี้</span><strong><span id="opened-count">0</span> / 78</strong></div>
             <div class="progress-track" role="progressbar" aria-label="เปิดไพ่ไปแล้ว" aria-valuemin="0" aria-valuemax="78" aria-valuenow="0"><span id="progress-bar"></span></div>
@@ -171,6 +168,6 @@
 
       <footer class="ai-footer"><span>✦ TAROT DAILY</span><span>คำทำนายเป็นแนวทาง ไม่ใช่คำตัดสินชีวิต</span><a href="../privacy/">ความเป็นส่วนตัว</a><a href="../terms/">ข้อกำหนด</a><a href="../admin/">สำหรับผู้ดูแล</a></footer>
     </main>
-    <script type="module" src="./ai.js?v=20260909-ai-deck-v36" defer></script>
+    <script type="module" src="./ai.js?v=20260909-ai-deck-v37" defer></script>
   </body>
 </html>

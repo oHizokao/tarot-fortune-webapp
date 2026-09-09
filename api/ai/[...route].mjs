@@ -1,6 +1,6 @@
 import { AppError } from "../../lib/vercel/db.mjs";
 import { endpoint } from "../../lib/vercel/http.mjs";
-import { addMessage, answerReadingRound, closeReading, createDeckSession, createReading, drawReadingRound, getDeckSession, getReading, listDeckSessions, listReadings, resetDeckSession, tarotChat } from "../../lib/vercel/routes/ai.mjs";
+import { addMessage, answerReadingRound, closeReading, createDeckSession, createReading, deleteAllDeckSessions, deleteDeckSession, drawReadingRound, getDeckSession, getReading, listDeckSessions, listReadings, resetDeckSession, tarotChat } from "../../lib/vercel/routes/ai.mjs";
 
 function parts(request) {
   const pathname = new URL(request.url).pathname.replace(/\/+$/, "");
@@ -28,6 +28,7 @@ async function dispatch(request) {
     const params = new URL(request.url).searchParams;
     const sessionId = String(params.get("session_id") || "").trim();
     const action = String(params.get("action") || "").trim().toLowerCase();
+    if (request.method === "DELETE") return sessionId ? deleteDeckSession(request, sessionId) : deleteAllDeckSessions(request);
     if (sessionId && action === "draw") return drawReadingRound(request, sessionId);
     if (sessionId && action === "reset") return resetDeckSession(request, sessionId);
     if (sessionId && action === "answer") return answerReadingRound(request, sessionId, String(params.get("round_id") || "").trim());
@@ -54,3 +55,4 @@ async function dispatch(request) {
 
 export const GET = endpoint(dispatch);
 export const POST = endpoint(dispatch);
+export const DELETE = endpoint(dispatch);

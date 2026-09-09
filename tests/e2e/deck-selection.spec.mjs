@@ -14,8 +14,7 @@ test("guest selects up to three cards from the full deck and sees a concise resu
   await deckCards.nth(2).click();
   await expect(deckCards.nth(3)).toBeDisabled();
 
-  await expect(page.locator("#selected-cards .selected-card")).toHaveCount(3);
-  await expect(page.locator("#selected-count")).toHaveText("3 / 3");
+  await expect(page.locator("#tarot-deck-card-list .tarot-deck-card.is-selected")).toHaveCount(3);
   await expect(page.locator("#draw-button")).toBeEnabled();
 
   await page.locator("#draw-button").click();
@@ -24,4 +23,8 @@ test("guest selects up to three cards from the full deck and sees a concise resu
   await expect(page.locator("#reading-sets .reading-set")).toHaveCount(1);
   await expect(page.locator("#reading-sets .tarot-card-card")).toHaveCount(3);
   await expect(page.locator("#reading-result-title")).toHaveText("ผลการเปิดไพ่");
+  await expect(deckCards.nth(0)).toHaveClass(/is-used/);
+  await expect(deckCards.nth(0)).toBeDisabled();
+  await expect(deckCards.nth(1)).toHaveClass(/is-used/);
+  await expect(deckCards.nth(2)).toHaveClass(/is-used/);
 });

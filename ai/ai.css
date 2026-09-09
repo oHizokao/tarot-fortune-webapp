@@ -1045,6 +1045,19 @@ a { color: inherit; }
 .tarot-deck-card:disabled { cursor: default; }
 .tarot-deck-card.is-disabled { opacity: .25; }
 .tarot-deck-card.is-selected { opacity: 1; filter: brightness(1.36) drop-shadow(0 0 18px rgba(113, 228, 205, .72)); }
+.tarot-deck-card.is-used {
+  opacity: .28;
+  filter: grayscale(1) brightness(.28);
+  cursor: not-allowed;
+}
+
+.tarot-deck-card.is-used .tarot-deck-card__back {
+  border-color: rgba(0, 0, 0, .8);
+  background: #03040b;
+  box-shadow: inset 0 0 0 4px rgba(0, 0, 0, .72), inset 0 0 0 6px rgba(107, 112, 144, .12), 0 4px 10px rgba(0, 0, 0, .45);
+}
+
+.tarot-deck-card.is-used .tarot-deck-card__back i { opacity: .18; }
 
 .tarot-deck-card__back {
   display: grid;
@@ -1102,36 +1115,6 @@ a { color: inherit; }
 .tarot-deck-zone[data-deck-state="shuffling"] .tarot-deck-orbit::before { animation-duration: 2.4s; }
 .tarot-deck-zone[data-deck-state="shuffling"] .tarot-deck-card__back { box-shadow: 0 0 24px rgba(146, 116, 255, .58), inset 0 0 0 4px rgba(16, 12, 57, .7); }
 
-.selected-cards {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin: 18px auto 0;
-  max-width: 640px;
-}
-
-.selected-card-slot {
-  display: grid;
-  min-height: 78px;
-  place-items: center;
-  align-content: center;
-  gap: 4px;
-  border: 1px dashed rgba(165, 176, 225, .28);
-  border-radius: 14px;
-  background: rgba(5, 9, 35, .28);
-  color: #8f9bc0;
-  text-align: center;
-  transition: .25s ease;
-}
-
-.selected-card-slot span { color: #c9b9f6; font: 600 19px "Kanit", sans-serif; }
-.selected-card-slot small { font-size: 10px; }
-.selected-card-slot.selected-card { border-style: solid; border-color: rgba(129, 228, 189, .6); background: linear-gradient(145deg, rgba(92, 77, 190, .42), rgba(34, 103, 134, .3)); color: #e5fff5; box-shadow: 0 8px 22px rgba(50, 55, 155, .18); }
-.selected-card-slot.selected-card span { color: var(--green); }
-
-.selection-status { display: flex; justify-content: space-between; max-width: 640px; margin: 14px auto 0; color: #909dc2; font-size: 11px; }
-.selection-status strong { color: #e8ddff; font: 600 15px "Kanit", sans-serif; }
-
 .spread-actions { align-items: stretch; }
 .spread-actions .predict-button { flex: 1; min-height: 64px; }
 .predict-button:disabled { cursor: not-allowed; filter: saturate(.55); opacity: .48; }
@@ -1171,10 +1154,6 @@ a { color: inherit; }
   .tarot-deck-center { min-height: 118px; width: 156px; padding: 15px 10px; }
   .tarot-deck-center strong { font-size: 14px; }
   .tarot-deck-center small { font-size: 9px; }
-  .selected-cards { gap: 7px; }
-  .selected-card-slot { min-height: 68px; border-radius: 11px; }
-  .selected-card-slot span { font-size: 16px; }
-  .selected-card-slot small { font-size: 9px; }
   .spread-actions { flex-direction: column; }
   .spread-actions .predict-button, .spread-actions .reset-button { width: 100%; }
   .ai-reveal-stage .witch-scene { min-height: 145px; margin-top: 10px; }
@@ -1207,7 +1186,9 @@ a { color: inherit; }
   top: auto;
   left: auto;
   width: min(100%, 58px);
-  height: min(100%, 104px);
+  height: auto;
+  max-height: 104px;
+  aspect-ratio: 448 / 800;
   opacity: .82;
   transform: rotateZ(-2deg);
 }
@@ -1222,7 +1203,7 @@ a { color: inherit; }
   .tarot-deck-card,
   .tarot-deck-card:nth-child(3n),
   .tarot-deck-card:nth-child(5n),
-  .tarot-deck-card:nth-child(7n) { width: min(100%, 32px); height: min(100%, 58px); }
+  .tarot-deck-card:nth-child(7n) { width: min(100%, 32px); height: auto; max-height: 58px; aspect-ratio: 448 / 800; }
   .tarot-deck-card__back { border-radius: 5px; }
   .tarot-deck-card__back i { font-size: 11px; }
 }
@@ -3997,6 +3978,13 @@ body {
   gap: 20px;
 }
 
+.reading-history-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
 .reading-history-heading h2 {
   margin: 3px 0 0;
   color: #f2eeff;
@@ -4012,7 +4000,9 @@ body {
 }
 
 .history-new-button,
-.history-open-button {
+.history-open-button,
+.history-delete-all-button,
+.history-delete-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -4029,15 +4019,26 @@ body {
   transition: border-color .2s ease, background .2s ease, transform .2s ease;
 }
 
+.history-delete-all-button,
+.history-delete-button {
+  color: #ffc8d1;
+  border-color: rgba(255, 152, 170, .34);
+  background: rgba(133, 43, 67, .2);
+}
+
 .history-new-button:hover:not(:disabled),
-.history-open-button:hover:not(:disabled) {
+.history-open-button:hover:not(:disabled),
+.history-delete-all-button:hover:not(:disabled),
+.history-delete-button:hover:not(:disabled) {
   border-color: rgba(220, 204, 255, .72);
   background: rgba(110, 86, 224, .42);
   transform: translateY(-1px);
 }
 
 .history-new-button:focus-visible,
-.history-open-button:focus-visible {
+.history-open-button:focus-visible,
+.history-delete-all-button:focus-visible,
+.history-delete-button:focus-visible {
   outline: 2px solid #8de8ca;
   outline-offset: 3px;
 }
@@ -4056,6 +4057,13 @@ body {
   min-width: 0;
   padding: 14px 0;
   border-top: 1px solid rgba(195, 175, 255, .14);
+}
+
+.reading-history-item-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
 }
 
 .reading-history-item.is-selected {
@@ -4098,6 +4106,12 @@ body {
   cursor: default;
 }
 
+.history-delete-all-button:disabled,
+.history-delete-button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
 @media (max-width: 650px) {
   .reading-history-panel {
     width: 100%;
@@ -4112,14 +4126,24 @@ body {
     display: block;
   }
 
+  .reading-history-actions {
+    align-items: stretch;
+    flex-direction: column;
+    margin-top: 16px;
+  }
+
   .reading-history-heading h2 {
     font-size: 22px;
   }
 
   .history-new-button {
     width: 100%;
-    margin-top: 16px;
+    margin-top: 0;
   }
+
+  .history-delete-all-button,
+  .history-delete-button,
+  .history-open-button { width: 100%; }
 
   .reading-history-item {
     align-items: stretch;
@@ -4127,9 +4151,7 @@ body {
     gap: 11px;
   }
 
-  .history-open-button {
-    width: 100%;
-  }
+  .reading-history-item-actions { align-items: stretch; flex-direction: column; }
 }
 
 /* v31: make the card count and deck actions feel like one clear control deck. */

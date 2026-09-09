@@ -65,13 +65,14 @@ test("continuous deck routes expose session, draw, answer, and reset operations"
   const source = await readFile(path.join(root, "lib", "vercel", "routes", "ai.mjs"), "utf8");
   const route = await readFile(path.join(root, "api", "ai", "[...route].mjs"), "utf8");
 
-  for (const operation of ["createDeckSession", "drawReadingRound", "answerReadingRound", "getDeckSession", "resetDeckSession"]) {
+  for (const operation of ["createDeckSession", "drawReadingRound", "answerReadingRound", "getDeckSession", "resetDeckSession", "deleteDeckSession", "deleteAllDeckSessions"]) {
     assert.match(source, new RegExp(`export async function ${operation}`));
   }
   assert.match(source, /FOR UPDATE/);
   assert.match(source, /request_id/);
   assert.match(route, /deck-sessions/);
   assert.match(route, /rounds/);
+  assert.match(route, /request\.method === "DELETE"/);
 });
 
 test("deck allocation keeps a single shuffled order and rejects overdraw", async () => {
