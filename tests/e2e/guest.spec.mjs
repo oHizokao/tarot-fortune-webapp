@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 async function installMemberApi(page) {
-  const api = { session: false, rounds: [], nextCard: 1, drawCalls: 0, answerCalls: 0 };
+  const api = { session: false, rounds: [], nextCard: 1, drawCalls: 0, answerCalls: 0, answerDelay: 0, drawGate: null, releaseDraw: null, answerGate: null, releaseAnswer: null };
   const cardName = (file) => file.includes("002") ? "Acceptance" : file.includes("003") ? "Understanding" : "Relaxation";
   const structuredAnswer = (round) => ({
     verdict: `ฟันธง: คำตอบของคำถาม “${round.question}” คือให้เดินหน้าอย่างชัดเจน`,
@@ -55,6 +55,7 @@ async function installMemberApi(page) {
       const round = { id: `round-${api.rounds.length + 1}`, round_number: api.rounds.length + 1, question: body.question, cards: nextCards(Number(body.count)), status: "drawn", answer_json: null, answer_text: "" };
       api.rounds.push(round);
       api.drawCalls += 1;
+      if (api.drawGate) await api.drawGate;
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, session: sessionPayload(), round, remaining: sessionPayload().remaining }) });
       return;
     }
@@ -65,6 +66,8 @@ async function installMemberApi(page) {
       round.answer_text = structured.verdict;
       round.status = "answered";
       api.answerCalls += 1;
+      if (api.answerGate) await api.answerGate;
+      if (api.answerDelay) await new Promise((resolve) => setTimeout(resolve, api.answerDelay));
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, session: sessionPayload(), round, answer: round.answer_text, structured }) });
       return;
     }
@@ -182,6 +185,32 @@ test("member types a question, selects cards, and receives one reading per card 
   await expect(page.locator("#ai-answer")).not.toContainText("คำถามชวนทบทวน");
   expect(api.drawCalls).toBe(1);
   expect(api.answerCalls).toBe(1);
+});
+
+test("member keeps the deck count and unused cards visible while AI is answering", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  const api = await installMemberApi(page);
+  api.drawGate = new Promise((resolve) => { api.releaseDraw = resolve; });
+  api.answerGate = new Promise((resolve) => { api.releaseAnswer = resolve; });
+  await page.goto("/ai/");
+  await page.getByLabel("คำถามของคุณ").fill("เรื่องนี้ควรเดินหน้าต่อไหม?");
+  await selectCards(page, 1);
+  await page.locator("#draw-button").click();
+  await expect(page.locator("#deck-center-title")).toHaveText("กำลังสับไพ่…");
+  await expect(page.locator("#opened-count")).toHaveText("1");
+  await expect(page.locator("#remaining-count")).toHaveText("77");
+  api.releaseDraw();
+  await expect(page.locator("#tarot-waiting-ritual")).toBeVisible();
+  await expect(page.locator("#opened-count")).toHaveText("1");
+  await expect(page.locator("#remaining-count")).toHaveText("77");
+  const unusedCard = page.locator("#tarot-deck-card-list .tarot-deck-card:not(.is-used):not(.is-selected)").first();
+  await expect(unusedCard).toBeVisible();
+  await expect(unusedCard).not.toHaveClass(/is-disabled/);
+  const visual = await unusedCard.evaluate((element) => ({ opacity: Number.parseFloat(getComputedStyle(element).opacity), filter: getComputedStyle(element).filter }));
+  expect(visual.opacity).toBeGreaterThan(0.6);
+  expect(visual.filter).toBe("none");
+  api.releaseAnswer();
+  await expect(page.locator("#ai-answer .answer-section--overall")).toBeVisible({ timeout: 10_000 });
 });
 
 test("member can continue with a new question and the memory keeps both rounds", async ({ page }) => {

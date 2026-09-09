@@ -10,6 +10,7 @@ const DECK_SIZE = 78;
 const MAX_SELECTED_CARDS = 3;
 const state = {
   count: 0,
+  pendingDrawCount: 0,
   selectedCards: [],
   usedDeckIndexes: [],
   visualDeckKey: "",
@@ -260,10 +261,13 @@ function renderDeckZone() {
   cards.forEach((card, index) => {
     const selected = selectedIndexes.has(index);
     const used = usedIndexes.has(index);
-    const unavailable = used || selected || state.selectedCards.length >= MAX_SELECTED_CARDS || state.busy || isViewingHistory();
+    const selectionLocked = state.selectedCards.length >= MAX_SELECTED_CARDS && !selected;
+    const unavailable = used || selected || selectionLocked || state.busy || isViewingHistory();
+    const visuallyDisabled = used || selectionLocked || isViewingHistory();
     card.classList.toggle("is-selected", selected);
     card.classList.toggle("is-used", used);
-    card.classList.toggle("is-disabled", unavailable && !selected);
+    card.classList.toggle("is-disabled", visuallyDisabled && !selected);
+    card.classList.toggle("is-loading", state.busy && !used && !selected && !selectionLocked);
     card.disabled = unavailable && !selected;
     card.setAttribute("aria-pressed", String(selected));
     card.setAttribute("aria-label", used ? `ไพ่จากสำรับ ใบที่ ${index + 1} เปิดไปแล้ว` : `เลือกไพ่จากสำรับ ใบที่ ${index + 1}`);
@@ -333,14 +337,15 @@ function renderFlow() {
 }
 
 function renderProgress() {
-  const opened = openedCount();
-  const remaining = remainingCount();
+  const pending = Math.max(0, Math.min(MAX_SELECTED_CARDS, Number(state.pendingDrawCount) || 0));
+  const opened = Math.min(DECK_SIZE, openedCount() + pending);
+  const remaining = Math.max(0, remainingCount() - pending);
   const percent = Math.round((opened / DECK_SIZE) * 100);
   $("#remaining-count").textContent = String(remaining);
   $("#opened-count").textContent = String(opened);
   $("#progress-bar").style.width = `${percent}%`;
   $(".progress-track")?.setAttribute("aria-valuenow", String(opened));
-  const empty = remaining === 0;
+  const empty = remaining === 0 && pending === 0;
   const round = currentRound();
   const hasSpread = Boolean(round);
   const answered = hasAnswer();
@@ -355,6 +360,10 @@ function renderProgress() {
   $("#draw-button")?.setAttribute("aria-label", empty ? "สำรับหมดแล้ว" : `ทำนาย · ${selected || 0} ใบ`);
   $("#deck-message").textContent = historyView
     ? "กำลังดูประวัติเดิม · กดเริ่มดูดวงใหม่ด้านบนเมื่อต้องการเปิดรอบใหม่"
+    : state.busy && pending
+    ? "กำลังเปิดไพ่ " + pending + " ใบ · เหลือ " + remaining + " ใบ"
+    : state.busy && state.fanPhase === "answering"
+    ? "กำลังอ่านคำทำนาย · เหลือ " + remaining + " ใบ"
     : empty
     ? "เปิดครบทั้ง 78 ใบแล้ว กดล้างไพ่และสับใหม่เพื่อเริ่มต้นอีกครั้ง"
     : selected >= MAX_SELECTED_CARDS
@@ -857,6 +866,7 @@ function clearPrivateMemory() {
   state.currentRoundId = "";
   state.drawn = [];
   state.selectedCards = [];
+  state.pendingDrawCount = 0;
   state.usedDeckIndexes = [];
   state.visualDeckKey = "";
   state.count = 0;
@@ -965,6 +975,7 @@ function startNewReading() {
   state.currentRoundId = "";
   state.drawn = [];
   state.selectedCards = [];
+  state.pendingDrawCount = 0;
   state.usedDeckIndexes = [];
   state.visualDeckKey = "";
   state.count = 0;
@@ -1067,6 +1078,7 @@ async function predictSelectedCards() {
   if ($("#draw-button").disabled) return;
   state.count = state.selectedCards.length;
   const version = ++state.requestVersion;
+  state.pendingDrawCount = state.selectedCards.length;
   state.busy = true;
   setFanPhase("shuffling");
   $("#draw-button").classList.add("is-busy");
@@ -1107,6 +1119,7 @@ async function predictSelectedCards() {
       syncHistory();
       saveState();
     }
+    state.pendingDrawCount = 0;
     state.usedDeckIndexes = normalizeDeckIndexes([...state.usedDeckIndexes, ...state.selectedCards.map((item) => item.deckIndex)]);
     saveVisualDeckState();
     saveState();
@@ -1125,6 +1138,7 @@ async function predictSelectedCards() {
   } catch (error) {
     if (version !== state.requestVersion) return;
     state.busy = false;
+    state.pendingDrawCount = 0;
     $("#draw-button").classList.remove("is-busy");
     setFanPhase(currentRound()?.cards?.length ? "revealed" : "ready");
     $("#request-status").textContent = messageForError(error.code, error.requestId) || error.message;
@@ -1152,6 +1166,7 @@ async function resetCards() {
   state.currentRoundId = "";
   state.drawn = [];
   state.selectedCards = [];
+  state.pendingDrawCount = 0;
   state.usedDeckIndexes = [];
   state.visualDeckKey = "";
   state.savedVisualDeckKey = "";
