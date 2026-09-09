@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 async function installMemberApi(page) {
-  const api = { session: false, rounds: [], nextCard: 1, drawCalls: 0, answerCalls: 0, questions: [], answerDelay: 0 };
+  const api = { session: false, rounds: [], nextCard: 1, drawCalls: 0, answerCalls: 0, questions: [], drawDelay: 0, answerDelay: 0 };
   const cardName = (file) => file.includes("002") ? "Acceptance" : file.includes("003") ? "Understanding" : "Relaxation";
   const structuredAnswer = (round) => ({
     verdict: `ฟันธง: คำตอบของคำถาม “${round.question}” คือให้เดินหน้ากับเรื่องนี้อย่างชัดเจน`,
@@ -48,6 +48,7 @@ async function installMemberApi(page) {
     }
     if (route.request().method() === "POST" && action === "draw") {
       const body = await route.request().postDataJSON();
+      if (api.drawDelay) await new Promise((resolve) => setTimeout(resolve, api.drawDelay));
       const round = { id: `round-${api.rounds.length + 1}`, round_number: api.rounds.length + 1, question: body.question, cards: nextCards(Number(body.count)), status: "drawn", answer_json: null, answer_text: "" };
       api.rounds.push(round);
       api.questions.push(body.question);
@@ -158,6 +159,41 @@ test("card fan turns the selected cards into a clear game-like reveal", async ({
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
+test("guest chooses a count before spinning the card wheel", async ({ page }) => {
+  await page.goto("/ai/");
+  const wheel = page.locator("#tarot-fan");
+  const drawButton = page.locator("#draw-button");
+
+  await expect(wheel).toHaveAttribute("role", "button");
+  await expect(wheel).toHaveAttribute("aria-label", "หมุนวงล้อไพ่ · 1 ใบ");
+  await expect(drawButton).toHaveAttribute("aria-label", "หมุนวงล้อไพ่ · 1 ใบ");
+
+  await page.locator('.choice-button[data-count="3"]').click();
+  await expect(wheel).toHaveAttribute("aria-label", "หมุนวงล้อไพ่ · 3 ใบ");
+  await expect(drawButton).toHaveAttribute("aria-label", "หมุนวงล้อไพ่ · 3 ใบ");
+
+  await wheel.click();
+  await expect(page.locator("#reading-sets .reading-set")).toHaveCount(1);
+  await expect(page.locator("#tarot-fan-board")).toHaveAttribute("data-fan-state", "revealed");
+  await expect(wheel.locator(".tarot-fan-card.is-revealed")).toHaveCount(3);
+});
+
+test("card wheel visibly rotates while the selected spread is being drawn", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  const api = await installMemberApi(page);
+  api.drawDelay = 900;
+
+  await page.goto("/ai/");
+  await page.getByLabel("คำถามของคุณ").fill("เรื่องนี้ควรเริ่มจากตรงไหน?");
+  await page.locator('.choice-button[data-count="2"]').click();
+  await page.locator("#tarot-fan").click();
+
+  await expect(page.locator("#tarot-fan-board")).toHaveAttribute("data-fan-state", "shuffling");
+  await expect(page.locator("#tarot-fan")).toHaveCSS("animation-name", "tarotWheelSpin");
+  await expect(page.locator("#draw-button")).toHaveClass(/is-busy/);
+  await expect(page.locator("#tarot-fan-board")).toHaveAttribute("data-fan-state", "revealed", { timeout: 5_000 });
+});
+
 test("witch ritual wheel is visible and continuously animates", async ({ page }) => {
   await page.goto("/ai/");
   const wheel = page.locator(".witch-motion-wheel");
@@ -215,7 +251,7 @@ test("member AI flow keeps the question, draw, and answer steps obvious", async 
   await page.getByLabel("คำถามของคุณ").fill("วันนี้ควรเริ่มจากตรงไหน?");
   await expect(page.locator("#draw-button")).toBeEnabled();
   const drawAlignment = await page.locator("#draw-button").evaluate((button) => {
-    const action = button.closest(".spread-actions");
+    const action = button.closest(".tarot-fan-board__copy");
     const buttonBox = button.getBoundingClientRect();
     const actionBox = action.getBoundingClientRect();
     return Math.abs((buttonBox.left + buttonBox.width / 2) - (actionBox.left + actionBox.width / 2));
@@ -409,12 +445,10 @@ test("card count choices are easy to tap on desktop and mobile", async ({ page }
   expect(Number.parseFloat(desktopMetrics.fontSize)).toBeGreaterThanOrEqual(30);
   expect(await page.locator(".choice-visual").count()).toBe(3);
   expect(await page.locator('.choice-button[data-count="1"]').innerText()).toContain("จับไพ่ 1 ใบ");
-  const desktopActions = await page.locator(".spread-actions").evaluate((actions) => ({
-    drawHeight: actions.querySelector("#draw-button")?.getBoundingClientRect().height || 0,
-    resetHeight: actions.querySelector("#reset-button")?.getBoundingClientRect().height || 0,
-  }));
-  expect(desktopActions.drawHeight).toBeGreaterThanOrEqual(68);
-  expect(desktopActions.resetHeight).toBeGreaterThanOrEqual(48);
+  const desktopDrawHeight = await page.locator("#draw-button").evaluate((button) => button.getBoundingClientRect().height);
+  const desktopResetHeight = await page.locator("#reset-button").evaluate((button) => button.getBoundingClientRect().height);
+  expect(desktopDrawHeight).toBeGreaterThanOrEqual(68);
+  expect(desktopResetHeight).toBeGreaterThanOrEqual(48);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
@@ -424,12 +458,10 @@ test("card count choices are easy to tap on desktop and mobile", async ({ page }
   });
   expect(mobileMetrics.height).toBeGreaterThanOrEqual(112);
   expect(mobileMetrics.columnCount).toBe(1);
-  const mobileActions = await page.locator(".spread-actions").evaluate((actions) => ({
-    drawHeight: actions.querySelector("#draw-button")?.getBoundingClientRect().height || 0,
-    resetHeight: actions.querySelector("#reset-button")?.getBoundingClientRect().height || 0,
-  }));
-  expect(mobileActions.drawHeight).toBeGreaterThanOrEqual(64);
-  expect(mobileActions.resetHeight).toBeGreaterThanOrEqual(50);
+  const mobileDrawHeight = await page.locator("#draw-button").evaluate((button) => button.getBoundingClientRect().height);
+  const mobileResetHeight = await page.locator("#reset-button").evaluate((button) => button.getBoundingClientRect().height);
+  expect(mobileDrawHeight).toBeGreaterThanOrEqual(64);
+  expect(mobileResetHeight).toBeGreaterThanOrEqual(50);
 });
 
 test("member AI answer separates every card from its interpretation and summary", async ({ page }) => {

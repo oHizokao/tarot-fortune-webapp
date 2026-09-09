@@ -142,7 +142,7 @@ function setReaderMode(user) {
       eyebrow: "AI TAROT · QUESTION FIRST",
       primary: "ถามไพ่ในเรื่องที่อยู่ใจ",
       secondary: "แล้วรับคำตอบให้ชัดเจน",
-      description: "พิมพ์คำถาม เลือกจำนวนไพ่ แล้วกดเปิดไพ่ คำตอบจะอ่านจากคำบนไพ่และตอบตรงกับเรื่องที่คุณถาม",
+      description: "พิมพ์คำถาม เลือกจำนวนไพ่ แล้วกดวงล้อไพ่ คำตอบจะอ่านจากคำบนไพ่และตอบตรงกับเรื่องที่คุณถาม",
       spread: "เลือก 1, 2 หรือ 3 ใบ · ทุกครั้งจะหยิบต่อจากสำรับเดิม",
       cards: "ไพ่ที่เปิดได้",
       seal: "AI\nREADING",
@@ -152,7 +152,7 @@ function setReaderMode(user) {
       eyebrow: "FREE READING · NO LOGIN",
       primary: "เปิดไพ่ด้วยตัวเอง",
       secondary: "ให้ไพ่เล่าเรื่องของคุณ",
-      description: "เลือกจำนวนไพ่ เปิดทีละใบ แล้วอ่านภาพและคำบนไพ่ด้วยตัวเอง ไม่ต้องสมัครสมาชิก",
+      description: "เลือกจำนวนไพ่ แล้วกดวงล้อไพ่เพื่อเปิดและอ่านภาพกับคำบนไพ่ด้วยตัวเอง ไม่ต้องสมัครสมาชิก",
       spread: "เลือก 1, 2 หรือ 3 ใบ · เปิดต่อได้จนกว่าจะครบสำรับ",
       cards: "ไพ่ที่เปิดได้",
       seal: "FREE\nREADING",
@@ -171,8 +171,8 @@ function setReaderMode(user) {
   Object.entries(stepNumbers).forEach(([step, number]) => { $(`#flow-number-${step}`)?.replaceChildren(document.createTextNode(number)); });
   $("#account-title")?.replaceChildren(document.createTextNode(member ? (user.ai_enabled ? `พร้อมอ่านไพ่ให้ ${user.name || user.username}` : "บัญชีนี้ยังรอสิทธิ์ AI") : "เปิดไพ่ได้เลย"));
   $("#account-message")?.replaceChildren(document.createTextNode(member
-    ? user.ai_enabled ? "พิมพ์คำถามก่อน แล้วกดเปิดไพ่ ระบบจะอ่านคำตอบให้ตรงกับคำถามและจำรอบก่อนหน้าไว้" : "บัญชีเข้าใช้งานแล้ว แต่ผู้ดูแลยังไม่ได้เปิดสิทธิ์ AI ให้บัญชีนี้"
-    : "เลือกจำนวนไพ่แล้วกดเปิดไพ่ได้ทันที ถ้าอยากให้ AI ตอบคำถาม ให้เข้าใช้งานก่อน"));
+    ? user.ai_enabled ? "พิมพ์คำถามก่อน เลือกจำนวนไพ่ แล้วกดวงล้อไพ่ ระบบจะอ่านคำตอบให้ตรงกับคำถามและจำรอบก่อนหน้าไว้" : "บัญชีเข้าใช้งานแล้ว แต่ผู้ดูแลยังไม่ได้เปิดสิทธิ์ AI ให้บัญชีนี้"
+    : "เลือกจำนวนไพ่แล้วกดวงล้อไพ่ได้ทันที ถ้าอยากให้ AI ตอบคำถาม ให้เข้าใช้งานก่อน"));
   const accountAction = $("#account-action");
   if (accountAction) {
     accountAction.textContent = member ? "ออกจากระบบ" : "เข้าใช้งาน";
@@ -234,6 +234,8 @@ function renderFanBoard() {
   const board = $("#tarot-fan-board");
   if (!board) return;
   const fanCards = ensureFanCards();
+  const drawButton = $("#draw-button");
+  const fan = $("#tarot-fan");
   const round = currentRound();
   const hasCards = Boolean(round?.cards?.length);
   const phase = state.fanPhase === "ready" && hasCards && !isViewingHistory() ? "revealed" : state.fanPhase;
@@ -241,6 +243,12 @@ function renderFanBoard() {
   const history = isViewingHistory();
   board.dataset.fanState = phase;
   board.dataset.cardCount = String(files.length);
+  if (fan) {
+    const disabled = Boolean(drawButton?.disabled);
+    fan.classList.toggle("is-disabled", disabled);
+    fan.setAttribute("aria-disabled", String(disabled));
+    fan.setAttribute("aria-label", `หมุนวงล้อไพ่ · ${state.count} ใบ`);
+  }
   const selectedStart = Math.floor((FAN_CARD_COUNT - files.length) / 2);
 
   fanCards.forEach((card, index) => {
@@ -266,7 +274,7 @@ function renderFanBoard() {
   const message = $("#tarot-fan-message");
   if (phase === "shuffling") {
     title && (title.textContent = "กำลังสับไพ่…");
-    message && (message.textContent = "ไพ่กำลังหมุนออกมาทีละใบ");
+    message && (message.textContent = `วงล้อกำลังหมุน · เตรียมเปิด ${state.count} ใบ`);
   } else if (phase === "answering") {
     title && (title.textContent = `ไพ่เปิดแล้ว · ${files.length} ใบ`);
     message && (message.textContent = "กำลังอ่านคำบนไพ่ให้ตรงกับคำถามของคุณ");
@@ -278,7 +286,7 @@ function renderFanBoard() {
     message && (message.textContent = "เลื่อนลงเพื่ออ่านความหมายและคำทำนาย");
   } else {
     title && (title.textContent = "สำรับพร้อมแล้ว");
-    message && (message.textContent = "เลือกจำนวนไพ่ แล้วกด “เปิดไพ่”");
+    message && (message.textContent = `เลือกจำนวนไพ่ แล้วกดวงล้อเพื่อเปิด ${state.count} ใบ`);
   }
 }
 
@@ -337,29 +345,31 @@ function renderProgress() {
   $("#reset-button").disabled = state.busy || historyView;
   choiceButtons.forEach((button) => { button.disabled = state.busy || historyView || (hasAiAccess() && hasSpread && !answered); });
   $("#draw-label").textContent = empty ? "สำรับหมดแล้ว" : "เปิดไพ่";
+  $("#draw-button")?.setAttribute("aria-label", empty ? "สำรับหมดแล้ว" : `หมุนวงล้อไพ่ · ${state.count} ใบ`);
   $("#deck-message").textContent = historyView
     ? "กำลังดูประวัติเดิม · กดเริ่มดูดวงใหม่ด้านบนเมื่อต้องการเปิดรอบใหม่"
     : empty
     ? "เปิดครบทั้ง 78 ใบแล้ว กดล้างไพ่และสับใหม่เพื่อเริ่มต้นอีกครั้ง"
     : !hasAiAccess()
-      ? `เปิดแล้ว ${opened} ใบ · กดเปิดไพ่ต่อได้ ไพ่จะไม่ซ้ำกัน`
+      ? `เปิดแล้ว ${opened} ใบ · กดวงล้อต่อได้ ไพ่จะไม่ซ้ำกัน`
       : !hasSpread
-        ? questionReady ? `คำถามพร้อมแล้ว · กดเปิดไพ่ (เหลือ ${remaining} ใบ)` : "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงกดเปิดไพ่"
+        ? questionReady ? `คำถามพร้อมแล้ว · กดวงล้อไพ่ (เหลือ ${remaining} ใบ)` : "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงกดวงล้อไพ่"
         : !answered
           ? "ไพ่เปิดแล้ว · กำลังเตรียมคำทำนาย"
           : duplicateCurrentQuestion(question)
             ? "พิมพ์คำถามใหม่เพื่อเปิดไพ่รอบถัดไป"
-            : question ? `คำถามรอบใหม่พร้อมแล้ว · กดเปิดไพ่ (เหลือ ${remaining} ใบ)` : "คำตอบพร้อมแล้ว · พิมพ์คำถามรอบถัดไป";
+            : question ? `คำถามรอบใหม่พร้อมแล้ว · กดวงล้อไพ่ (เหลือ ${remaining} ใบ)` : "คำตอบพร้อมแล้ว · พิมพ์คำถามรอบถัดไป";
   if (empty) setWitchStatus("เปิดครบทั้งสำรับแล้ว · เริ่มสำรับใหม่ได้เลย");
   else if (state.busy) setWitchStatus(hasAnswer() ? "กำลังอ่านคำทำนาย..." : "กำลังสับไพ่...", "reading");
-  else if (hasAnswer()) setWitchStatus(question && !duplicateCurrentQuestion(question) ? "คำถามใหม่พร้อมแล้ว · กดเปิดไพ่" : "คำตอบพร้อมแล้ว · พิมพ์คำถามใหม่", "ready");
+  else if (hasAnswer()) setWitchStatus(question && !duplicateCurrentQuestion(question) ? "คำถามใหม่พร้อมแล้ว · กดวงล้อไพ่" : "คำตอบพร้อมแล้ว · พิมพ์คำถามใหม่", "ready");
   else if (hasSpread) setWitchStatus(isMemberMode() ? "ไพ่เปิดแล้ว · กำลังเตรียมคำตอบ" : "ไพ่เปิดแล้ว · เปิดต่อได้เลย", "ready");
-  else if (hasAiAccess() && questionReady) setWitchStatus("คำถามพร้อมแล้ว · กดเปิดไพ่");
+  else if (hasAiAccess() && questionReady) setWitchStatus("คำถามพร้อมแล้ว · กดวงล้อไพ่");
   else if (hasAiAccess()) setWitchStatus("รอคำถามของคุณ");
   else setWitchStatus("พร้อมเปิดไพ่");
   renderWaitingRitual();
   renderQuestionComposer();
   renderFlow();
+  renderFanBoard();
 }
 
 function getNumber(file) { return String(file).match(/card-(\d{3})/)?.[1] || "—"; }
@@ -435,8 +445,8 @@ function renderCards() {
     setsContainer.dataset.setCount = "0";
     setsContainer.classList.add("is-empty");
     setsContainer.innerHTML = hasAiAccess()
-      ? '<div class="empty-card"><span>?</span><p>พิมพ์คำถามก่อน<br />แล้วกดเปิดไพ่</p></div>'
-      : '<div class="empty-card"><span>?</span><p>เลือกจำนวนไพ่<br />แล้วกดเปิดไพ่</p></div>';
+      ? '<div class="empty-card"><span>?</span><p>พิมพ์คำถามก่อน<br />แล้วกดวงล้อไพ่</p></div>'
+      : '<div class="empty-card"><span>?</span><p>เลือกจำนวนไพ่<br />แล้วกดวงล้อไพ่</p></div>';
     $("#spread-count").textContent = "ยังไม่ได้เปิด";
     $("#reading-note").textContent = hasAiAccess() ? "คำตอบจะอ่านจากคำบนไพ่ของรอบล่าสุด" : "เปิดไพ่แล้วอ่านภาพและคำบนไพ่ด้วยตัวเองได้เลย";
     return;
@@ -649,7 +659,7 @@ function renderAnswer(answer, structured = null, round = currentRound()) {
   if (reading.safety_note) appendCopy(overall, "หมายเหตุ", reading.safety_note);
   box.append(overall);
   $("#ai-answer-stage").hidden = false;
-  $("#request-status").textContent = "คำตอบพร้อมแล้ว · พิมพ์คำถามใหม่ด้านล่าง แล้วกดเปิดไพ่";
+  $("#request-status").textContent = "คำตอบพร้อมแล้ว · พิมพ์คำถามใหม่ด้านบน แล้วกดวงล้อไพ่";
   renderQuestionComposer();
   setWitchStatus("คำตอบพร้อมแล้ว · ถามไพ่รอบใหม่ได้", "ready");
   renderWaitingRitual();
@@ -741,7 +751,7 @@ function syncQuestion() {
   } else if (answer && duplicateCurrentQuestion(question)) {
     $("#request-status").textContent = "คำถามซ้ำกับรอบก่อน · พิมพ์คำถามใหม่ก่อนเปิดไพ่";
   } else if (!answer && !state.busy && !state.failedQuestion) {
-    $("#request-status").textContent = question ? "คำถามพร้อมแล้ว · กดเปิดไพ่" : "พิมพ์คำถามเพื่อเริ่มอ่าน";
+    $("#request-status").textContent = question ? "คำถามพร้อมแล้ว · กดวงล้อไพ่" : "พิมพ์คำถามเพื่อเริ่มอ่าน";
   }
   renderProgress();
 }
@@ -933,7 +943,7 @@ async function drawCards() {
   if (state.busy) return;
   const question = hasAiAccess() ? textValue($("#ai-question")?.value) : "";
   if (hasAiAccess() && !question) {
-    $("#request-status").textContent = "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงกดเปิดไพ่";
+    $("#request-status").textContent = "ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงกดวงล้อไพ่";
     $("#ai-question")?.focus();
     return;
   }
@@ -1086,6 +1096,12 @@ function retryAi() {
 }
 
 $("#draw-button")?.addEventListener("click", drawCards);
+$("#tarot-fan")?.addEventListener("click", () => { void drawCards(); });
+$("#tarot-fan")?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  event.preventDefault();
+  void drawCards();
+});
 $("#reset-button")?.addEventListener("click", resetCards);
 $("#new-reading-button")?.addEventListener("click", resetCards);
 $("#start-new-reading-button")?.addEventListener("click", startNewReading);

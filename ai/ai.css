@@ -4245,7 +4245,7 @@ body {
   }
 }
 
-/* v34: turn the reveal into a simple, game-like card fan. */
+/* v35: make the card fan the clear second step: choose, spin, reveal. */
 .ai-reading-stage.ai-reading-stage--sequential .tarot-fan-board {
   position: relative;
   display: grid;
@@ -4302,6 +4302,21 @@ body {
   height: 270px;
   perspective: 1200px;
   transform: translateY(8px);
+  cursor: pointer;
+  outline: 0;
+  touch-action: manipulation;
+  transition: filter .25s ease, opacity .25s ease;
+}
+
+.tarot-fan:focus-visible {
+  border-radius: 28px;
+  box-shadow: 0 0 0 3px rgba(255, 224, 165, .9), 0 0 0 8px rgba(113, 96, 228, .28);
+}
+
+.tarot-fan.is-disabled {
+  cursor: not-allowed;
+  opacity: .62;
+  filter: saturate(.72);
 }
 
 .tarot-fan-card {
@@ -4320,6 +4335,7 @@ body {
   transform-origin: 50% 100%;
   transition: transform .8s cubic-bezier(.22, .8, .2, 1), filter .5s ease;
   will-change: transform;
+  pointer-events: none;
 }
 
 .tarot-fan-card:nth-child(1) { --fan-x: -218px; --fan-y: 22px; --fan-rotate: -36deg; --fan-shuffle-y: -28px; --fan-shuffle-rotate: -42deg; --fan-z: 1; }
@@ -4447,9 +4463,34 @@ body {
   line-height: 1.65;
 }
 
+.ai-reading-stage.ai-reading-stage--sequential .tarot-fan-board__copy .tarot-wheel-button {
+  width: min(100%, 390px);
+  min-height: 68px;
+  margin-top: 13px;
+  padding: 0 22px;
+  border-radius: 18px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .tarot-wheel-button b {
+  font-size: 18px;
+}
+
+.ai-reading-stage.ai-reading-stage--sequential .tarot-wheel-button > span:last-child {
+  font-size: 25px;
+}
+
 .tarot-fan-board[data-fan-state="shuffling"] .tarot-fan-card {
   animation: tarotFanShuffle 1.15s ease-in-out infinite;
   animation-delay: calc((var(--fan-slot, 1) - 1) * -110ms);
+}
+
+.tarot-fan-board[data-fan-state="shuffling"] .tarot-fan {
+  animation: tarotWheelSpin 1.8s cubic-bezier(.58, .08, .42, .92) infinite;
+  will-change: transform;
+}
+
+.tarot-fan-board[data-fan-state="shuffling"] .tarot-wheel-button {
+  animation: buttonPulse 1s ease-in-out infinite;
 }
 
 .tarot-fan-board[data-fan-state="shuffling"] .tarot-fan-card__back span {
@@ -4474,6 +4515,12 @@ body {
 @keyframes tarotFanPulse {
   0%, 100% { opacity: .68; transform: scale(.9) rotate(0deg); }
   50% { opacity: 1; transform: scale(1.16) rotate(12deg); }
+}
+
+@keyframes tarotWheelSpin {
+  0% { transform: translateY(8px) rotate(0deg); }
+  50% { transform: translateY(8px) rotate(180deg); }
+  100% { transform: translateY(8px) rotate(360deg); }
 }
 
 @media (max-width: 650px) {
@@ -4514,10 +4561,19 @@ body {
   .tarot-fan-card__label { right: 3px; bottom: 3px; left: 3px; padding: 3px 2px; font-size: 7px; }
   .tarot-fan-board__copy strong { font-size: 17px; }
   .tarot-fan-board__copy p { font-size: 11px; }
+
+  .ai-reading-stage.ai-reading-stage--sequential .tarot-fan-board__copy .tarot-wheel-button {
+    min-height: 68px;
+    margin-top: 10px;
+    padding: 0 16px;
+  }
+
+  .ai-reading-stage.ai-reading-stage--sequential .tarot-wheel-button b { font-size: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   #ai-reader-app.motion-always-on .tarot-fan-board[data-fan-state="shuffling"] .tarot-fan-card,
+  #ai-reader-app.motion-always-on .tarot-fan-board[data-fan-state="shuffling"] .tarot-fan,
   #ai-reader-app.motion-always-on .tarot-fan-board[data-fan-state="shuffling"] .tarot-fan-card__back span {
     animation-iteration-count: infinite !important;
     animation-play-state: running !important;

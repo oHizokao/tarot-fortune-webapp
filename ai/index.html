@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./ai.css?v=20260909-ai-fan-v34" />
+    <link rel="stylesheet" href="./ai.css?v=20260909-ai-wheel-v35" />
   </head>
   <body>
     <div class="ai-bg ai-bg--one" aria-hidden="true"></div>
@@ -43,7 +43,7 @@
         <div>
           <p class="panel-kicker">FREE MODE / NO LOGIN</p>
           <h2>เปิดไพ่ได้เลย</h2>
-          <p>เลือก 1, 2 หรือ 3 ใบ แล้วกด “เปิดไพ่” เพื่ออ่านภาพและคำบนไพ่ด้วยตัวเอง</p>
+          <p>เลือกจำนวนไพ่ แล้วกดวงล้อไพ่เพื่อเปิดและอ่านภาพกับคำบนไพ่ด้วยตัวเอง</p>
         </div>
         <a class="guest-mode-banner__action" href="../login/?next=/ai/">เข้าใช้งานเพื่อถามไพ่ AI <span aria-hidden="true">→</span></a>
       </section>
@@ -64,7 +64,7 @@
         <div class="flow-steps" aria-label="ขั้นตอนการอ่านไพ่">
           <div class="flow-step member-only" id="flow-step-question" data-step="question" hidden><span id="flow-number-question">01</span><div><strong>พิมพ์คำถาม</strong><small>เริ่มจากเรื่องที่อยากสะท้อน</small></div></div>
           <div class="flow-step" id="flow-step-spread" data-step="spread"><span id="flow-number-spread">01</span><div><strong>เลือกจำนวนไพ่</strong><small>เลือก 1, 2 หรือ 3 ใบ</small></div></div>
-          <div class="flow-step" id="flow-step-draw" data-step="draw"><span id="flow-number-draw">02</span><div><strong>เปิดไพ่</strong><small>ไพ่จะไม่ซ้ำจนกว่าจะครบสำรับ</small></div></div>
+          <div class="flow-step" id="flow-step-draw" data-step="draw"><span id="flow-number-draw">02</span><div><strong>หมุนวงล้อไพ่</strong><small>เปิดตามจำนวนที่เลือก · ไพ่ไม่ซ้ำกัน</small></div></div>
           <div class="flow-step member-only" id="flow-step-answer" data-step="answer" hidden><span id="flow-number-answer">04</span><div><strong>รับคำตอบ</strong><small>AI อ่านจากคำบนไพ่</small></div></div>
         </div>
 
@@ -85,7 +85,7 @@
 
         <section class="ai-spread-stage panel" aria-labelledby="spread-title">
           <div class="stage-heading">
-            <div><p class="panel-kicker" id="spread-kicker">01 / CHOOSE CARDS</p><h2 id="spread-title">เลือกจำนวนไพ่</h2><p id="spread-description">เลือก 1, 2 หรือ 3 ใบ แล้วเปิดไพ่เพื่ออ่านด้วยตัวเอง</p></div>
+            <div><p class="panel-kicker" id="spread-kicker">01 / CHOOSE CARDS</p><h2 id="spread-title">เลือกจำนวนไพ่</h2><p id="spread-description">เลือก 1, 2 หรือ 3 ใบ แล้วกดวงล้อไพ่เพื่ออ่านด้วยตัวเอง</p></div>
             <span class="deck-status"><i></i><strong id="remaining-count">78</strong> ใบเหลือ</span>
           </div>
           <div class="choice-row" role="group" aria-label="จำนวนไพ่ที่ต้องการเปิด">
@@ -99,7 +99,6 @@
             <p id="deck-message">ไพ่จะไม่ซ้ำกันจนกว่าจะครบทั้งสำรับ</p>
           </div>
           <div class="spread-actions">
-            <button class="draw-button" id="draw-button" type="button"><span>✦</span><b id="draw-label">เปิดไพ่</b><span>→</span></button>
             <button class="reset-button" id="reset-button" type="button"><span class="reset-icon" aria-hidden="true">↻</span><span class="reset-label">ล้างไพ่</span><small>เริ่มสำรับใหม่</small></button>
           </div>
           <p class="request-status request-status--main" id="request-status" role="status" aria-live="polite">ขั้นที่ 1: พิมพ์คำถามก่อน แล้วจึงเลือกจำนวนไพ่</p>
@@ -111,10 +110,11 @@
             <span class="spread-count" id="spread-count">ยังไม่ได้เปิด</span>
           </div>
           <div class="tarot-fan-board" id="tarot-fan-board" data-fan-state="ready" data-card-count="0" role="status" aria-live="polite">
-            <div class="tarot-fan" id="tarot-fan" aria-hidden="true"></div>
+            <div class="tarot-fan" id="tarot-fan" role="button" tabindex="0" aria-label="หมุนวงล้อไพ่" aria-disabled="false"></div>
             <div class="tarot-fan-board__copy">
               <strong id="tarot-fan-title">สำรับพร้อมแล้ว</strong>
-              <p id="tarot-fan-message">เลือกจำนวนไพ่ แล้วกด “เปิดไพ่”</p>
+              <p id="tarot-fan-message">เลือกจำนวนไพ่ก่อน แล้วกดวงล้อไพ่เพื่อเปิด</p>
+              <button class="draw-button tarot-wheel-button" id="draw-button" type="button" aria-label="หมุนวงล้อไพ่ · 1 ใบ"><span>✦</span><b id="draw-label">เปิดไพ่</b><span aria-hidden="true">↻</span></button>
             </div>
           </div>
           <div class="witch-scene" data-motion="ambient" aria-hidden="true">
@@ -137,7 +137,7 @@
               <p>กำลังเชื่อมโยงกับคำถามของคุณ</p>
             </div>
           </div>
-          <div class="reading-sets is-empty" id="reading-sets" aria-live="polite"><div class="empty-card"><span>?</span><p>เลือกจำนวนไพ่<br />แล้วกดเปิดไพ่</p></div></div>
+          <div class="reading-sets is-empty" id="reading-sets" aria-live="polite"><div class="empty-card"><span>?</span><p>เลือกจำนวนไพ่<br />แล้วกดวงล้อไพ่</p></div></div>
           <p class="reading-note" id="reading-note">เปิดไพ่แล้วอ่านภาพและคำบนไพ่ด้วยตัวเองได้เลย</p>
         </section>
 
@@ -158,6 +158,6 @@
 
       <footer class="ai-footer"><span>✦ TAROT DAILY</span><span>คำทำนายเป็นแนวทาง ไม่ใช่คำตัดสินชีวิต</span><a href="../privacy/">ความเป็นส่วนตัว</a><a href="../terms/">ข้อกำหนด</a><a href="../admin/">สำหรับผู้ดูแล</a></footer>
     </main>
-    <script type="module" src="./ai.js?v=20260909-ai-fan-v34" defer></script>
+    <script type="module" src="./ai.js?v=20260909-ai-wheel-v35" defer></script>
   </body>
 </html>
