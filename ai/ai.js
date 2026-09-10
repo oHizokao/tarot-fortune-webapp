@@ -1,5 +1,6 @@
 import { messageForError } from "../lib/client/error-copy.js";
 import { createLocalDeckSession, drawNextRound, normalizeLocalDeckSession, resetLocalDeckSession } from "./deck-session.mjs";
+import { commitVisualRound } from "./deck-visual-state.mjs";
 import { groupReadingHistory } from "./reading-sets.mjs";
 
 const STORAGE_KEY = "tarot-daily-ai-reading-v3";
@@ -16,6 +17,8 @@ const state = {
   visualDeckKey: "",
   savedVisualDeckKey: "",
   savedVisualDeckIndexes: [],
+  visualRounds: [],
+  savedVisualRounds: [],
   localSession: null,
   savedServerSessionId: "",
   sessionId: "",
@@ -56,6 +59,16 @@ function normalizeDeckIndexes(value) {
   return [...new Set(value.map((index) => Number(index)).filter((index) => Number.isInteger(index) && index >= 0 && index < DECK_SIZE))].sort((a, b) => a - b);
 }
 
+function normalizeVisualRounds(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map((round) => ({
+    requestId: textValue(round?.requestId, 160),
+    roundId: textValue(round?.roundId, 160),
+    selectedIndexes: normalizeDeckIndexes(round?.selectedIndexes),
+    cards: Array.isArray(round?.cards) ? round.cards.map((card) => textValue(card, 160)) : [],
+  })).filter((round) => round.requestId && round.roundId && round.selectedIndexes.length === round.cards.length);
+}
+
 function visualDeckKey() {
   if (isMemberMode()) return state.sessionId ? `member:${state.sessionId}` : "member:new";
   return state.localSession?.createdAt ? `guest:${state.localSession.createdAt}` : "";
@@ -66,8 +79,8 @@ function syncVisualDeckState() {
   if (!key || state.visualDeckKey === key) return;
   state.visualDeckKey = key;
   const saved = state.savedVisualDeckKey === key ? state.savedVisualDeckIndexes : [];
-  const fallbackCount = Math.min(openedCount(), DECK_SIZE);
-  state.usedDeckIndexes = normalizeDeckIndexes(saved.length ? saved : Array.from({ length: fallbackCount }, (_, index) => index));
+  state.usedDeckIndexes = normalizeDeckIndexes(saved);
+  state.visualRounds = state.savedVisualDeckKey === key ? normalizeVisualRounds(state.savedVisualRounds) : [];
 }
 
 function saveVisualDeckState() {
@@ -76,8 +89,9 @@ function saveVisualDeckState() {
   state.visualDeckKey = key;
   state.savedVisualDeckKey = key;
   state.savedVisualDeckIndexes = normalizeDeckIndexes(state.usedDeckIndexes);
+  state.savedVisualRounds = normalizeVisualRounds(state.visualRounds);
   try {
-    localStorage.setItem(VISUAL_DECK_STORAGE_KEY, JSON.stringify({ key, indexes: state.savedVisualDeckIndexes }));
+    localStorage.setItem(VISUAL_DECK_STORAGE_KEY, JSON.stringify({ key, indexes: state.savedVisualDeckIndexes, rounds: state.savedVisualRounds }));
   } catch { /* storage may be disabled */ }
 }
 
@@ -801,10 +815,12 @@ function savedLocalSession() {
     state.savedServerSessionId = textValue(value?.serverSessionId, 120);
     state.savedVisualDeckKey = textValue(value?.visualDeckKey, 160);
     state.savedVisualDeckIndexes = normalizeDeckIndexes(value?.usedDeckIndexes);
+    state.savedVisualRounds = normalizeVisualRounds(value?.visualRounds);
     if (!state.savedVisualDeckKey) {
       const visual = JSON.parse(localStorage.getItem(VISUAL_DECK_STORAGE_KEY) || "null");
       state.savedVisualDeckKey = textValue(visual?.key, 160);
       state.savedVisualDeckIndexes = normalizeDeckIndexes(visual?.indexes);
+      state.savedVisualRounds = normalizeVisualRounds(visual?.rounds);
     }
     return normalizeLocalDeckSession(value?.localSession || value);
   } catch { return null; }
@@ -817,6 +833,7 @@ function saveState() {
       localSession: state.localSession,
       visualDeckKey: state.visualDeckKey || visualDeckKey(),
       usedDeckIndexes: normalizeDeckIndexes(state.usedDeckIndexes),
+      visualRounds: normalizeVisualRounds(state.visualRounds),
     }));
   } catch { /* private browsing can disable storage */ }
 }
@@ -868,6 +885,7 @@ function clearPrivateMemory() {
   state.selectedCards = [];
   state.pendingDrawCount = 0;
   state.usedDeckIndexes = [];
+  state.visualRounds = [];
   state.visualDeckKey = "";
   state.count = 0;
   state.viewingHistorySessionId = "";
@@ -977,6 +995,7 @@ function startNewReading() {
   state.selectedCards = [];
   state.pendingDrawCount = 0;
   state.usedDeckIndexes = [];
+  state.visualRounds = [];
   state.visualDeckKey = "";
   state.count = 0;
   state.failedQuestion = "";
@@ -1077,6 +1096,8 @@ async function predictSelectedCards() {
   }
   if ($("#draw-button").disabled) return;
   state.count = state.selectedCards.length;
+  const selectedIndexes = state.selectedCards.map((item) => Number(item.deckIndex));
+  const drawRequestId = randomId("draw");
   const version = ++state.requestVersion;
   state.pendingDrawCount = state.selectedCards.length;
   state.busy = true;
@@ -1099,7 +1120,7 @@ async function predictSelectedCards() {
       const data = await api(deckSessionUrl(state.sessionId, "draw"), {
         method: "POST",
         headers: { "X-CSRF-Token": state.csrf },
-        body: JSON.stringify({ count: state.count, question, request_id: randomId("draw") }),
+        body: JSON.stringify({ count: state.count, question, request_id: drawRequestId, selected_indexes: selectedIndexes }),
       });
       if (version !== state.requestVersion) return;
       applyServerSession(data.session);
@@ -1119,8 +1140,19 @@ async function predictSelectedCards() {
       syncHistory();
       saveState();
     }
+    const committedVisualState = commitVisualRound({
+      sessionKey: visualDeckKey(),
+      usedIndexes: state.usedDeckIndexes,
+      rounds: state.visualRounds,
+    }, {
+      requestId: drawRequestId,
+      roundId: round.id,
+      selectedIndexes,
+      cards: round.cards,
+    });
     state.pendingDrawCount = 0;
-    state.usedDeckIndexes = normalizeDeckIndexes([...state.usedDeckIndexes, ...state.selectedCards.map((item) => item.deckIndex)]);
+    state.usedDeckIndexes = committedVisualState.usedIndexes;
+    state.visualRounds = committedVisualState.rounds;
     saveVisualDeckState();
     saveState();
     state.selectedCards = [];
@@ -1168,6 +1200,7 @@ async function resetCards() {
   state.selectedCards = [];
   state.pendingDrawCount = 0;
   state.usedDeckIndexes = [];
+  state.visualRounds = [];
   state.visualDeckKey = "";
   state.savedVisualDeckKey = "";
   state.savedVisualDeckIndexes = [];

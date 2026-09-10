@@ -187,6 +187,23 @@ test("member types a question, selects cards, and receives one reading per card 
   expect(api.answerCalls).toBe(1);
 });
 
+test("member marks exactly the sparse cards selected in the deck", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  const api = await installMemberApi(page);
+  await page.goto("/ai/");
+  await page.getByLabel("คำถามของคุณ").fill("ไพ่สามใบนี้ตอบคำถามของฉันอย่างไร?");
+
+  const selected = [0, 20, 50];
+  for (const index of selected) {
+    await page.locator(`#tarot-deck-card-list .tarot-deck-card[data-deck-index="${index}"]`).click();
+  }
+  await page.locator("#draw-button").click();
+  await expect(page.locator("#opened-count")).toHaveText("3");
+  await expect(page.locator("#remaining-count")).toHaveText("75");
+  await expect.poll(async () => page.locator("#tarot-deck-card-list .tarot-deck-card.is-used").evaluateAll((nodes) => nodes.map((node) => Number(node.dataset.deckIndex)).sort((a, b) => a - b))).toEqual(selected);
+  expect(api.drawCalls).toBe(1);
+});
+
 test("member keeps the deck count and unused cards visible while AI is answering", async ({ page }) => {
   await page.addInitScript(() => localStorage.clear());
   const api = await installMemberApi(page);
