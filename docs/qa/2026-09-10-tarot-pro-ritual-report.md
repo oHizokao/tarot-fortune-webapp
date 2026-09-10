@@ -2,9 +2,9 @@
 
 Date: 2026-09-10 (Asia/Bangkok)
 
-Release commit: `58c65ac` (`test: track pro ritual asset version`)
+Release commit: `9f4b3e0` (`fix: keep tarot counters and retry unfinished readings`)
 
-Production deployment: Vercel deployment `5vm3Y8vk5YPpLugRedibddVaZLog`, serving `https://tarot-daily-78-history.vercel.app/`
+Production deployment: Vercel deployment `BMNFzsQdfo6fhF5JuCSBc92KXMYq`, serving `https://tarot-daily-78-history.vercel.app/`
 
 ## Release scope
 
@@ -13,6 +13,7 @@ Production deployment: Vercel deployment `5vm3Y8vk5YPpLugRedibddVaZLog`, serving
 - The compose scene is now a calmer single reading path. The full deck is the visual focus, selected cards appear in a small tray, and selected/opened/pending/remaining counts are separated.
 - The result scene keeps each draw as its own set, preserves the complete card image ratio, and places the question context beside the result instead of burying it in the answer.
 - Follow-up stays on the compose scene with a blank new question, a new selection, the same continuous deck, and preserved memory/history.
+- While a draw is pending, `เปิดแล้ว`, `กำลังเปิด`, and `เหลือ` remain separate; a drawn-but-unanswered history round exposes a retry action after reload.
 - History remains available as a secondary launchpad with explicit open, delete-one, delete-all, and start-new actions.
 - Ambient motion stays on without a toggle, including the ritual wheel and waiting state. Reduced-motion requests slow the effects without removing the ritual signal.
 - The shell is flat rather than a stack of dashboard cards, and the mobile layout stays within the viewport.
@@ -21,8 +22,8 @@ Production deployment: Vercel deployment `5vm3Y8vk5YPpLugRedibddVaZLog`, serving
 
 - `npm run check` — passed.
 - `npm test` — 111 passed, 0 failed.
-- `npx playwright test` — 52 passed, 2 skipped, 0 failed across desktop and mobile projects.
-- Focused pro-ritual/deck/scene/member suite — 23 passed, 0 failed.
+- `npx playwright test` — 54 passed, 2 skipped, 0 failed across desktop and mobile projects.
+- Focused pro-ritual/deck/scene/member suite — 24 passed, 0 failed.
 - `git diff --check` — passed.
 - Visual smoke checked at desktop and mobile sizes; no horizontal overflow, clipped card source images, or hidden motion control found.
 - No API key, password, cookie, or database credential was added to source, tests, logs, or this report.
@@ -39,7 +40,7 @@ Production deployment: Vercel deployment `5vm3Y8vk5YPpLugRedibddVaZLog`, serving
 ## Deployment
 
 - GitHub branch pushed: `codex/witch-two-modes`.
-- Preview deployment passed before promotion: `J5XoCw43VBuATbfFvTK9yQaqW6ni`.
+- Preview deployment passed before promotion: `9PekYTzxNh2hks1wfqiVKXb6o1pe`.
 - The verified preview was promoted through Vercel to the production domain.
 
 ## Rollback
