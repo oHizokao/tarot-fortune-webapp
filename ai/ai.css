@@ -5438,7 +5438,11 @@ body {
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .ai-topbar {
   min-height: 66px;
   padding: 0 4px 17px;
-  border-bottom: 1px solid rgba(203, 187, 255, .13);
+  border: 0 !important;
+  border-bottom: 1px solid rgba(203, 187, 255, .13) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .top-actions {
@@ -5835,8 +5839,8 @@ body {
 }
 
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .reader-view--result .witch-scene {
-  min-height: 98px;
-  height: 98px;
+  min-height: 98px !important;
+  height: 98px !important;
   margin: 24px 0 3px;
   border: 0;
   border-top: 1px solid var(--pro-line);
@@ -5848,6 +5852,16 @@ body {
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .reader-view--result .reading-sets {
   max-width: 920px;
   margin-top: 31px;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .result-question-context {
+  width: min(100%, 820px);
+  margin: 18px auto 0;
+  padding: 9px 0 9px 14px;
+  color: #b6c3e2;
+  border-left: 2px solid rgba(129, 228, 189, .58);
+  font-size: 12px;
+  line-height: 1.7;
 }
 
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .reader-view--result .reading-set {

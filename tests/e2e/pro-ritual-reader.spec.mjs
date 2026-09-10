@@ -32,3 +32,34 @@ test("the mobile compose scene stays inside the viewport", async ({ page }) => {
   await page.waitForTimeout(700);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
+
+test("the result ritual stays compact so the card remains the visual focus", async ({ page }) => {
+  await page.goto("/ai/");
+  await page.locator("#tarot-deck-card-list .tarot-deck-card").first().click();
+  await page.locator("#draw-button").click();
+  await expect(page.locator("#reader-result-view")).toBeVisible();
+  const height = await page.locator("#reader-result-view .witch-scene").evaluate((element) => element.getBoundingClientRect().height);
+  expect(height).toBeLessThan(160);
+});
+
+test("the reader chrome stays flat instead of looking like a dashboard card", async ({ page }) => {
+  await page.goto("/ai/");
+  const style = await page.locator(".ai-topbar").evaluate((element) => {
+    const computed = getComputedStyle(element);
+    return {
+      borderTop: computed.borderTopStyle,
+      borderRight: computed.borderRightStyle,
+      borderBottom: computed.borderBottomStyle,
+      borderLeft: computed.borderLeftStyle,
+      radius: computed.borderRadius,
+      shadow: computed.boxShadow,
+      background: computed.backgroundColor,
+    };
+  });
+  expect(style.borderTop).toBe("none");
+  expect(style.borderRight).toBe("none");
+  expect(style.borderLeft).toBe("none");
+  expect(style.radius).toBe("0px");
+  expect(style.shadow).toBe("none");
+  expect(style.background).toBe("rgba(0, 0, 0, 0)");
+});

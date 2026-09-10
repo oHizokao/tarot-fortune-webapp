@@ -633,9 +633,11 @@ function syncHistory() {
 function renderCards() {
   const setsContainer = $("#reading-sets");
   const resultStage = $("#reading-result-stage");
+  const questionContext = $("#result-question-context");
   const readingSets = groupReadingHistory(state.history);
   if (!readingSets.length) {
     if (resultStage) resultStage.hidden = true;
+    if (questionContext) questionContext.hidden = true;
     setsContainer.dataset.setCount = "0";
     setsContainer.classList.add("is-empty");
     setsContainer.innerHTML = hasAiAccess()
@@ -646,6 +648,11 @@ function renderCards() {
     return;
   }
   if (resultStage) resultStage.hidden = false;
+  if (questionContext) {
+    const question = textValue(currentRound()?.question, 2_000);
+    questionContext.textContent = question ? "คำถามที่ใช้เปิดไพ่: " + question : "";
+    questionContext.hidden = !question;
+  }
   setsContainer.dataset.setCount = String(readingSets.length);
   setsContainer.classList.remove("is-empty");
   let cardOffset = 0;

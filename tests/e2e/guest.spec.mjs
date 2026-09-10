@@ -185,6 +185,7 @@ test("member types a question, selects cards, and receives one reading per card 
   await page.locator("#draw-button").click();
   await expect(page).toHaveURL(/#reading-result$/);
   await expect(page.locator("#reading-sets .tarot-card-card")).toHaveCount(2);
+  await expect(page.locator("#result-question-context")).toContainText("เรื่องงานครั้งนี้ควรเดินหน้าต่อไหม?");
   await expect(page.locator("#ai-answer .answer-section--verdict .answer-section-heading h3")).toHaveText("ฟันธงคำถามนี้");
   await expect(page.locator("#ai-answer .answer-section--cards .answer-section-heading h3")).toHaveText("อ่านไพ่ทีละใบ");
   await expect(page.locator("#ai-answer .answer-section--overall .answer-section-heading h3")).toHaveText("สรุปคำทำนาย");
