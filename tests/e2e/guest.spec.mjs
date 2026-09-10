@@ -199,6 +199,88 @@ test("member types a question, selects cards, and receives one reading per card 
   expect(api.answerCalls).toBe(1);
 });
 
+test("member question composer is readable, aligned, and stable on desktop", async ({ page }) => {
+  await installMemberApi(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/ai/");
+
+  const field = page.getByLabel("คำถามของคุณ");
+  const label = page.locator("#question-label");
+  const hint = page.locator("#question-hint");
+  await expect(field).toHaveAttribute("aria-describedby", /(?:^|\s)question-hint(?:\s|$)/);
+  await expect(field).toHaveAttribute("aria-describedby", /(?:^|\s)request-status(?:\s|$)/);
+
+  const empty = await field.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const placeholder = getComputedStyle(element, "::placeholder");
+    const rect = element.getBoundingClientRect();
+    return {
+      width: rect.width,
+      height: rect.height,
+      borderWidth: style.borderWidth,
+      borderRadius: style.borderRadius,
+      background: style.backgroundColor,
+      color: style.color,
+      fontSize: style.fontSize,
+      lineHeight: style.lineHeight,
+      padding: style.padding,
+      placeholderColor: placeholder.color,
+      placeholderOpacity: placeholder.opacity,
+    };
+  });
+  expect(empty).toEqual({
+    width: 760,
+    height: 148,
+    borderWidth: "1px",
+    borderRadius: "16px",
+    background: "rgb(23, 19, 32)",
+    color: "rgb(245, 240, 232)",
+    fontSize: "18px",
+    lineHeight: "31.5px",
+    padding: "22px 24px",
+    placeholderColor: "rgb(186, 178, 200)",
+    placeholderOpacity: "1",
+  });
+
+  const labelWidth = await label.evaluate((element) => element.getBoundingClientRect().width);
+  const hintWidth = await hint.evaluate((element) => element.getBoundingClientRect().width);
+  expect(labelWidth).toBe(empty.width);
+  expect(hintWidth).toBe(empty.width);
+
+  await field.focus();
+  await expect(field).toHaveCSS("border-color", "rgb(216, 191, 140)");
+  const focused = await field.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return { width: rect.width, height: rect.height, borderWidth: style.borderWidth, borderColor: style.borderColor };
+  });
+  expect(focused).toEqual({ width: empty.width, height: empty.height, borderWidth: "1px", borderColor: "rgb(216, 191, 140)" });
+
+  const longThaiQuestion = "ฉันกำลังพิจารณาเปลี่ยนงานในช่วงปลายปีนี้ แต่ยังไม่แน่ใจว่าควรเลือกโอกาสใหม่ที่ท้าทายหรืออยู่ในที่เดิมเพื่อสร้างความมั่นคง ไพ่ต้องการชี้ให้เห็นปัจจัยใดที่ฉันควรพิจารณาอย่างรอบคอบก่อนตัดสินใจ?";
+  await field.fill(longThaiQuestion);
+  await expect(field).toHaveValue(longThaiQuestion);
+});
+
+test("member question composer stays legible without overflow on mobile", async ({ page }) => {
+  await installMemberApi(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ai/");
+
+  const field = page.getByLabel("คำถามของคุณ");
+  await page.evaluate(() => document.fonts.ready);
+  const before = await field.boundingBox();
+  expect(before).not.toBeNull();
+  await expect(field).toHaveCSS("font-size", "16px");
+  await expect(field).toHaveCSS("min-height", "136px");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+  await field.focus();
+  await expect(field).toHaveCSS("border-color", "rgb(216, 191, 140)");
+  const after = await field.boundingBox();
+  expect(after?.width).toBe(before?.width);
+  expect(after?.height).toBe(before?.height);
+});
+
 test("member marks exactly the sparse cards selected in the deck", async ({ page }) => {
   await page.addInitScript(() => localStorage.clear());
   const api = await installMemberApi(page);

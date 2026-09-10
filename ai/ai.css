@@ -5431,6 +5431,11 @@ body {
   --pro-surface: rgba(11, 15, 47, .54);
   --pro-surface-soft: rgba(20, 25, 72, .32);
   --pro-line: rgba(203, 187, 255, .18);
+  --composer-surface: #171320;
+  --composer-text: #f5f0e8;
+  --composer-placeholder: #bab2c8;
+  --composer-border: #81728c;
+  --composer-accent: #d8bf8c;
   width: min(1160px, calc(100% - 48px));
   padding: 18px 0 54px;
 }
@@ -5553,27 +5558,51 @@ body {
   background: transparent;
 }
 
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .question-label,
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .question-panel textarea,
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .question-hint {
+  width: min(100%, 760px);
+  margin-right: auto;
+  margin-left: auto;
+}
+
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .question-label {
   margin-top: 25px;
+  color: var(--composer-text);
+  font-size: 15px;
 }
 
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .question-panel textarea {
-  min-height: 106px;
-  padding: 16px 0;
-  border-width: 0 0 1px;
-  border-radius: 0;
-  background: transparent;
-  font-size: 16px;
-  line-height: 1.8;
+  min-height: 148px;
+  margin-top: 12px;
+  padding: 22px 24px;
+  border: 1px solid var(--composer-border);
+  border-radius: 16px;
+  background: var(--composer-surface);
+  color: var(--composer-text);
+  font-family: inherit;
+  font-size: 18px;
+  line-height: 1.75;
+  resize: vertical;
+  caret-color: var(--composer-accent);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .question-panel textarea::placeholder {
+  color: var(--composer-placeholder);
+  font: inherit;
+  opacity: 1;
 }
 
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .question-panel textarea:focus {
-  border-color: var(--blue);
-  box-shadow: 0 3px 0 rgba(104, 189, 255, .18);
+  border-color: var(--composer-accent);
+  box-shadow: 0 0 0 3px rgba(216, 191, 140, .16);
 }
 
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .question-hint {
   margin-top: 8px;
+  color: var(--composer-placeholder);
+  font-size: 14px;
   line-height: 1.7;
 }
 
@@ -6001,8 +6030,10 @@ body {
   }
 
   #ai-reader-app[data-ui-version="pro-ritual-v1"] .question-panel textarea {
-    min-height: 112px;
-    font-size: 14px;
+    min-height: 136px;
+    padding: 16px 18px;
+    font-size: 16px;
+    line-height: 1.75;
   }
 
   #ai-reader-app[data-ui-version="pro-ritual-v1"] .tarot-deck-zone {
