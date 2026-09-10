@@ -6103,3 +6103,26 @@ body {
     animation-duration: 4s !important;
   }
 }
+
+/* v42 — history is a quiet secondary section below the active reading. */
+#ai-reader-app[data-ui-version="pro-ritual-v1"] > .reading-history-panel {
+  width: min(100%, 1000px);
+  margin: 54px auto 0;
+  padding: 29px 0 0;
+  border-width: 1px 0 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] > .reading-history-panel .reading-history-heading {
+  align-items: flex-end;
+}
+
+@media (max-width: 650px) {
+  #ai-reader-app[data-ui-version="pro-ritual-v1"] > .reading-history-panel {
+    width: 100%;
+    margin-top: 42px;
+    padding-top: 24px;
+  }
+}

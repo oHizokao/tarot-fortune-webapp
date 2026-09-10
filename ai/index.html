@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./ai.css?v=20260910-ai-two-scene-v41" />
+    <link rel="stylesheet" href="./ai.css?v=20260910-ai-two-scene-v42" />
   </head>
   <body>
     <div class="ai-bg ai-bg--one" aria-hidden="true"></div>
@@ -46,21 +46,6 @@
           <p>คลิกไพ่จากสำรับได้เลย สูงสุด 3 ใบ แล้วกด “ทำนาย” เพื่อดูผล</p>
         </div>
         <a class="guest-mode-banner__action" href="../login/?next=/ai/">เข้าใช้งานเพื่อถามไพ่ AI <span aria-hidden="true">→</span></a>
-      </section>
-
-      <section class="reading-history-panel member-only" id="reading-history-panel" aria-labelledby="reading-history-title" hidden>
-        <div class="reading-history-heading">
-          <div>
-            <p class="panel-kicker">YOUR READING HISTORY</p>
-            <h2 id="reading-history-title">ประวัติการดูดวง</h2>
-            <p>รอบเก่าจะอยู่ที่นี่ เลือกเปิดดูย้อนหลังได้ทุกเมื่อ หรือเริ่มดูดวงรอบใหม่ได้ทันที</p>
-          </div>
-          <div class="reading-history-actions">
-            <button class="history-new-button" id="start-new-reading-button" type="button">เริ่มดูดวงใหม่ <span aria-hidden="true">→</span></button>
-            <button class="history-delete-all-button" id="delete-all-history-button" type="button">ลบประวัติทั้งหมด</button>
-          </div>
-        </div>
-        <div class="reading-history-list" id="reading-history-list" aria-live="polite"></div>
       </section>
 
       <section class="ai-reading-stage ai-reading-stage--sequential" data-reader-order="question spread reveal answer" aria-label="ขั้นตอนถามแม่มด AI">
@@ -186,8 +171,23 @@
         </div>
       </section>
 
+      <section class="reading-history-panel member-only" id="reading-history-panel" aria-labelledby="reading-history-title" hidden>
+        <div class="reading-history-heading">
+          <div>
+            <p class="panel-kicker">YOUR READING HISTORY</p>
+            <h2 id="reading-history-title">ประวัติการดูดวง</h2>
+            <p>รอบเก่าจะอยู่ที่นี่ เลือกเปิดดูย้อนหลังได้ทุกเมื่อ หรือเริ่มดูดวงรอบใหม่ได้ทันที</p>
+          </div>
+          <div class="reading-history-actions">
+            <button class="history-new-button" id="start-new-reading-button" type="button">เริ่มดูดวงใหม่ <span aria-hidden="true">→</span></button>
+            <button class="history-delete-all-button" id="delete-all-history-button" type="button">ลบประวัติทั้งหมด</button>
+          </div>
+        </div>
+        <div class="reading-history-list" id="reading-history-list" aria-live="polite"></div>
+      </section>
+
       <footer class="ai-footer"><span>✦ TAROT DAILY</span><span>คำทำนายเป็นแนวทาง ไม่ใช่คำตัดสินชีวิต</span><a href="../privacy/">ความเป็นส่วนตัว</a><a href="../terms/">ข้อกำหนด</a><a href="../admin/">สำหรับผู้ดูแล</a></footer>
     </main>
-    <script type="module" src="./ai.js?v=20260910-ai-two-scene-v41" defer></script>
+    <script type="module" src="./ai.js?v=20260910-ai-two-scene-v42" defer></script>
   </body>
 </html>
