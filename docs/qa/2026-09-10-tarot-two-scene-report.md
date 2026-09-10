@@ -37,4 +37,3 @@ Production deployment: Vercel deployment `8WpQBVQFCpdX1TqzibR5SgnHV4mF`, serving
 ## Rollback
 
 If an urgent rollback is needed, promote the previous known-good Vercel deployment for commit `a7dd233`. The additive migration is backward-compatible and does not require deleting data.
-
