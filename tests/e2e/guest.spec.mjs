@@ -226,7 +226,8 @@ test("member keeps the deck count and unused cards visible while AI is answering
   await selectCards(page, 1);
   await page.locator("#draw-button").click();
   await expect(page.locator("#deck-center-title")).toHaveText("กำลังสับไพ่…");
-  await expect(page.locator("#opened-count")).toHaveText("1");
+  await expect(page.locator("#opened-count")).toHaveText("0");
+  await expect(page.locator("#pending-count")).toHaveText("1");
   await expect(page.locator("#remaining-count")).toHaveText("77");
   api.releaseDraw();
   await expect(page.locator("#tarot-waiting-ritual")).toBeVisible();
@@ -273,6 +274,20 @@ test("member opens old history only when requested and starts with a fresh readi
   await expect(page.locator("#question-stage")).toBeVisible();
   await expect(page.locator("#reading-result-stage")).toBeHidden();
   await expect(page.locator("#ai-answer-stage")).toBeHidden();
+});
+
+test("member can resume an unanswered history round", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  const api = await installMemberApi(page);
+  api.session = true;
+  api.rounds = [{ id: "round-drawn-1", round_number: 1, question: "รอบที่ยังไม่ได้รับคำตอบควรทำอย่างไร?", cards: ["card-001.webp"], status: "drawn", answer_json: null, answer_text: "" }];
+  await page.goto("/ai/");
+  await page.getByRole("button", { name: /ดูย้อนหลัง/ }).click();
+  await expect(page.locator("#reader-result-view")).toBeVisible();
+  await expect(page.locator("#retry-ai-button")).toBeVisible();
+  await page.locator("#retry-ai-button").click();
+  await expect(page.locator("#ai-answer .answer-section--overall")).toBeVisible({ timeout: 10_000 });
+  expect(api.answerCalls).toBe(1);
 });
 
 test("member can delete one saved history item", async ({ page }) => {

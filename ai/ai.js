@@ -511,7 +511,7 @@ function renderFlow() {
 
 function renderProgress() {
   const pending = Math.max(0, Math.min(MAX_SELECTED_CARDS, Number(state.pendingDrawCount) || 0));
-  const opened = Math.min(DECK_SIZE, openedCount() + pending);
+  const opened = Math.min(DECK_SIZE, openedCount());
   const remaining = Math.max(0, remainingCount() - pending);
   const percent = Math.round((opened / DECK_SIZE) * 100);
   $("#remaining-count").textContent = String(remaining);
@@ -1059,7 +1059,11 @@ function renderAll() {
 function renderAnswerFromCurrent() {
   const round = currentRound();
   if (round?.answer || round?.structured) renderAnswer(round.answer, round.structured, round);
-  else if (!round || !hasAnswer()) clearAnswer();
+  else if (round && hasAiAccess() && isViewingHistory() && round.status === "drawn") {
+    clearAnswer();
+    $("#ai-answer-stage")?.removeAttribute("hidden");
+    $("#retry-ai-button")?.removeAttribute("hidden");
+  } else if (!round || !hasAnswer()) clearAnswer();
 }
 
 function syncQuestion() {
@@ -1177,6 +1181,12 @@ async function openHistorySession(sessionId) {
     if (!data.session || data.session.deck_ready === false) throw new Error("ประวัติชุดนี้ไม่พร้อมเปิดดู");
     state.viewingHistorySessionId = String(sessionId);
     applyServerSession(data.session);
+    const historyRound = currentRound();
+    if (historyRound && !hasAnswer() && historyRound.status === "drawn") {
+      state.failedQuestion = historyRound.question;
+      state.failedErrorCode = "AI_UNANSWERED_HISTORY";
+      state.failedRequestId = "";
+    }
     state.fanPhase = "revealed";
     renderAll();
     setReaderView("result", { updateUrl: true, replace: true });
