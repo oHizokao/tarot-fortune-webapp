@@ -406,6 +406,54 @@ function renderDeckZone() {
   }
 }
 
+function renderSelectedTray() {
+  const tray = $("#selected-card-tray");
+  if (!tray) return;
+  const selected = state.selectedCards.slice(0, MAX_SELECTED_CARDS);
+  tray.dataset.selectedCount = String(selected.length);
+  if (!selected.length) {
+    const empty = document.createElement("p");
+    empty.className = "selected-card-tray__empty";
+    empty.textContent = "เลือกไพ่จากวงล้อได้ 1–3 ใบ";
+    tray.replaceChildren(empty);
+    return;
+  }
+  tray.replaceChildren(...selected.map((item, index) => {
+    const slot = document.createElement("article");
+    slot.className = "selected-card-slot";
+    slot.dataset.deckIndex = String(item.deckIndex);
+    slot.dataset.slot = String(index + 1);
+
+    const back = document.createElement("span");
+    back.className = "selected-card-slot__back";
+    back.setAttribute("aria-hidden", "true");
+    back.textContent = "✦";
+
+    const copy = document.createElement("div");
+    copy.className = "selected-card-slot__copy";
+    const number = document.createElement("strong");
+    number.textContent = "ใบที่ " + (index + 1);
+    const detail = document.createElement("small");
+    detail.textContent = state.busy ? "กำลังอ่าน" : "เลือกแล้ว";
+    copy.append(number, detail);
+
+    const remove = document.createElement("button");
+    remove.className = "selected-card-slot__remove";
+    remove.type = "button";
+    remove.textContent = "เอาออก";
+    remove.setAttribute("aria-label", "เอาไพ่ใบที่ " + (index + 1) + " ออกจากชุดที่เลือก");
+    remove.disabled = state.busy || isViewingHistory();
+    remove.addEventListener("click", () => {
+      if (remove.disabled) return;
+      const card = document.querySelector("#tarot-deck-card-list .tarot-deck-card[data-deck-index=\"" + item.deckIndex + "\"]");
+      if (card) selectDeckCard(card);
+    });
+
+    slot.append(back, copy, remove);
+    return slot;
+  }));
+}
+
 function selectDeckCard(card) {
   if (state.busy || isViewingHistory() || card.classList.contains("is-used")) return;
   const deckIndex = Number(card.dataset.deckIndex);
@@ -467,7 +515,10 @@ function renderProgress() {
   const remaining = Math.max(0, remainingCount() - pending);
   const percent = Math.round((opened / DECK_SIZE) * 100);
   $("#remaining-count").textContent = String(remaining);
+  $("#available-count").textContent = String(remaining);
   $("#opened-count").textContent = String(opened);
+  $("#selected-count").textContent = String(state.selectedCards.length);
+  $("#pending-count").textContent = String(pending);
   $("#progress-bar").style.width = `${percent}%`;
   $(".progress-track")?.setAttribute("aria-valuenow", String(opened));
   const empty = remaining === 0 && pending === 0;
@@ -509,6 +560,7 @@ function renderProgress() {
   renderWaitingRitual();
   renderQuestionComposer();
   renderFlow();
+  renderSelectedTray();
   renderDeckZone();
 }
 

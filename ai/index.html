@@ -11,12 +11,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./ai.css?v=20260910-ai-two-scene-v40" />
+    <link rel="stylesheet" href="./ai.css?v=20260910-ai-two-scene-v41" />
   </head>
   <body>
     <div class="ai-bg ai-bg--one" aria-hidden="true"></div>
     <div class="ai-bg ai-bg--two" aria-hidden="true"></div>
-    <main class="ai-shell" id="ai-reader-app" data-reader-mode="guest">
+    <main class="ai-shell" id="ai-reader-app" data-reader-mode="guest" data-ui-version="pro-ritual-v1">
       <header class="ai-topbar">
         <a class="brand" href="../" aria-label="กลับหน้าเลือกโหมด Tarot Daily">
           <span class="brand-mark" aria-hidden="true">✦</span>
@@ -100,8 +100,19 @@
               <small id="deck-center-message">คลิกไพ่ทีละใบ · สูงสุด 3 ใบ</small>
             </div>
           </div>
+          <div class="selected-card-tray" id="selected-card-tray" aria-label="ไพ่ที่เลือก" aria-live="polite">
+            <div class="selected-card-tray__empty">เลือกไพ่จากวงล้อได้ 1–3 ใบ</div>
+          </div>
           <div class="progress-wrap">
-            <div class="progress-label"><span>สำรับรอบนี้</span><strong><span id="opened-count">0</span> / 78</strong></div>
+            <div class="progress-label">
+              <span>สถานะสำรับ</span>
+              <div class="deck-counter-group" aria-label="จำนวนไพ่ในสำรับ">
+                <span class="deck-counter"><strong id="opened-count">0</strong><small>เปิดแล้ว</small></span>
+                <span class="deck-counter"><strong id="selected-count">0</strong><small>เลือกอยู่</small></span>
+                <span class="deck-counter"><strong id="pending-count">0</strong><small>กำลังเปิด</small></span>
+                <span class="deck-counter"><strong id="available-count">78</strong><small>เหลือ</small></span>
+              </div>
+            </div>
             <div class="progress-track" role="progressbar" aria-label="เปิดไพ่ไปแล้ว" aria-valuemin="0" aria-valuemax="78" aria-valuenow="0"><span id="progress-bar"></span></div>
             <p id="deck-message">คลิกไพ่จากสำรับเพื่อเริ่มเลือก · ไพ่จะไม่ซ้ำกันจนกว่าจะครบสำรับ</p>
           </div>
@@ -176,6 +187,6 @@
 
       <footer class="ai-footer"><span>✦ TAROT DAILY</span><span>คำทำนายเป็นแนวทาง ไม่ใช่คำตัดสินชีวิต</span><a href="../privacy/">ความเป็นส่วนตัว</a><a href="../terms/">ข้อกำหนด</a><a href="../admin/">สำหรับผู้ดูแล</a></footer>
     </main>
-    <script type="module" src="./ai.js?v=20260910-ai-two-scene-v40" defer></script>
+    <script type="module" src="./ai.js?v=20260910-ai-two-scene-v41" defer></script>
   </body>
 </html>
