@@ -41,3 +41,11 @@ test("old local reading state migrates without losing opened cards", () => {
   assert.deepEqual(normalized.deckOrder.slice(0, 4), ["card-001.webp", "card-002.webp", "card-003.webp", "card-004.webp"]);
   assert.deepEqual(normalized.rounds[0].cards, ["card-001.webp", "card-002.webp"]);
 });
+
+test("local rounds preserve the visual slots selected for each draw", () => {
+  const session = createLocalDeckSession(() => 0.5);
+  const drawn = drawNextRound(session, 3, "คำถามสามใบ", () => "round-visual", [0, 20, 50]);
+  const normalized = normalizeLocalDeckSession(drawn.session);
+
+  assert.deepEqual(normalized.rounds[0].selectedIndexes, [0, 20, 50]);
+});

@@ -59,5 +59,5 @@ test("member login starts a fresh reader while saved sessions stay selectable", 
 });
 
 test("AI reset stays enabled after the first answer finishes", () => {
-  assert.match(script, /if \(version === state\.requestVersion\) \{\s*state\.busy = false;\s*renderProgress\(\);\s*renderMemory\(\);\s*syncQuestion\(\);\s*\}/);
+  assert.match(script, /if \(version === state\.requestVersion\) \{\s*state\.busy = false;\s*renderProgress\(\);\s*renderMemory\(\);\s*renderResultActions\(\);\s*syncQuestion\(\);\s*\}/);
 });

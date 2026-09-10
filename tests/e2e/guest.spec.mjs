@@ -88,6 +88,12 @@ async function selectCards(page, count) {
 }
 
 async function predict(page, count = 1) {
+  const continueButton = page.locator("#continue-reading-button");
+  if (await continueButton.isVisible()) {
+    await expect(continueButton).toBeEnabled({ timeout: 30_000 });
+    await continueButton.click();
+    await expect(page.locator("#reader-compose-view")).toBeVisible();
+  }
   const before = await page.locator(".tarot-card-card").count();
   await selectCards(page, count);
   await page.locator("#draw-button").click();
@@ -119,7 +125,7 @@ test("guest selects up to three cards, predicts, and resets the 78-card deck", a
   await expect(page.locator("#reading-sets .tarot-card-card")).toHaveCount(3);
   await expect(page.locator("#opened-count")).toHaveText("3");
   await expect(page.locator("#remaining-count")).toHaveText("75");
-  await page.locator("#reset-button").click();
+  await page.locator("#result-reset-button").click();
   await expect(page.locator("#opened-count")).toHaveText("0");
   await expect(page.locator("#remaining-count")).toHaveText("78");
   await expect(page.locator(".tarot-card-card")).toHaveCount(0);
@@ -179,6 +185,11 @@ test("member types a question, selects cards, and receives one reading per card 
   await page.locator("#draw-button").click();
   await expect(page).toHaveURL(/#reading-result$/);
   await expect(page.locator("#reading-sets .tarot-card-card")).toHaveCount(2);
+  await expect(page.locator("#ai-answer .answer-section--verdict .answer-section-heading h3")).toHaveText("ฟันธงคำถามนี้");
+  await expect(page.locator("#ai-answer .answer-section--cards .answer-section-heading h3")).toHaveText("อ่านไพ่ทีละใบ");
+  await expect(page.locator("#ai-answer .answer-section--overall .answer-section-heading h3")).toHaveText("สรุปคำทำนาย");
+  await expect(page.locator("#ai-answer")).not.toContainText("คำทำนายรายใบ");
+  await expect(page.locator("#ai-answer .answer-section--card .answer-detail-row").first()).toContainText("แปลความหมาย");
   await expect(page.locator("#ai-answer .answer-section--cards .answer-card")).toHaveCount(2, { timeout: 10_000 });
   await expect(page.locator("#ai-answer .answer-section--overall")).toContainText("สรุปคำทำนาย");
   await expect(page.locator("#ai-answer")).not.toContainText("คำแนะนำถัดไป");
@@ -220,12 +231,9 @@ test("member keeps the deck count and unused cards visible while AI is answering
   await expect(page.locator("#tarot-waiting-ritual")).toBeVisible();
   await expect(page.locator("#opened-count")).toHaveText("1");
   await expect(page.locator("#remaining-count")).toHaveText("77");
-  const unusedCard = page.locator("#tarot-deck-card-list .tarot-deck-card:not(.is-used):not(.is-selected)").first();
-  await expect(unusedCard).toBeVisible();
-  await expect(unusedCard).not.toHaveClass(/is-disabled/);
-  const visual = await unusedCard.evaluate((element) => ({ opacity: Number.parseFloat(getComputedStyle(element).opacity), filter: getComputedStyle(element).filter }));
-  expect(visual.opacity).toBeGreaterThan(0.6);
-  expect(visual.filter).toBe("none");
+  await expect(page.locator("#reader-compose-view")).toBeHidden();
+  await expect(page.locator("#reader-result-view")).toBeVisible();
+  await expect(page.locator("#result-status")).toContainText("สำรับเหลือ 77 ใบ");
   api.releaseAnswer();
   await expect(page.locator("#ai-answer .answer-section--overall")).toBeVisible({ timeout: 10_000 });
 });
@@ -237,6 +245,8 @@ test("member can continue with a new question and the memory keeps both rounds",
   await page.getByLabel("คำถามของคุณ").fill("ควรเริ่มจากอะไร?");
   await predict(page, 1);
   await expect(page.locator("#memory-history")).toContainText("1 คำถาม");
+  await page.locator("#continue-reading-button").click();
+  await expect(page.locator("#reader-compose-view")).toBeVisible();
   await page.getByLabel("คำถามรอบถัดไป").fill("แล้วก้าวต่อไปล่ะ?");
   await predict(page, 2);
   await expect(page.locator(".reading-set")).toHaveCount(2);
@@ -291,19 +301,25 @@ test("member can delete all saved history items", async ({ page }) => {
   expect(api.session).toBe(false);
 });
 
-test("mobile reader keeps the deck and result stages in one readable vertical path", async ({ page }) => {
+test("mobile reader keeps compose and result scenes in one readable vertical path", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ai/");
   const layout = await page.evaluate(() => {
-    const stage = getComputedStyle(document.querySelector(".ai-reading-stage"));
-    const boxes = [".flow-steps", ".ai-spread-stage", ".ai-reveal-stage"].map((selector) => {
+    const boxes = ["#reader-compose-view", ".ai-spread-stage", "#reader-result-view", ".ai-reveal-stage"].map((selector) => {
       const rect = document.querySelector(selector).getBoundingClientRect();
-      return { top: rect.top, bottom: rect.bottom };
+      return { top: rect.top, bottom: rect.bottom, display: getComputedStyle(document.querySelector(selector)).display };
     });
-    return { areas: stage.gridTemplateAreas, boxes, width: document.documentElement.scrollWidth <= window.innerWidth };
+    return {
+      composeVisible: !document.querySelector("#reader-compose-view").hidden,
+      resultHidden: document.querySelector("#reader-result-view").hidden,
+      boxes,
+      width: document.documentElement.scrollWidth <= window.innerWidth,
+    };
   });
-  expect(layout.areas).toBe('"flow" "spread" "reveal"');
-  expect(layout.boxes[0].bottom).toBeLessThanOrEqual(layout.boxes[1].top);
+  expect(layout.composeVisible).toBe(true);
+  expect(layout.resultHidden).toBe(true);
+  expect(layout.boxes[0].display).not.toBe("none");
+  expect(layout.boxes[1].bottom).toBeLessThanOrEqual(layout.boxes[0].bottom);
   expect(layout.width).toBe(true);
 });
 

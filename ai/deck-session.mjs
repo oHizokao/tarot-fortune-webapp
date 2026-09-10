@@ -28,7 +28,7 @@ export function createLocalDeckSession(randomFn = Math.random) {
   };
 }
 
-export function drawNextRound(session, count, question = "", idFactory = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`) {
+export function drawNextRound(session, count, question = "", idFactory = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`, selectedIndexes = null) {
   const normalized = normalizeLocalDeckSession(session) || createLocalDeckSession();
   const requested = Number(count);
   if (!Number.isInteger(requested) || requested < 1 || requested > 3) throw new Error("เลือกไพ่ได้ครั้งละ 1–3 ใบ");
@@ -39,6 +39,7 @@ export function drawNextRound(session, count, question = "", idFactory = () => `
     id: String(idFactory()),
     roundNumber: normalized.rounds.length + 1,
     cards,
+    selectedIndexes: normalizeSelectedIndexes(selectedIndexes, requested),
     question: textValue(question),
     answer: "",
     structured: null,
@@ -106,6 +107,7 @@ function normalizeRounds(roundsValue, historyValue) {
       id: textValue(entry?.id) || `round-${index + 1}`,
       roundNumber: Number(entry?.roundNumber || entry?.round_number || index + 1),
       cards,
+      selectedIndexes: normalizeSelectedIndexes(entry?.selectedIndexes || entry?.selected_indexes, cards.length),
       question: textValue(entry?.question),
       answer,
       structured: entry?.structured && typeof entry.structured === "object" ? entry.structured : entry?.answer && typeof entry.answer === "object" ? entry.answer : null,
@@ -114,6 +116,13 @@ function normalizeRounds(roundsValue, historyValue) {
       updatedAt: numberValue(entry?.updatedAt || entry?.updated_at, numberValue(entry?.createdAt || entry?.created_at, 0)),
     };
   }).filter(Boolean).slice(-MAX_ROUNDS);
+}
+
+function normalizeSelectedIndexes(value, expectedCount) {
+  if (!Array.isArray(value)) return null;
+  const indexes = value.map((index) => Number(index));
+  if (indexes.length !== expectedCount || indexes.some((index) => !Number.isInteger(index) || index < 0 || index >= DECK_SIZE)) return null;
+  return new Set(indexes).size === indexes.length ? indexes : null;
 }
 
 function migrateDeckOrder(openedValue, remainingValue) {

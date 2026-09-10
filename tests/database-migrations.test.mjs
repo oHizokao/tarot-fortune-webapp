@@ -25,6 +25,13 @@ test("fresh schema includes the production tables", async () => {
   assert.match(sql, /deck_order\s+JSONB/i);
   assert.match(sql, /draw_cursor\s+INTEGER/i);
   assert.match(sql, /opened_count\s+INTEGER/i);
+  assert.match(sql, /selected_indexes\s+JSONB/i);
+});
+
+test("visual card slots use an additive migration", async () => {
+  const sql = await fs.readFile(path.join(root, "database/migrations/003_reading_round_visual_slots.sql"), "utf8");
+  assert.match(sql, /ALTER TABLE reading_rounds ADD COLUMN IF NOT EXISTS selected_indexes JSONB/i);
+  assert.match(sql, /INSERT INTO schema_migrations\s*\(version, name\)\s*VALUES\s*\(3/i);
 });
 
 test("migration runner submits raw statements as Neon transaction queries", async () => {

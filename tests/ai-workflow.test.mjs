@@ -70,6 +70,9 @@ test("continuous deck routes expose session, draw, answer, and reset operations"
   }
   assert.match(source, /FOR UPDATE/);
   assert.match(source, /request_id/);
+  assert.match(source, /selected_indexes/);
+  assert.match(source, /validateSelectedIndexes/);
+  assert.match(source, /roundRows\?\.\[0\] \|\| \(await query\("SELECT \* FROM reading_rounds WHERE session_id = \$1 AND request_id = \$2 LIMIT 1"/);
   assert.match(route, /deck-sessions/);
   assert.match(route, /rounds/);
   assert.match(route, /request\.method === "DELETE"/);

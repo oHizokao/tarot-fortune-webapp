@@ -35,6 +35,9 @@ const state = {
   backend: true,
   busy: false,
   fanPhase: "ready",
+  deckRotation: 0,
+  deckPointer: null,
+  suppressDeckClick: false,
   requestVersion: 0,
   failedQuestion: "",
   failedErrorCode: "",
@@ -78,9 +81,18 @@ function syncVisualDeckState() {
   const key = visualDeckKey();
   if (!key || state.visualDeckKey === key) return;
   state.visualDeckKey = key;
-  const saved = state.savedVisualDeckKey === key ? state.savedVisualDeckIndexes : [];
+  const hasSavedVisualState = state.savedVisualDeckKey === key;
+  const serverRounds = state.rounds
+    .filter((round) => Array.isArray(round?.selectedIndexes) && round.selectedIndexes.length === round.cards.length)
+    .map((round, index) => ({
+      requestId: textValue(round.requestId, 160) || `legacy-${round.id || index + 1}`,
+      roundId: textValue(round.id, 160) || `legacy-round-${index + 1}`,
+      selectedIndexes: round.selectedIndexes,
+      cards: round.cards,
+    }));
+  const saved = hasSavedVisualState ? state.savedVisualDeckIndexes : serverRounds.flatMap((round) => round.selectedIndexes);
   state.usedDeckIndexes = normalizeDeckIndexes(saved);
-  state.visualRounds = state.savedVisualDeckKey === key ? normalizeVisualRounds(state.savedVisualRounds) : [];
+  state.visualRounds = hasSavedVisualState ? normalizeVisualRounds(state.savedVisualRounds) : normalizeVisualRounds(serverRounds);
 }
 
 function saveVisualDeckState() {
@@ -132,6 +144,41 @@ function setReadingState() {
   const app = $("#ai-reader-app");
   if (!app) return;
   app.dataset.readingState = hasAnswer() ? "answered" : currentRound() ? "drawn" : "empty";
+}
+
+function setReaderView(view, { replace = false, updateUrl = false, focus = false } = {}) {
+  const nextView = view === "result" ? "result" : "compose";
+  const compose = $("#reader-compose-view");
+  const result = $("#reader-result-view");
+  [compose, result].forEach((element) => {
+    if (!element) return;
+    const active = element.dataset.readerView === nextView;
+    element.hidden = !active;
+    element.inert = !active;
+    element.setAttribute("aria-hidden", String(!active));
+  });
+  $("#ai-reader-app")?.setAttribute("data-reader-view", nextView);
+  if (updateUrl) {
+    const hash = nextView === "result" ? "#reading-result" : "#question-title";
+    const method = replace ? "replaceState" : "pushState";
+    window.history[method]({ readerView: nextView, roundId: state.currentRoundId || "" }, "", hash);
+  }
+  if (focus) {
+    window.requestAnimationFrame(() => {
+      const target = nextView === "result" ? $("#reading-result-title") : $("#question-title");
+      target?.focus?.({ preventScroll: true });
+      $(nextView === "result" ? "#reader-result-view" : "#reader-compose-view")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+    });
+  }
+}
+
+function syncReaderViewFromLocation() {
+  const wantsResult = window.location.hash === "#reading-result" && (Boolean(state.currentRoundId) || isViewingHistory());
+  const nextView = wantsResult ? "result" : "compose";
+  setReaderView(nextView);
+  if (nextView === "compose" && window.location.hash !== "#question-title") {
+    window.history.replaceState({ ...(window.history.state || {}), readerView: "compose", roundId: state.currentRoundId || "" }, "", "#question-title");
+  }
 }
 
 function renderQuestionComposer() {
@@ -256,16 +303,69 @@ function ensureDeckCards() {
     card.style.setProperty("--deck-angle", `${(index / DECK_SIZE) * 360}deg`);
     card.setAttribute("aria-label", `เลือกไพ่จากสำรับ ใบที่ ${index + 1}`);
     card.innerHTML = '<span class="tarot-deck-card__back" aria-hidden="true"><i>✦</i></span>';
-    card.addEventListener("click", () => selectDeckCard(card));
+    card.addEventListener("click", (event) => {
+      if (state.suppressDeckClick) {
+        event.preventDefault();
+        state.suppressDeckClick = false;
+        return;
+      }
+      selectDeckCard(card);
+    });
     return card;
   }));
   return [...deck.children];
+}
+
+function applyDeckRotation() {
+  $("#tarot-deck-card-list")?.style.setProperty("--deck-rotation", `${state.deckRotation}deg`);
+}
+
+function initDeckInteraction() {
+  const zone = $("#tarot-deck-zone");
+  if (!zone || zone.dataset.interactionReady === "true") return;
+  zone.dataset.interactionReady = "true";
+  zone.addEventListener("pointerdown", (event) => {
+    if (state.busy || isViewingHistory() || (event.pointerType === "mouse" && event.button !== 0)) return;
+    state.deckPointer = { pointerId: event.pointerId, startX: event.clientX, lastX: event.clientX, moved: false };
+    zone.classList.add("is-dragging");
+  });
+  zone.addEventListener("pointermove", (event) => {
+    const pointer = state.deckPointer;
+    if (!pointer || pointer.pointerId !== event.pointerId) return;
+    const delta = event.clientX - pointer.lastX;
+    if (!pointer.moved && Math.abs(event.clientX - pointer.startX) > 8) pointer.moved = true;
+    if (pointer.moved && delta) {
+      state.deckRotation += delta * 0.42;
+      applyDeckRotation();
+    }
+    pointer.lastX = event.clientX;
+  });
+  const finishPointer = (event) => {
+    const pointer = state.deckPointer;
+    if (!pointer || pointer.pointerId !== event.pointerId) return;
+    if (pointer.moved) {
+      state.suppressDeckClick = true;
+      window.setTimeout(() => { state.suppressDeckClick = false; }, 120);
+    }
+    state.deckPointer = null;
+    zone.classList.remove("is-dragging");
+  };
+  zone.addEventListener("pointerup", finishPointer);
+  zone.addEventListener("pointercancel", finishPointer);
+  zone.addEventListener("wheel", (event) => {
+    if (state.busy || isViewingHistory() || Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
+    event.preventDefault();
+    state.deckRotation += event.deltaX * 0.18;
+    applyDeckRotation();
+  }, { passive: false });
 }
 
 function renderDeckZone() {
   const zone = $("#tarot-deck-zone");
   if (!zone) return;
   syncVisualDeckState();
+  initDeckInteraction();
+  applyDeckRotation();
   const cards = ensureDeckCards();
   const phase = state.fanPhase;
   const selectedIndexes = new Set(state.selectedCards.map((item) => Number(item.deckIndex)));
@@ -307,8 +407,19 @@ function renderDeckZone() {
 }
 
 function selectDeckCard(card) {
-  if (state.busy || isViewingHistory() || state.selectedCards.length >= MAX_SELECTED_CARDS || card.classList.contains("is-selected") || card.classList.contains("is-used")) return;
-  state.selectedCards = [...state.selectedCards, { deckIndex: Number(card.dataset.deckIndex), slot: state.selectedCards.length + 1 }];
+  if (state.busy || isViewingHistory() || card.classList.contains("is-used")) return;
+  const deckIndex = Number(card.dataset.deckIndex);
+  if (card.classList.contains("is-selected")) {
+    state.selectedCards = state.selectedCards
+      .filter((item) => Number(item.deckIndex) !== deckIndex)
+      .map((item, index) => ({ ...item, slot: index + 1 }));
+    state.count = state.selectedCards.length;
+    renderProgress();
+    setWitchStatus(state.selectedCards.length ? `เลือกแล้ว ${state.selectedCards.length} ใบ · เลือกเพิ่มได้` : "พร้อมเลือกไพ่", "ready");
+    return;
+  }
+  if (state.selectedCards.length >= MAX_SELECTED_CARDS) return;
+  state.selectedCards = [...state.selectedCards, { deckIndex, slot: state.selectedCards.length + 1 }];
   state.count = state.selectedCards.length;
   renderProgress();
   setWitchStatus(`เลือกแล้ว ${state.selectedCards.length} ใบ · กดทำนายเมื่อพร้อม`, "ready");
@@ -494,8 +605,37 @@ function renderCards() {
   setsContainer.replaceChildren(...setElements);
   const totalCards = readingSets.reduce((sum, entry) => sum + entry.cardCount, 0);
   $("#spread-count").textContent = `${readingSets.length} ชุด · ${totalCards} ใบ`;
-  $("#result-status")?.replaceChildren(document.createTextNode(hasAiAccess() ? "ไพ่ชุดนี้จะอยู่ด้านบน และคำทำนายจาก AI จะสรุปต่อด้านล่าง" : "ไพ่ชุดนี้เปิดแล้ว · อ่านคำบนไพ่และความหมายด้วยตัวเองได้เลย"));
+  $("#result-status")?.replaceChildren(document.createTextNode(hasAiAccess()
+    ? `ไพ่ชุดนี้เปิดแล้ว · สำรับเหลือ ${remainingCount()} ใบ · คำทำนายจาก AI จะสรุปต่อด้านล่าง`
+    : `ไพ่ชุดนี้เปิดแล้ว · สำรับเหลือ ${remainingCount()} ใบ · อ่านคำบนไพ่และความหมายด้วยตัวเองได้เลย`));
   $("#reading-note").textContent = hasAiAccess() ? "แต่ละชุดแสดงแยกกัน · รอบล่าสุดคือชุดที่ใช้ตอบคำถามปัจจุบัน" : `เปิดแล้ว ${readingSets.length} ชุด · เลื่อนดูไพ่รอบก่อนหน้าได้`;
+}
+
+function renderResultActions() {
+  const continueButton = $("#continue-reading-button");
+  const resetButton = $("#result-reset-button");
+  if (!continueButton || !resetButton) return;
+  continueButton.replaceChildren(
+    document.createTextNode(hasAiAccess() ? "ถามต่อ · จับไพ่ใหม่ " : "จับไพ่ต่อ "),
+    Object.assign(document.createElement("span"), { textContent: "→", ariaHidden: "true" }),
+  );
+  continueButton.disabled = state.busy || isViewingHistory() || !currentRound();
+  resetButton.disabled = state.busy || isViewingHistory();
+}
+
+function continueReading() {
+  if (state.busy || isViewingHistory() || !currentRound()) return;
+  state.requestVersion += 1;
+  state.selectedCards = [];
+  state.pendingDrawCount = 0;
+  state.count = 0;
+  state.failedQuestion = "";
+  state.failedErrorCode = "";
+  state.failedRequestId = "";
+  $("#ai-question").value = "";
+  setFanPhase("ready");
+  renderAll();
+  setReaderView("compose", { updateUrl: true, focus: true });
 }
 
 function historySessionTitle(session, index = 0) {
@@ -574,6 +714,7 @@ async function deleteDeckHistory(sessionId) {
       state.drawn = [];
       state.selectedCards = [];
       state.usedDeckIndexes = [];
+      state.visualRounds = [];
       state.visualDeckKey = "";
       state.count = 0;
       clearAnswer();
@@ -581,6 +722,7 @@ async function deleteDeckHistory(sessionId) {
       saveState();
     }
     renderAll();
+    if (isCurrent) setReaderView("compose", { updateUrl: true, replace: true });
     $("#request-status").textContent = "ลบประวัติแล้ว · พร้อมเริ่มดูดวงใหม่";
   } catch (error) {
     $("#request-status").textContent = messageForError(error.code, error.requestId) || error.message;
@@ -706,7 +848,7 @@ function renderAnswer(answer, structured = null, round = currentRound()) {
   verdict.className = "answer-section answer-section--verdict";
   verdict.dataset.answerKey = "verdict";
   verdict.style.setProperty("--answer-delay", "0ms");
-  verdict.append(createAnswerHeading("คำฟันธงจากไพ่", "01"));
+  verdict.append(createAnswerHeading("ฟันธงคำถามนี้", "01"));
   const verdictText = document.createElement("p");
   verdictText.className = "answer-verdict-text";
   verdictText.textContent = reading.verdict;
@@ -723,7 +865,7 @@ function renderAnswer(answer, structured = null, round = currentRound()) {
   cardsSection.className = "answer-section answer-section--cards";
   cardsSection.dataset.answerKey = "cards";
   cardsSection.style.setProperty("--answer-delay", "110ms");
-  cardsSection.append(createAnswerHeading("คำทำนายรายใบ", "02"));
+  cardsSection.append(createAnswerHeading("อ่านไพ่ทีละใบ", "02"));
   const cardList = document.createElement("div");
   cardList.className = "answer-card-list";
   reading.cards.forEach((card, index) => {
@@ -741,7 +883,7 @@ function renderAnswer(answer, structured = null, round = currentRound()) {
     name.textContent = card.name;
     cardHeader.append(marker, name);
     cardSection.append(cardHeader);
-    appendCopy(cardSection, "ความหมายของไพ่", card.meaning);
+    appendCopy(cardSection, "แปลความหมาย", card.meaning);
     appendCopy(cardSection, "คำทำนาย", card.prediction);
     cardList.append(cardSection);
   });
@@ -752,7 +894,7 @@ function renderAnswer(answer, structured = null, round = currentRound()) {
   overall.className = "answer-section answer-section--overall";
   overall.dataset.answerKey = "overall";
   overall.style.setProperty("--answer-delay", `${(reading.cards.length + 2) * 110}ms`);
-  overall.append(createAnswerHeading("คำทำนายโดยรวม", "03"));
+  overall.append(createAnswerHeading("สรุปคำทำนาย", "03"));
   const overallText = document.createElement("p");
   overallText.className = "answer-overall-text";
   overallText.textContent = reading.overall_prediction;
@@ -772,8 +914,12 @@ function normalizeServerRound(round, index = 0) {
   const answerText = textValue(round?.answer_text || (typeof round?.answer === "string" ? round.answer : ""), 12_000);
   return {
     id: String(round?.id || `round-${index + 1}`),
+    requestId: textValue(round?.request_id || round?.requestId, 160),
     roundNumber: Number(round?.round_number || round?.roundNumber || index + 1),
     cards,
+    selectedIndexes: Array.isArray(round?.selected_indexes)
+      ? round.selected_indexes.map((slot) => Number(slot))
+      : Array.isArray(round?.selectedIndexes) ? round.selectedIndexes.map((slot) => Number(slot)) : null,
     question: textValue(round?.question),
     answer: answerText,
     structured: answerObject,
@@ -839,9 +985,11 @@ function saveState() {
 }
 
 function renderAll() {
+  syncReaderViewFromLocation();
   renderProgress();
   renderServerHistory();
   renderCards();
+  renderResultActions();
   renderDeckZone();
   renderMemory();
   renderAnswerFromCurrent();
@@ -887,6 +1035,7 @@ function clearPrivateMemory() {
   state.usedDeckIndexes = [];
   state.visualRounds = [];
   state.visualDeckKey = "";
+  state.deckRotation = 0;
   state.count = 0;
   state.viewingHistorySessionId = "";
   state.historyBusy = false;
@@ -971,6 +1120,7 @@ async function openHistorySession(sessionId) {
     applyServerSession(data.session);
     state.fanPhase = "revealed";
     renderAll();
+    setReaderView("result", { updateUrl: true, replace: true });
     $("#request-status").textContent = "กำลังดูประวัติเดิม · กดเริ่มดูดวงใหม่เมื่อต้องการเปิดรอบใหม่";
     setWitchStatus("กำลังดูประวัติเดิม", "ready");
     document.querySelector("#ai-answer-stage")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
@@ -997,6 +1147,7 @@ function startNewReading() {
   state.usedDeckIndexes = [];
   state.visualRounds = [];
   state.visualDeckKey = "";
+  state.deckRotation = 0;
   state.count = 0;
   state.failedQuestion = "";
   state.failedErrorCode = "";
@@ -1005,6 +1156,7 @@ function startNewReading() {
   $("#ai-question").value = "";
   clearAnswer();
   syncHistory();
+  setReaderView("compose", { updateUrl: true });
   saveState();
   renderAll();
   $("#request-status").textContent = "พร้อมเริ่มดูดวงใหม่ · พิมพ์คำถามแล้วเลือกไพ่จากสำรับ";
@@ -1018,6 +1170,7 @@ async function answerCurrentRound(roundId) {
   const round = state.rounds.find((item) => item.id === roundId);
   if (!round) return;
   state.busy = true;
+  renderResultActions();
   setFanPhase("answering");
   state.failedQuestion = "";
   state.failedErrorCode = "";
@@ -1066,14 +1219,15 @@ async function answerCurrentRound(roundId) {
       state.busy = false;
       renderProgress();
       renderMemory();
+      renderResultActions();
       syncQuestion();
     }
   }
 }
 
 function goToReadingResult() {
-  window.location.hash = "reading-result";
-  window.requestAnimationFrame(() => $("#reading-result-stage")?.scrollIntoView?.({ behavior: "smooth", block: "start" }));
+  renderResultActions();
+  setReaderView("result", { updateUrl: true, focus: true });
 }
 
 async function predictSelectedCards() {
@@ -1131,7 +1285,7 @@ async function predictSelectedCards() {
       syncHistory();
       saveState();
     } else {
-      const result = drawNextRound(state.localSession, state.count, "", () => randomId("round"));
+      const result = drawNextRound(state.localSession, state.count, "", () => randomId("round"), selectedIndexes);
       state.localSession = result.session;
       round = result.round;
       state.rounds = result.session.rounds.map((item) => ({ ...item }));
@@ -1164,6 +1318,7 @@ async function predictSelectedCards() {
     setFanPhase(hasAiAccess() ? "answering" : "revealed");
     renderProgress();
     renderCards();
+    renderResultActions();
     renderMemory();
     goToReadingResult();
     if (hasAiAccess()) await answerCurrentRound(round.id);
@@ -1205,6 +1360,7 @@ async function resetCards() {
   state.savedVisualDeckKey = "";
   state.savedVisualDeckIndexes = [];
   state.count = 0;
+  state.deckRotation = 0;
   state.failedQuestion = "";
   state.failedErrorCode = "";
   state.failedRequestId = "";
@@ -1213,6 +1369,7 @@ async function resetCards() {
   clearAnswer();
   syncHistory();
   state.busy = false;
+  setReaderView("compose", { updateUrl: true });
   saveState();
   renderAll();
   $("#request-status").textContent = "เริ่มสำรับใหม่แล้ว ไพ่ทั้ง 78 ใบพร้อมให้เปิด";
@@ -1254,7 +1411,7 @@ async function logoutMember(event) {
   applyLocalSession(state.localSession || createLocalDeckSession());
   setReaderMode(null);
   renderAll();
-  window.location.hash = "question-title";
+  setReaderView("compose", { updateUrl: true, replace: true });
 }
 
 function handleQuestionInput(event) {
@@ -1280,6 +1437,10 @@ $("#retry-ai-button")?.addEventListener("click", retryAi);
 $("#ai-question")?.addEventListener("input", handleQuestionInput);
 $("#account-action")?.addEventListener("click", logoutMember);
 $("#account-link")?.addEventListener("click", logoutMember);
+$("#continue-reading-button")?.addEventListener("click", continueReading);
+$("#result-reset-button")?.addEventListener("click", () => { void resetCards(); });
+window.addEventListener("hashchange", syncReaderViewFromLocation);
+window.addEventListener("popstate", syncReaderViewFromLocation);
 
 initMotion();
 setReaderMode(null);

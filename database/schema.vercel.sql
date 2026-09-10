@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS reading_rounds (
   round_number INTEGER NOT NULL CHECK (round_number >= 1),
   question TEXT NOT NULL,
   cards JSONB NOT NULL,
+  selected_indexes JSONB,
   answer_json JSONB,
   answer_text TEXT,
   status VARCHAR(20) NOT NULL DEFAULT 'drawn' CHECK (status IN ('drawn', 'answered', 'failed')),

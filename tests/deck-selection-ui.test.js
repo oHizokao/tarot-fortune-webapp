@@ -32,5 +32,6 @@ test("prediction is driven by selected cards instead of a count picker", () => {
   assert.match(js, /function predictSelectedCards/);
   assert.match(js, /usedDeckIndexes/);
   assert.match(js, /is-used/);
-  assert.match(js, /window\.location\.hash\s*=\s*["']reading-result["']/);
+  assert.match(js, /setReaderView\("result",\s*\{\s*updateUrl:\s*true/);
+  assert.match(js, /nextView === "result" \? "#reading-result"/);
 });

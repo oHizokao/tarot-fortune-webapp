@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./ai.css?v=20260909-ai-deck-v39" />
+    <link rel="stylesheet" href="./ai.css?v=20260910-ai-two-scene-v40" />
   </head>
   <body>
     <div class="ai-bg ai-bg--one" aria-hidden="true"></div>
@@ -71,6 +71,7 @@
           <div class="flow-step member-only" id="flow-step-answer" data-step="answer" hidden><span id="flow-number-answer">04</span><div><strong>รับคำตอบ</strong><small>AI อ่านจากคำบนไพ่</small></div></div>
         </div>
 
+        <div class="reader-view reader-view--compose" id="reader-compose-view" data-reader-view="compose" aria-label="หน้าพิมพ์คำถามและเลือกไพ่">
         <section class="ai-question-stage panel question-panel member-only" id="question-stage" aria-label="ขั้นที่ 1 พิมพ์คำถาม" hidden>
           <div class="stage-heading">
             <div><p class="panel-kicker" id="question-kicker">01 / YOUR QUESTION</p><h2 id="question-title">พิมพ์คำถามของคุณ</h2><p id="question-description">เขียนเรื่องที่ต้องการถามให้ชัดเจน คำถามนี้จะเป็นแกนหลักของคำทำนาย</p></div>
@@ -121,7 +122,9 @@
             <span class="witch-status">พร้อมเลือกไพ่</span>
           </div>
         </section>
+        </div>
 
+        <div class="reader-view reader-view--result" id="reader-result-view" data-reader-view="result" aria-label="หน้าผลการเปิดไพ่" hidden>
         <section class="ai-reveal-stage panel" id="reading-result-stage" aria-labelledby="reading-result-title" hidden>
           <div class="stage-heading stage-heading--compact">
             <div><p class="panel-kicker" id="reveal-kicker">02 / THE REVEAL</p><h2 id="reading-result-title">ผลการเปิดไพ่</h2><p id="result-status">ไพ่ที่เปิดได้จะแสดงเป็นชุดด้านล่าง</p></div>
@@ -149,6 +152,10 @@
           </div>
           <div class="reading-sets is-empty" id="reading-sets" aria-live="polite"><div class="empty-card"><span>?</span><p>เลือกไพ่จากสำรับ<br />แล้วกดทำนาย</p></div></div>
           <p class="reading-note" id="reading-note">เปิดไพ่แล้วอ่านภาพและคำบนไพ่ด้วยตัวเองได้เลย</p>
+          <div class="result-actions" aria-label="การทำรายการต่อ">
+            <button class="result-action result-action--primary" id="continue-reading-button" type="button">จับไพ่ต่อ <span aria-hidden="true">→</span></button>
+            <button class="result-action result-action--secondary" id="result-reset-button" type="button">ล้างไพ่</button>
+          </div>
         </section>
 
         <section class="ai-answer-stage panel member-only" id="ai-answer-stage" aria-labelledby="ai-answer-title" hidden>
@@ -164,10 +171,11 @@
           </div>
           <div class="answer-actions"><button class="retry-button" id="retry-ai-button" type="button" hidden>ลองอ่านคำทำนายอีกครั้ง</button></div>
         </section>
+        </div>
       </section>
 
       <footer class="ai-footer"><span>✦ TAROT DAILY</span><span>คำทำนายเป็นแนวทาง ไม่ใช่คำตัดสินชีวิต</span><a href="../privacy/">ความเป็นส่วนตัว</a><a href="../terms/">ข้อกำหนด</a><a href="../admin/">สำหรับผู้ดูแล</a></footer>
     </main>
-    <script type="module" src="./ai.js?v=20260909-ai-deck-v39" defer></script>
+    <script type="module" src="./ai.js?v=20260910-ai-two-scene-v40" defer></script>
   </body>
 </html>
