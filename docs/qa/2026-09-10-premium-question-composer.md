@@ -46,3 +46,44 @@ At every width, `document.documentElement.scrollWidth <= window.innerWidth`, the
 Integrated post-change screenshots were generated for all five widths in both Playwright projects under ignored `test-results/guest-member-question-comp-8c55e-ewport-with-usable-controls-*/composer-*px.png`. They are local transient artifacts and are not committed. Task 4 began from the already-integrated Task 1–3 baseline, so it did not create a new pre-change capture or touch the user's untracked `output/` directory.
 
 All member API flows above are mocks installed with Playwright routing for `/api/auth/me` and `/api/ai/deck-sessions`; the guest flow is local browser behavior. No real OpenAI/API smoke test was performed. Remaining limitation: viewport emulation does not validate physical-device Thai IME behavior or software-keyboard occlusion, and the repository E2E configuration covers Chromium rather than Safari/Firefox.
+
+## Reviewer fix report — 2026-09-11
+
+The four review gaps were closed without production-code changes:
+
+1. Reproducible before/after captures now exist for all five acceptance widths. The before site was served from a temporary clean `git archive` of `f506c78ffb806198a38a0b03351bdf087b111bac` on port 4184. The after site was served from the current worktree whose parent is `bad4704`. Both revisions have the same `ai/` tree hash, `153c5151a8e25946b52d54c68f41a16702e738a4`, because Task 4 changes tests and documentation only. Therefore visual parity between these Task 4 before/after sets is expected; this is not presented as a Task 1 pre-redesign comparison.
+2. Each relevant measured control (`#ai-question`, `#draw-button`, and `#reset-button`) now asserts both rendered width and height are at least 44px at 360, 390, 430, 768, and 1440px. Minimum observed size was the Reset control at 336 × 49px.
+3. Keyboard coverage now asserts that Tab from `#ai-question` focuses the first generated `.tarot-deck-card`, then Shift+Tab returns to `#ai-question`. Enter still inserts a newline without navigation or draw/answer API calls.
+4. Every required viewport now checks text contrast ≥4.5:1, placeholder contrast ≥4.5:1, settled focus-border contrast ≥3:1, exact gold focus color, 1px border width, and unchanged textarea width/height. Observed ratios at every width were 16.09:1 text, 8.94:1 placeholder, and 10.21:1 focus border.
+
+### Visual evidence paths
+
+The PNGs are deliberately ignored transient QA artifacts and were not staged. They remain available in this worktree at these exact repository-relative paths:
+
+| Width | Before — exact `f506c78` archive | After — current branch |
+| --- | --- | --- |
+| 360px | `.playwright-cli/task4-visual-evidence/before-f506c78/composer-360px.png` | `.playwright-cli/task4-visual-evidence/after-current/composer-360px.png` |
+| 390px | `.playwright-cli/task4-visual-evidence/before-f506c78/composer-390px.png` | `.playwright-cli/task4-visual-evidence/after-current/composer-390px.png` |
+| 430px | `.playwright-cli/task4-visual-evidence/before-f506c78/composer-430px.png` | `.playwright-cli/task4-visual-evidence/after-current/composer-430px.png` |
+| 768px | `.playwright-cli/task4-visual-evidence/before-f506c78/composer-768px.png` | `.playwright-cli/task4-visual-evidence/after-current/composer-768px.png` |
+| 1440px | `.playwright-cli/task4-visual-evidence/before-f506c78/composer-1440px.png` | `.playwright-cli/task4-visual-evidence/after-current/composer-1440px.png` |
+
+The 390px and 1440px pairs were also visually inspected: the focused composer remains legible and aligned, the deck begins below it without horizontal clipping, and the only capture-to-capture differences are expected ambient deck/background animation frames.
+
+Capture commands and results:
+
+- Before: `$env:BASE_URL='http://127.0.0.1:4184'; npx playwright test tests/e2e/guest.spec.mjs --grep "acceptance viewport" --project=desktop-chromium --output=test-results/task4-visual-before-f506c78` — PASS, 1/1.
+- After: `npx playwright test tests/e2e/guest.spec.mjs --grep "acceptance viewport" --project=desktop-chromium --output=test-results/task4-visual-after-bad4704` — PASS, 1/1.
+
+### Reviewer-fix verification
+
+| Command | Result |
+| --- | --- |
+| `npx playwright test tests/e2e/guest.spec.mjs --grep "acceptance viewport\|multiline Thai"` (first review run) | 2/4 passed; the intentionally over-broad deck-card touch-target inclusion exposed its transformed 33.49px projected width and was removed from the composer/action target set |
+| Same focused command (second review run) | 2/4 passed; immediate focus sampling caught the intentional 180ms transition mid-color |
+| Same focused command after waiting for settled focus styling | PASS, 4/4 |
+| `npx playwright test tests/e2e/guest.spec.mjs tests/e2e/pro-ritual-reader.spec.mjs tests/e2e/reader-scenes.spec.mjs` | PASS, 60/60, 0 failed |
+| `npm test` | PASS, 112/112, 0 failed/skipped/cancelled/todo |
+| `npm run check` | PASS, exit 0 |
+
+Guest/member flow assertions and the earlier mock boundary remain unchanged. Member auth/deck/answer flows are mocked, no real OpenAI/API smoke test was performed, and physical-device Thai IME/software-keyboard occlusion plus non-Chromium browser behavior remain outside this local acceptance run.

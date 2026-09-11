@@ -336,9 +336,22 @@ test("member question composer fits every acceptance viewport with usable contro
     await page.goto("/ai/");
     await page.evaluate(() => document.fonts.ready);
 
-    const metrics = await page.evaluate(() => {
+    const beforeFocus = await page.evaluate(() => {
+      const luminance = (color) => {
+        const channels = color.match(/[\d.]+/g).slice(0, 3).map((value) => Number(value) / 255).map((value) => (
+          value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+        ));
+        return (0.2126 * channels[0]) + (0.7152 * channels[1]) + (0.0722 * channels[2]);
+      };
+      const contrast = (foreground, background) => {
+        const lighter = Math.max(luminance(foreground), luminance(background));
+        const darker = Math.min(luminance(foreground), luminance(background));
+        return (lighter + 0.05) / (darker + 0.05);
+      };
       const field = document.querySelector("#ai-question");
       const fieldRect = field.getBoundingClientRect();
+      const fieldStyle = getComputedStyle(field);
+      const placeholderStyle = getComputedStyle(field, "::placeholder");
       const controls = ["#ai-question", "#draw-button", "#reset-button"].map((selector) => {
         const element = document.querySelector(selector);
         const rect = element.getBoundingClientRect();
@@ -349,17 +362,55 @@ test("member question composer fits every acceptance viewport with usable contro
         scrollWidth: document.documentElement.scrollWidth,
         fieldLeft: fieldRect.left,
         fieldRight: fieldRect.right,
-        fieldFontSize: Number.parseFloat(getComputedStyle(field).fontSize),
+        fieldWidth: fieldRect.width,
+        fieldHeight: fieldRect.height,
+        fieldFontSize: Number.parseFloat(fieldStyle.fontSize),
+        textContrast: contrast(fieldStyle.color, fieldStyle.backgroundColor),
+        placeholderContrast: contrast(placeholderStyle.color, fieldStyle.backgroundColor),
         controls,
       };
     });
 
-    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
-    expect(metrics.fieldLeft).toBeGreaterThanOrEqual(0);
-    expect(metrics.fieldRight).toBeLessThanOrEqual(metrics.viewportWidth);
-    expect(metrics.fieldFontSize).toBeGreaterThanOrEqual(16);
-    for (const control of metrics.controls) expect(control.height, control.selector).toBeGreaterThanOrEqual(44);
-    evidence.push(metrics);
+    expect(beforeFocus.scrollWidth).toBeLessThanOrEqual(beforeFocus.viewportWidth);
+    expect(beforeFocus.fieldLeft).toBeGreaterThanOrEqual(0);
+    expect(beforeFocus.fieldRight).toBeLessThanOrEqual(beforeFocus.viewportWidth);
+    expect(beforeFocus.fieldFontSize).toBeGreaterThanOrEqual(16);
+    expect(beforeFocus.textContrast).toBeGreaterThanOrEqual(4.5);
+    expect(beforeFocus.placeholderContrast).toBeGreaterThanOrEqual(4.5);
+    for (const control of beforeFocus.controls) {
+      expect(control.width, `${control.selector} width`).toBeGreaterThanOrEqual(44);
+      expect(control.height, `${control.selector} height`).toBeGreaterThanOrEqual(44);
+    }
+
+    const field = page.locator("#ai-question");
+    await field.focus();
+    await expect(field).toHaveCSS("border-color", "rgb(216, 191, 140)");
+    const focused = await field.evaluate((field) => {
+      const luminance = (color) => {
+        const channels = color.match(/[\d.]+/g).slice(0, 3).map((value) => Number(value) / 255).map((value) => (
+          value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+        ));
+        return (0.2126 * channels[0]) + (0.7152 * channels[1]) + (0.0722 * channels[2]);
+      };
+      const style = getComputedStyle(field);
+      const rect = field.getBoundingClientRect();
+      const border = luminance(style.borderColor);
+      const background = luminance(style.backgroundColor);
+      return {
+        width: rect.width,
+        height: rect.height,
+        borderColor: style.borderColor,
+        borderWidth: style.borderWidth,
+        borderContrast: (Math.max(border, background) + 0.05) / (Math.min(border, background) + 0.05),
+      };
+    });
+    expect(focused.borderColor).toBe("rgb(216, 191, 140)");
+    expect(focused.borderWidth).toBe("1px");
+    expect(focused.borderContrast).toBeGreaterThanOrEqual(3);
+    expect(focused.width).toBeCloseTo(beforeFocus.fieldWidth, 3);
+    expect(focused.height).toBeCloseTo(beforeFocus.fieldHeight, 3);
+
+    evidence.push({ ...beforeFocus, focused });
     await page.screenshot({ path: testInfo.outputPath(`composer-${width}px.png`), fullPage: false });
   }
 
@@ -379,7 +430,7 @@ test("member can navigate and enter multiline Thai without submitting from the k
   await field.focus();
   await expect(field).toBeFocused();
   await page.keyboard.press("Tab");
-  await expect(field).not.toBeFocused();
+  await expect(page.locator("#tarot-deck-card-list .tarot-deck-card").first()).toBeFocused();
   await page.keyboard.press("Shift+Tab");
   await expect(field).toBeFocused();
 
