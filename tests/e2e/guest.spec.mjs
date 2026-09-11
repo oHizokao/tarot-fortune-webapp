@@ -271,9 +271,9 @@ test("member question composer is readable, aligned, and stable on desktop", asy
       placeholderOpacity: placeholder.opacity,
     };
   });
-  expect(empty).toEqual({
+  expect({ ...empty, height: undefined }).toEqual({
     width: 760,
-    height: 148,
+    height: undefined,
     borderWidth: "1px",
     borderRadius: "16px",
     background: "rgb(23, 19, 32)",
@@ -284,6 +284,7 @@ test("member question composer is readable, aligned, and stable on desktop", asy
     placeholderColor: "rgb(186, 178, 200)",
     placeholderOpacity: "1",
   });
+  expect(empty.height).toBeCloseTo(148, 3);
 
   const labelWidth = await label.evaluate((element) => element.getBoundingClientRect().width);
   const hintWidth = await hint.evaluate((element) => element.getBoundingClientRect().width);
@@ -297,7 +298,9 @@ test("member question composer is readable, aligned, and stable on desktop", asy
     const rect = element.getBoundingClientRect();
     return { width: rect.width, height: rect.height, borderWidth: style.borderWidth, borderColor: style.borderColor };
   });
-  expect(focused).toEqual({ width: empty.width, height: empty.height, borderWidth: "1px", borderColor: "rgb(216, 191, 140)" });
+  expect(focused).toMatchObject({ borderWidth: "1px", borderColor: "rgb(216, 191, 140)" });
+  expect(focused.width).toBeCloseTo(empty.width, 3);
+  expect(focused.height).toBeCloseTo(empty.height, 3);
 
   const longThaiQuestion = "ฉันกำลังพิจารณาเปลี่ยนงานในช่วงปลายปีนี้ แต่ยังไม่แน่ใจว่าควรเลือกโอกาสใหม่ที่ท้าทายหรืออยู่ในที่เดิมเพื่อสร้างความมั่นคง ไพ่ต้องการชี้ให้เห็นปัจจัยใดที่ฉันควรพิจารณาอย่างรอบคอบก่อนตัดสินใจ?";
   await field.fill(longThaiQuestion);
@@ -322,6 +325,87 @@ test("member question composer stays legible without overflow on mobile", async 
   const after = await field.boundingBox();
   expect(after?.width).toBe(before?.width);
   expect(after?.height).toBeCloseTo(before?.height, 3);
+});
+
+test("member question composer fits every acceptance viewport with usable controls", async ({ page }, testInfo) => {
+  await installMemberApi(page);
+  const evidence = [];
+
+  for (const width of [360, 390, 430, 768, 1440]) {
+    await page.setViewportSize({ width, height: width === 1440 ? 900 : 844 });
+    await page.goto("/ai/");
+    await page.evaluate(() => document.fonts.ready);
+
+    const metrics = await page.evaluate(() => {
+      const field = document.querySelector("#ai-question");
+      const fieldRect = field.getBoundingClientRect();
+      const controls = ["#ai-question", "#draw-button", "#reset-button"].map((selector) => {
+        const element = document.querySelector(selector);
+        const rect = element.getBoundingClientRect();
+        return { selector, width: rect.width, height: rect.height };
+      });
+      return {
+        viewportWidth: window.innerWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        fieldLeft: fieldRect.left,
+        fieldRight: fieldRect.right,
+        fieldFontSize: Number.parseFloat(getComputedStyle(field).fontSize),
+        controls,
+      };
+    });
+
+    expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.viewportWidth);
+    expect(metrics.fieldLeft).toBeGreaterThanOrEqual(0);
+    expect(metrics.fieldRight).toBeLessThanOrEqual(metrics.viewportWidth);
+    expect(metrics.fieldFontSize).toBeGreaterThanOrEqual(16);
+    for (const control of metrics.controls) expect(control.height, control.selector).toBeGreaterThanOrEqual(44);
+    evidence.push(metrics);
+    await page.screenshot({ path: testInfo.outputPath(`composer-${width}px.png`), fullPage: false });
+  }
+
+  console.log(`ACCEPTANCE_VIEWPORT_METRICS ${JSON.stringify(evidence)}`);
+});
+
+test("member can navigate and enter multiline Thai without submitting from the keyboard", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  const api = await installMemberApi(page);
+  await page.goto("/ai/");
+
+  const field = page.getByLabel("คำถามของคุณ");
+  const drawButton = page.locator("#draw-button");
+  await page.locator("#tarot-deck-card-list .tarot-deck-card").first().click();
+  await expect(drawButton).toBeDisabled();
+
+  await field.focus();
+  await expect(field).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(field).not.toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(field).toBeFocused();
+
+  const firstLine = "ความรักช่วงนี้จะเป็นอย่างไร?";
+  await page.keyboard.type(firstLine);
+  await expect(field).toHaveValue(firstLine);
+  await expect(drawButton).toBeEnabled();
+  expect(api.drawCalls).toBe(0);
+  expect(api.answerCalls).toBe(0);
+
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("ฉันควรสังเกตอะไรเพิ่มเติม");
+  await expect(field).toHaveValue(`${firstLine}\nฉันควรสังเกตอะไรเพิ่มเติม`);
+  await expect(page.locator("#reader-compose-view")).toBeVisible();
+  await expect(page).not.toHaveURL(/#reading-result$/);
+  expect(api.drawCalls).toBe(0);
+  expect(api.answerCalls).toBe(0);
+
+  const longThaiQuestion = "ฉันกำลังพิจารณาเปลี่ยนงานในช่วงปลายปีนี้ แต่ยังไม่แน่ใจว่าควรเลือกโอกาสใหม่ที่ท้าทายหรืออยู่ในที่เดิมเพื่อสร้างความมั่นคง ไพ่ต้องการชี้ให้เห็นปัจจัยใดที่ฉันควรพิจารณาอย่างรอบคอบก่อนตัดสินใจ?";
+  await field.fill(longThaiQuestion);
+  await expect(field).toHaveValue(longThaiQuestion);
+  await field.fill("");
+  await expect(field).toHaveValue("");
+  await expect(drawButton).toBeDisabled();
+  expect(api.drawCalls).toBe(0);
+  expect(api.answerCalls).toBe(0);
 });
 
 test("member marks exactly the sparse cards selected in the deck", async ({ page }) => {
