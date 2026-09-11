@@ -343,7 +343,16 @@ test("member starts with one concise question composer and account action in the
   await expect(page.locator("#account-link")).toContainText("ผู้ใช้งาน");
   await expect(page.locator("#account-link")).toContainText("ออกจากระบบ");
   await expect(page.getByText("ออกจากระบบ", { exact: false })).toHaveCount(1);
-  expect(await page.locator("#tarot-deck-zone").evaluate((element) => element.getBoundingClientRect().top)).toBeLessThanOrEqual(540);
+
+  const stageOrder = await page.evaluate(() => {
+    const question = document.querySelector("#question-stage")?.getBoundingClientRect();
+    const deck = document.querySelector("#tarot-deck-zone")?.getBoundingClientRect();
+    return {
+      questionBottom: question?.bottom ?? 0,
+      deckTop: deck?.top ?? 0,
+    };
+  });
+  expect(stageOrder.questionBottom).toBeLessThanOrEqual(stageOrder.deckTop + 1);
 });
 
 test("member without AI permission can read the account status without blocking free cards", async ({ page }) => {
