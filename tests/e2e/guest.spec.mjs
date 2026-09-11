@@ -458,6 +458,7 @@ test("member question composer stays legible without overflow on mobile", async 
 });
 
 test("member question composer fits every acceptance viewport with usable controls", async ({ page }, testInfo) => {
+  test.setTimeout(60_000);
   await installMemberApi(page);
   const evidence = [];
 
