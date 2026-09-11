@@ -5526,8 +5526,36 @@ body {
 }
 
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .reader-view--compose .ai-question-stage {
-  padding-bottom: 35px !important;
+  padding-bottom: 12px !important;
   border-bottom: 1px solid var(--pro-line) !important;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .reader-view--compose > .account-callout {
+  width: min(100%, 760px);
+  margin: 0 auto 24px;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .reader-view--compose > .account-callout[hidden] {
+  display: none;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .ai-question-stage .stage-heading {
+  display: block;
+  text-align: center;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .ai-question-stage .panel-kicker,
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .ai-question-stage .stage-number {
+  display: none;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .ai-question-stage .stage-heading h2 {
+  font-size: clamp(32px, 4vw, 40px);
+  line-height: 1.15;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .ai-question-stage .stage-heading p:last-child {
+  margin-top: 6px;
 }
 
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .stage-heading {
@@ -5567,7 +5595,7 @@ body {
 }
 
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .question-label {
-  margin-top: 25px;
+  margin-top: 16px;
   color: var(--composer-text);
   font-size: 15px;
 }
@@ -5608,7 +5636,16 @@ body {
 
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .reader-view--compose .ai-spread-stage {
   position: relative;
-  padding-top: 41px !important;
+  padding-top: 6px !important;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"][data-reader-mode="member"] .ai-spread-stage .panel-kicker,
+#ai-reader-app[data-ui-version="pro-ritual-v1"][data-reader-mode="member"] .ai-spread-stage .stage-heading p:last-child {
+  display: none;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"][data-reader-mode="member"] .ai-spread-stage .stage-heading h2 {
+  font-size: 30px;
 }
 
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .reader-view--compose .ai-spread-stage > .stage-heading,
@@ -5627,7 +5664,7 @@ body {
 
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .tarot-deck-zone {
   min-height: 520px;
-  margin-top: 27px;
+  margin-top: 8px;
   border-color: rgba(203, 187, 255, .24);
   border-radius: 31px;
   background:
@@ -6014,7 +6051,7 @@ body {
   }
 
   #ai-reader-app[data-ui-version="pro-ritual-v1"] .reader-view--compose .ai-spread-stage {
-    padding-top: 31px !important;
+    padding-top: 18px !important;
   }
 
   #ai-reader-app[data-ui-version="pro-ritual-v1"] .stage-heading {

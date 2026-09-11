@@ -30,7 +30,8 @@ test("AI reader presents and enforces question → draw → answer → new round
   assert.match(html, /id="flow-step-question"/);
   assert.match(html, /id="flow-step-draw"/);
   assert.match(html, /id="flow-step-answer"/);
-  assert.match(html, /พิมพ์คำถามก่อน/);
+  assert.match(html, /วันนี้อยากถามไพ่เรื่องอะไร\?/);
+  assert.match(html, /พิมพ์คำถาม แล้วเลือกไพ่ได้สูงสุด 3 ใบ/);
   assert.match(html, /id="ai-question"/);
   assert.doesNotMatch(html, /id="follow-up-question"/);
   assert.doesNotMatch(html, /id="ask-ai-button"/);
@@ -44,7 +45,7 @@ test("AI reader presents and enforces question → draw → answer → new round
   assert.match(script, /params\.set\("round_id"/);
   assert.doesNotMatch(script, /ask-ai-button/);
   assert.doesNotMatch(script, /previous_reading_id/);
-  assert.match(script, /คำถามรอบใหม่/);
+  assert.match(script, /คำถามต่อเนื่อง/);
   assert.match(script, /duplicateCurrentQuestion/);
   assert.match(script, /state\.currentRoundId = round\.id/);
   assert.match(script, /AI_RATE_LIMITED/);

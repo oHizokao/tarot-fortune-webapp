@@ -19,9 +19,9 @@ test("approved member asks a follow-up with a new card spread", async ({ page })
   await expect(page.locator("#ai-answer")).not.toBeEmpty({ timeout: 30_000 });
   await expect(page.locator("#ai-answer .answer-section--verdict .answer-section-heading h3")).toHaveText("ฟันธงคำถามนี้");
   await page.getByRole("button", { name: /ถามต่อ.*จับไพ่ใหม่/ }).click();
-  await page.getByLabel("คำถามรอบถัดไป").fill("แล้วก้าวเล็กที่สุดคืออะไร?");
+  await page.getByLabel("คำถามของคุณ").fill("แล้วก้าวเล็กที่สุดคืออะไร?");
   await expect(page.locator("#ai-answer")).toBeEmpty();
-  await expect(page.getByLabel("คำถามรอบถัดไป")).toHaveValue("แล้วก้าวเล็กที่สุดคืออะไร?");
+  await expect(page.getByLabel("คำถามของคุณ")).toHaveValue("แล้วก้าวเล็กที่สุดคืออะไร?");
   await page.locator("#tarot-deck-card-list .tarot-deck-card:not(.is-used)").first().click();
   await page.locator("#draw-button").click();
   await expect(page.locator(".reading-set")).toHaveCount(2, { timeout: 10_000 });

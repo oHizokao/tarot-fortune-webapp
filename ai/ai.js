@@ -188,21 +188,18 @@ function renderQuestionComposer() {
   const answered = hasAnswer();
   stage.hidden = !enabled || isViewingHistory();
   stage.dataset.composerMode = answered ? "follow-up" : "initial";
-  $("#question-kicker")?.replaceChildren(document.createTextNode(answered ? "คำถามรอบใหม่" : "01 / YOUR QUESTION"));
-  $("#question-title")?.replaceChildren(document.createTextNode(answered ? "ถามคำถามใหม่" : "พิมพ์คำถามของคุณ"));
-  $("#question-description")?.replaceChildren(document.createTextNode(answered
-    ? "พิมพ์คำถามใหม่ แล้วคลิกไพ่จากสำรับเพื่อเปิดรอบถัดไป"
-    : "เขียนเรื่องที่ต้องการถามให้ชัดเจน คำถามนี้จะเป็นแกนหลักของคำทำนาย"));
-  $("#question-label")?.replaceChildren(document.createTextNode(answered ? "คำถามรอบถัดไป" : "คำถามของคุณ"));
+  $("#question-kicker")?.replaceChildren(document.createTextNode(answered ? "คำถามต่อเนื่อง" : "คำถามของคุณ"));
+  $("#question-title")?.replaceChildren(document.createTextNode(answered ? "อยากถามอะไรต่อ?" : "วันนี้อยากถามไพ่เรื่องอะไร?"));
+  $("#question-description")?.replaceChildren(document.createTextNode("พิมพ์คำถาม แล้วเลือกไพ่ได้สูงสุด 3 ใบ"));
+  $("#question-label")?.replaceChildren(document.createTextNode("คำถามของคุณ"));
   const field = $("#ai-question");
   if (field) {
-    field.placeholder = answered ? "เช่น แล้วก้าวต่อไปเรื่องนี้ควรเป็นอย่างไร?" : "เช่น ตอนนี้ฉันควรเริ่มจัดการความกังวลเรื่องงานจากตรงไหนดี?";
-    field.setAttribute("aria-label", answered ? "คำถามรอบถัดไป" : "คำถามของคุณ");
+    field.placeholder = "เช่น ความรักช่วงนี้จะเป็นอย่างไร?";
+    field.setAttribute("aria-label", "คำถามของคุณ");
   }
   $("#question-hint")?.replaceChildren(document.createTextNode(answered
-    ? "คำถามนี้จะใช้เปิดไพ่ชุดใหม่ และระบบจะจำบริบทจากรอบก่อนหน้าไว้ให้"
-    : "ยิ่งระบุเรื่องที่อยากรู้ชัด คำทำนายจากไพ่ก็จะตรงกับคำถามมากขึ้น"));
-  $("#account-callout")?.classList.toggle("is-follow-up", answered);
+    ? "เลือกไพ่ใหม่ได้เลย ระบบยังจำเรื่องที่คุยกันไว้"
+    : "ระบุเรื่องที่อยากรู้ให้ชัดเจน"));
   setReadingState();
 }
 
@@ -229,6 +226,8 @@ function setReaderMode(user) {
   if (!aiEnabled) $("#ai-answer-stage")?.toggleAttribute("hidden", true);
   const guestBanner = $("#guest-mode-banner");
   if (guestBanner) guestBanner.hidden = member;
+  const accountCallout = $("#account-callout");
+  if (accountCallout) accountCallout.hidden = !member || aiEnabled;
   const copy = member
     ? {
       brand: "WITCH AI READER",
@@ -262,19 +261,21 @@ function setReaderMode(user) {
   $("#reveal-kicker")?.replaceChildren(document.createTextNode(member ? "03 / THE REVEAL" : "02 / THE REVEAL"));
   const stepNumbers = member ? { question: "01", spread: "02", draw: "03", answer: "04" } : { spread: "01", draw: "02" };
   Object.entries(stepNumbers).forEach(([step, number]) => { $(`#flow-number-${step}`)?.replaceChildren(document.createTextNode(number)); });
-  $("#account-title")?.replaceChildren(document.createTextNode(member ? (user.ai_enabled ? `พร้อมอ่านไพ่ให้ ${user.name || user.username}` : "บัญชีนี้ยังรอสิทธิ์ AI") : "เปิดไพ่ได้เลย"));
-  $("#account-message")?.replaceChildren(document.createTextNode(member
-    ? user.ai_enabled ? "พิมพ์คำถามก่อน คลิกไพ่ไม่เกิน 3 ใบ แล้วกดทำนาย ระบบจะอ่านคำตอบให้ตรงกับเรื่องที่ถามและจำรอบก่อนหน้าไว้" : "บัญชีเข้าใช้งานแล้ว แต่ผู้ดูแลยังไม่ได้เปิดสิทธิ์ AI ให้บัญชีนี้"
-    : "คลิกไพ่จากสำรับได้ทันที ถ้าอยากให้ AI ตอบคำถาม ให้เข้าใช้งานก่อน"));
+  const mustChangePassword = Boolean(user?.must_change_password);
+  $("#account-title")?.replaceChildren(document.createTextNode(mustChangePassword ? "ต้องเปลี่ยนรหัสผ่านก่อนใช้ AI" : "บัญชีนี้ยังรอสิทธิ์ AI"));
+  $("#account-message")?.replaceChildren(document.createTextNode(mustChangePassword
+    ? "ตั้งรหัสผ่านใหม่แล้วกลับมาถามไพ่ได้ คุณยังเปิดไพ่แบบปกติได้"
+    : "ผู้ดูแลยังไม่ได้เปิดสิทธิ์ AI ให้บัญชีนี้ คุณยังเปิดไพ่แบบปกติได้"));
   const accountAction = $("#account-action");
   if (accountAction) {
-    accountAction.textContent = member ? "ออกจากระบบ" : "เข้าใช้งาน";
-    accountAction.href = member ? "#question-title" : "../login/?next=/ai/";
-    accountAction.dataset.action = member ? "logout" : "login";
+    accountAction.hidden = !mustChangePassword;
+    accountAction.textContent = "เปลี่ยนรหัสผ่าน";
+    accountAction.href = "../login/?next=/ai/";
+    accountAction.dataset.action = "change-password";
   }
   const accountLink = $("#account-link");
   if (accountLink) {
-    accountLink.textContent = member ? "ออกจากระบบ" : "เข้าใช้งาน";
+    accountLink.textContent = member ? `${user.name || user.username || "บัญชี"} · ออกจากระบบ` : "เข้าใช้งาน";
     accountLink.href = member ? "#question-title" : "../login/?next=/ai/";
     accountLink.dataset.action = member ? "logout" : "login";
   }
@@ -695,6 +696,7 @@ function continueReading() {
   setFanPhase("ready");
   renderAll();
   setReaderView("compose", { updateUrl: true, focus: true });
+  if (hasAiAccess()) window.requestAnimationFrame(() => $("#ai-question")?.focus({ preventScroll: true }));
 }
 
 function historySessionTitle(session, index = 0) {
@@ -1504,7 +1506,6 @@ $("#start-new-reading-button")?.addEventListener("click", startNewReading);
 $("#delete-all-history-button")?.addEventListener("click", () => { void deleteAllDeckHistory(); });
 $("#retry-ai-button")?.addEventListener("click", retryAi);
 $("#ai-question")?.addEventListener("input", handleQuestionInput);
-$("#account-action")?.addEventListener("click", logoutMember);
 $("#account-link")?.addEventListener("click", logoutMember);
 $("#continue-reading-button")?.addEventListener("click", continueReading);
 $("#result-reset-button")?.addEventListener("click", () => { void resetCards(); });

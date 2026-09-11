@@ -57,19 +57,19 @@
         </div>
 
         <div class="reader-view reader-view--compose" id="reader-compose-view" data-reader-view="compose" aria-label="หน้าพิมพ์คำถามและเลือกไพ่">
+        <div class="account-callout" id="account-callout" role="status" hidden>
+          <span aria-hidden="true">◈</span>
+          <div><strong id="account-title">สถานะบัญชี</strong><p id="account-message"></p></div>
+          <a class="small-action" id="account-action" href="../login/?next=/ai/" hidden>เปลี่ยนรหัสผ่าน</a>
+        </div>
         <section class="ai-question-stage panel question-panel member-only" id="question-stage" aria-label="ขั้นที่ 1 พิมพ์คำถาม" hidden>
           <div class="stage-heading">
-            <div><p class="panel-kicker" id="question-kicker">01 / YOUR QUESTION</p><h2 id="question-title">พิมพ์คำถามของคุณ</h2><p id="question-description">เขียนเรื่องที่ต้องการถามให้ชัดเจน คำถามนี้จะเป็นแกนหลักของคำทำนาย</p></div>
+            <div><p class="panel-kicker" id="question-kicker">คำถามของคุณ</p><h2 id="question-title">วันนี้อยากถามไพ่เรื่องอะไร?</h2><p id="question-description">พิมพ์คำถาม แล้วเลือกไพ่ได้สูงสุด 3 ใบ</p></div>
             <span class="stage-number" aria-hidden="true">01</span>
           </div>
-          <div class="account-callout" id="account-callout">
-            <span aria-hidden="true">◈</span>
-            <div><strong id="account-title">พิมพ์คำถามได้เลย</strong><p id="account-message">คุณเปิดไพ่ได้ฟรีโดยไม่ต้องล็อกอิน เมื่ออยากรับคำตอบจาก AI ให้เข้าใช้งานก่อนส่งคำถาม</p></div>
-            <a class="small-action" id="account-action" href="../login/?next=/ai/">เข้าใช้งาน</a>
-          </div>
           <label class="question-label" id="question-label" for="ai-question">คำถามของคุณ</label>
-          <textarea id="ai-question" maxlength="2000" rows="3" required aria-describedby="question-hint request-status" placeholder="เช่น ตอนนี้ฉันควรเริ่มจัดการความกังวลเรื่องงานจากตรงไหนดี?"></textarea>
-          <p class="question-hint" id="question-hint">พิมพ์คำถามก่อน แล้วจึงเลือกไพ่ · ยิ่งระบุเรื่องที่อยากรู้ชัด คำทำนายจากไพ่ก็จะตรงกับคำถามมากขึ้น</p>
+          <textarea id="ai-question" maxlength="2000" rows="3" required aria-describedby="question-hint request-status" placeholder="เช่น ความรักช่วงนี้จะเป็นอย่างไร?"></textarea>
+          <p class="question-hint" id="question-hint">ระบุเรื่องที่อยากรู้ให้ชัดเจน</p>
         </section>
 
         <section class="ai-spread-stage panel" aria-labelledby="spread-title">

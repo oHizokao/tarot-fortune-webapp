@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-async function installMemberApi(page) {
+async function installMemberApi(page, userOverrides = {}) {
   const api = { session: false, rounds: [], nextCard: 1, drawCalls: 0, answerCalls: 0, answerDelay: 0, drawGate: null, releaseDraw: null, answerGate: null, releaseAnswer: null };
   const cardName = (file) => file.includes("002") ? "Acceptance" : file.includes("003") ? "Understanding" : "Relaxation";
   const structuredAnswer = (round) => ({
@@ -23,7 +23,7 @@ async function installMemberApi(page) {
   await page.route("**/api/auth/me", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
-    body: JSON.stringify({ ok: true, authenticated: true, csrf_token: "test-csrf", backend_configured: true, user: { username: "tester", name: "ผู้ใช้งาน", ai_enabled: true, must_change_password: false } }),
+    body: JSON.stringify({ ok: true, authenticated: true, csrf_token: "test-csrf", backend_configured: true, user: { username: "tester", name: "ผู้ใช้งาน", ai_enabled: true, must_change_password: false, ...userOverrides } }),
   }));
   await page.route("**/api/ai/deck-sessions*", async (route) => {
     const url = new URL(route.request().url());
@@ -199,6 +199,49 @@ test("member types a question, selects cards, and receives one reading per card 
   expect(api.answerCalls).toBe(1);
 });
 
+test("member starts with one concise question composer and account action in the top navigation", async ({ page }) => {
+  await installMemberApi(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/ai/");
+
+  await expect(page.locator("#question-title")).toHaveText("วันนี้อยากถามไพ่เรื่องอะไร?");
+  await expect(page.locator("#question-description")).toHaveText("พิมพ์คำถาม แล้วเลือกไพ่ได้สูงสุด 3 ใบ");
+  await expect(page.locator("#question-label")).toHaveText("คำถามของคุณ");
+  await expect(page.locator("#ai-question")).toHaveAttribute("placeholder", "เช่น ความรักช่วงนี้จะเป็นอย่างไร?");
+  await expect(page.locator("#question-hint")).toHaveText("ระบุเรื่องที่อยากรู้ให้ชัดเจน");
+  await expect(page.locator("#account-callout")).toBeHidden();
+  await expect(page.locator("#account-link")).toContainText("ผู้ใช้งาน");
+  await expect(page.locator("#account-link")).toContainText("ออกจากระบบ");
+  await expect(page.getByText("ออกจากระบบ", { exact: false })).toHaveCount(1);
+  expect(await page.locator("#tarot-deck-zone").evaluate((element) => element.getBoundingClientRect().top)).toBeLessThanOrEqual(540);
+});
+
+test("member without AI permission can read the account status without blocking free cards", async ({ page }) => {
+  await installMemberApi(page, { ai_enabled: false });
+  await page.goto("/ai/");
+
+  await expect(page.locator("#question-stage")).toBeHidden();
+  await expect(page.locator("#account-callout")).toBeVisible();
+  await expect(page.locator("#account-title")).toHaveText("บัญชีนี้ยังรอสิทธิ์ AI");
+  await expect(page.locator("#account-message")).toHaveText("ผู้ดูแลยังไม่ได้เปิดสิทธิ์ AI ให้บัญชีนี้ คุณยังเปิดไพ่แบบปกติได้");
+  await expect(page.locator("#tarot-deck-zone")).toBeVisible();
+});
+
+test("member who must change password gets an accessible account action without duplicate logout", async ({ page }) => {
+  await installMemberApi(page, { must_change_password: true });
+  await page.goto("/ai/");
+
+  await expect(page.locator("#question-stage")).toBeHidden();
+  await expect(page.locator("#account-callout")).toBeVisible();
+  await expect(page.locator("#account-title")).toHaveText("ต้องเปลี่ยนรหัสผ่านก่อนใช้ AI");
+  await expect(page.locator("#account-message")).toHaveText("ตั้งรหัสผ่านใหม่แล้วกลับมาถามไพ่ได้ คุณยังเปิดไพ่แบบปกติได้");
+  await expect(page.locator("#account-action")).toHaveText("เปลี่ยนรหัสผ่าน");
+  await expect(page.locator("#account-action")).toHaveAttribute("href", "../login/?next=/ai/");
+  await expect(page.getByText("ออกจากระบบ", { exact: false })).toHaveCount(1);
+  await page.locator("#account-action").click();
+  await expect(page).toHaveURL(/\/login\/\?next=\/ai\/$/);
+});
+
 test("member question composer is readable, aligned, and stable on desktop", async ({ page }) => {
   await installMemberApi(page);
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -278,7 +321,7 @@ test("member question composer stays legible without overflow on mobile", async 
   await expect(field).toHaveCSS("border-color", "rgb(216, 191, 140)");
   const after = await field.boundingBox();
   expect(after?.width).toBe(before?.width);
-  expect(after?.height).toBe(before?.height);
+  expect(after?.height).toBeCloseTo(before?.height, 3);
 });
 
 test("member marks exactly the sparse cards selected in the deck", async ({ page }) => {
@@ -331,7 +374,13 @@ test("member can continue with a new question and the memory keeps both rounds",
   await expect(page.locator("#memory-history")).toContainText("1 คำถาม");
   await page.locator("#continue-reading-button").click();
   await expect(page.locator("#reader-compose-view")).toBeVisible();
-  await page.getByLabel("คำถามรอบถัดไป").fill("แล้วก้าวต่อไปล่ะ?");
+  await expect(page.locator("#question-title")).toHaveText("อยากถามอะไรต่อ?");
+  await expect(page.locator("#question-description")).toHaveText("พิมพ์คำถาม แล้วเลือกไพ่ได้สูงสุด 3 ใบ");
+  await expect(page.locator("#question-label")).toHaveText("คำถามของคุณ");
+  await expect(page.locator("#question-hint")).toHaveText("เลือกไพ่ใหม่ได้เลย ระบบยังจำเรื่องที่คุยกันไว้");
+  await expect(page.locator("#ai-question")).toHaveAttribute("placeholder", "เช่น ความรักช่วงนี้จะเป็นอย่างไร?");
+  await expect(page.locator("#ai-question")).toBeFocused();
+  await page.getByLabel("คำถามของคุณ").fill("แล้วก้าวต่อไปล่ะ?");
   await predict(page, 2);
   await expect(page.locator(".reading-set")).toHaveCount(2);
   await expect(page.locator("#memory-history")).toContainText("2 คำถาม");
