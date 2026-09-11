@@ -1,7 +1,24 @@
 import { test, expect } from "@playwright/test";
 
 async function installMemberApi(page, userOverrides = {}) {
-  const api = { session: false, rounds: [], nextCard: 1, drawCalls: 0, answerCalls: 0, answerDelay: 0, drawGate: null, releaseDraw: null, answerGate: null, releaseAnswer: null };
+  const api = {
+    session: false,
+    rounds: [],
+    nextCard: 1,
+    drawCalls: 0,
+    drawRequests: [],
+    abortFirstDrawResponse: false,
+    abortedDrawResponse: false,
+    answerCalls: 0,
+    answerFailureCodes: [],
+    answerDelay: 0,
+    drawGate: null,
+    releaseDraw: null,
+    answerGate: null,
+    releaseAnswer: null,
+    logoutCalls: 0,
+    logoutGate: null,
+  };
   const cardName = (file) => file.includes("002") ? "Acceptance" : file.includes("003") ? "Understanding" : "Relaxation";
   const structuredAnswer = (round) => ({
     verdict: `ฟันธง: คำตอบของคำถาม “${round.question}” คือให้เดินหน้าอย่างชัดเจน`,
@@ -25,6 +42,11 @@ async function installMemberApi(page, userOverrides = {}) {
     contentType: "application/json",
     body: JSON.stringify({ ok: true, authenticated: true, csrf_token: "test-csrf", backend_configured: true, user: { username: "tester", name: "ผู้ใช้งาน", ai_enabled: true, must_change_password: false, ...userOverrides } }),
   }));
+  await page.route("**/api/auth/logout", async (route) => {
+    api.logoutCalls += 1;
+    if (api.logoutGate) await api.logoutGate;
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+  });
   await page.route("**/api/ai/deck-sessions*", async (route) => {
     const url = new URL(route.request().url());
     const action = url.searchParams.get("action") || "";
@@ -52,20 +74,43 @@ async function installMemberApi(page, userOverrides = {}) {
     }
     if (route.request().method() === "POST" && action === "draw") {
       const body = await route.request().postDataJSON();
-      const round = { id: `round-${api.rounds.length + 1}`, round_number: api.rounds.length + 1, question: body.question, cards: nextCards(Number(body.count)), status: "drawn", answer_json: null, answer_text: "" };
-      api.rounds.push(round);
       api.drawCalls += 1;
+      api.drawRequests.push({ request_id: body.request_id, selected_indexes: body.selected_indexes, count: body.count, question: body.question });
+      const existing = api.rounds.find((item) => item.request_id === body.request_id);
+      if (existing) {
+        await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, session: sessionPayload(), round: existing, remaining: sessionPayload().remaining, idempotent: true }) });
+        return;
+      }
+      const selectedIndexes = Array.isArray(body.selected_indexes) ? body.selected_indexes : [];
+      const occupied = api.rounds.some((item) => item.selected_indexes?.some((index) => selectedIndexes.includes(index)));
+      if (occupied) {
+        await route.fulfill({ status: 409, contentType: "application/json", body: JSON.stringify({ ok: false, code: "SELECTED_SLOT_USED", message: "ตำแหน่งไพ่ถูกเปิดไปแล้ว กรุณาเลือกใบที่ยังไม่เปิด" }) });
+        return;
+      }
+      const round = { id: `round-${api.rounds.length + 1}`, request_id: body.request_id, selected_indexes: selectedIndexes, round_number: api.rounds.length + 1, question: body.question, cards: nextCards(Number(body.count)), status: "drawn", answer_json: null, answer_text: "" };
+      api.rounds.push(round);
       if (api.drawGate) await api.drawGate;
+      if (api.abortFirstDrawResponse && api.drawCalls === 1) {
+        api.abortFirstDrawResponse = false;
+        api.abortedDrawResponse = true;
+        await route.abort();
+        return;
+      }
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, session: sessionPayload(), round, remaining: sessionPayload().remaining }) });
       return;
     }
     if (route.request().method() === "POST" && action === "answer") {
       const round = api.rounds.find((item) => item.id === roundId);
+      api.answerCalls += 1;
+      const failureCode = api.answerFailureCodes.shift();
+      if (failureCode) {
+        await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ ok: false, code: failureCode, request_id: "answer-failure-1", message: "AI ยังไม่พร้อมชั่วคราว" }) });
+        return;
+      }
       const structured = structuredAnswer(round);
       round.answer_json = structured;
       round.answer_text = structured.verdict;
       round.status = "answered";
-      api.answerCalls += 1;
       if (api.answerGate) await api.answerGate;
       if (api.answerDelay) await new Promise((resolve) => setTimeout(resolve, api.answerDelay));
       await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true, session: sessionPayload(), round, answer: round.answer_text, structured }) });
@@ -197,6 +242,73 @@ test("member types a question, selects cards, and receives one reading per card 
   await expect(page.locator("#ai-answer")).not.toContainText("คำถามชวนทบทวน");
   expect(api.drawCalls).toBe(1);
   expect(api.answerCalls).toBe(1);
+});
+
+test("member answer failure keeps the active result scene visible and retry answers the same draw", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  const api = await installMemberApi(page);
+  api.answerFailureCodes = ["AI_UPSTREAM_ERROR"];
+  await page.goto("/ai/");
+  await page.getByLabel("คำถามของคุณ").fill("คำถามนี้ควรได้รับคำตอบที่ชัดเจนไหม?");
+  await selectCards(page, 1);
+  await page.locator("#draw-button").click();
+
+  await expect(page.locator("#reader-result-view")).toBeVisible();
+  await expect(page.locator("#ai-answer-stage")).toBeVisible();
+  await expect(page.locator("#ai-answer-stage")).toContainText("AI ยังไม่พร้อมชั่วคราว");
+  await expect(page.locator("#retry-ai-button")).toBeVisible();
+
+  await page.locator("#retry-ai-button").click();
+  await expect(page.locator("#ai-answer .answer-section--overall")).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator("#ai-answer-stage")).not.toContainText("AI ยังไม่พร้อมชั่วคราว");
+  expect(api.drawCalls).toBe(1);
+  expect(api.answerCalls).toBe(2);
+});
+
+test("member logout invalidates a held answer and stays in guest mode after the stale response is released", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  const api = await installMemberApi(page);
+  api.answerGate = new Promise((resolve) => { api.releaseAnswer = resolve; });
+  await page.goto("/ai/");
+  await page.getByLabel("คำถามของคุณ").fill("คำตอบนี้ต้องไม่กลับมาหลังออกจากระบบ");
+  await selectCards(page, 1);
+  await page.locator("#draw-button").click();
+  await expect.poll(() => api.answerCalls).toBe(1);
+
+  await page.locator("#account-link").click();
+  await expect(page.locator("#ai-reader-app")).toHaveAttribute("data-reader-mode", "guest");
+  await expect(page.locator("#guest-mode-banner")).toBeVisible();
+  await expect(page.locator("#question-stage")).toBeHidden();
+  await expect(page.locator("#reading-history-panel")).toBeHidden();
+
+  api.releaseAnswer();
+  await expect(page.locator("#reader-result-view")).toBeHidden();
+  await expect(page.locator("#ai-answer-stage")).toHaveAttribute("hidden", "");
+  await expect(page.locator("#ai-answer")).toBeEmpty();
+  await expect(page.locator("#reading-history-list")).toBeEmpty();
+});
+
+test("member replays a committed draw with the same idempotency intent after the first response is lost", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  const api = await installMemberApi(page);
+  api.abortFirstDrawResponse = true;
+  await page.goto("/ai/");
+  await page.getByLabel("คำถามของคุณ").fill("ถ้าการเปิดไพ่สำเร็จแต่การตอบกลับหายไปควรทำอย่างไร?");
+  await selectCards(page, 1);
+  await page.locator("#draw-button").click();
+
+  await expect.poll(() => api.abortedDrawResponse).toBe(true);
+  await expect(page.locator("#draw-button")).toBeEnabled({ timeout: 10_000 });
+  await page.locator("#draw-button").click();
+
+  await expect(page.locator("#reader-result-view")).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator("#reading-sets .reading-set")).toHaveCount(1);
+  await expect(page.locator("#opened-count")).toHaveText("1");
+  await expect(page.locator("#remaining-count")).toHaveText("77");
+  await expect.poll(() => api.drawRequests.length).toBe(2);
+  expect(api.rounds).toHaveLength(1);
+  expect(api.drawRequests[1].request_id).toBe(api.drawRequests[0].request_id);
+  expect(api.drawRequests[1].selected_indexes).toEqual(api.drawRequests[0].selected_indexes);
 });
 
 test("member starts with one concise question composer and account action in the top navigation", async ({ page }) => {

@@ -39,6 +39,7 @@ const state = {
   deckPointer: null,
   suppressDeckClick: false,
   requestVersion: 0,
+  pendingDrawIntent: null,
   failedQuestion: "",
   failedErrorCode: "",
   failedRequestId: "",
@@ -49,6 +50,42 @@ const choiceButtons = [];
 
 function randomId(prefix = "request") {
   return globalThis.crypto?.randomUUID?.() || `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function memberIdentity(user = state.user) {
+  return textValue(user?.id ?? user?.user_id ?? user?.username ?? user?.name, 160);
+}
+
+function captureRequestIdentity() {
+  return { member: memberIdentity(), sessionId: textValue(state.sessionId, 120) };
+}
+
+function isCurrentRequest(version, identity) {
+  return version === state.requestVersion
+    && identity?.member === memberIdentity()
+    && (!identity?.sessionId || identity.sessionId === textValue(state.sessionId, 120));
+}
+
+function sameDrawIntent(intent, count, question, selectedIndexes) {
+  return Boolean(intent
+    && intent.member === memberIdentity()
+    && (!intent.sessionId || intent.sessionId === textValue(state.sessionId, 120))
+    && intent.count === count
+    && intent.question === question
+    && JSON.stringify(intent.selectedIndexes) === JSON.stringify(selectedIndexes));
+}
+
+function getDrawIntent(count, question, selectedIndexes) {
+  if (sameDrawIntent(state.pendingDrawIntent, count, question, selectedIndexes)) return state.pendingDrawIntent;
+  state.pendingDrawIntent = {
+    requestId: randomId("draw"),
+    member: memberIdentity(),
+    sessionId: textValue(state.sessionId, 120),
+    count,
+    question,
+    selectedIndexes: [...selectedIndexes],
+  };
+  return state.pendingDrawIntent;
 }
 
 function sleep(milliseconds) {
@@ -225,7 +262,11 @@ function setReaderMode(user) {
   $("#question-stage")?.toggleAttribute("hidden", !aiEnabled);
   if (!aiEnabled) $("#ai-answer-stage")?.toggleAttribute("hidden", true);
   const guestBanner = $("#guest-mode-banner");
-  if (guestBanner) guestBanner.hidden = member;
+  if (guestBanner) {
+    guestBanner.hidden = member;
+    if (member) guestBanner.style.removeProperty("display");
+    else guestBanner.style.setProperty("display", "grid", "important");
+  }
   const accountCallout = $("#account-callout");
   if (accountCallout) accountCallout.hidden = !member || aiEnabled;
   const copy = member
@@ -462,6 +503,7 @@ function selectDeckCard(card) {
     state.selectedCards = state.selectedCards
       .filter((item) => Number(item.deckIndex) !== deckIndex)
       .map((item, index) => ({ ...item, slot: index + 1 }));
+    state.pendingDrawIntent = null;
     state.count = state.selectedCards.length;
     renderProgress();
     setWitchStatus(state.selectedCards.length ? `เลือกแล้ว ${state.selectedCards.length} ใบ · เลือกเพิ่มได้` : "พร้อมเลือกไพ่", "ready");
@@ -469,6 +511,7 @@ function selectDeckCard(card) {
   }
   if (state.selectedCards.length >= MAX_SELECTED_CARDS) return;
   state.selectedCards = [...state.selectedCards, { deckIndex, slot: state.selectedCards.length + 1 }];
+  state.pendingDrawIntent = null;
   state.count = state.selectedCards.length;
   renderProgress();
   setWitchStatus(`เลือกแล้ว ${state.selectedCards.length} ใบ · กดทำนายเมื่อพร้อม`, "ready");
@@ -688,6 +731,7 @@ function continueReading() {
   state.requestVersion += 1;
   state.selectedCards = [];
   state.pendingDrawCount = 0;
+  state.pendingDrawIntent = null;
   state.count = 0;
   state.failedQuestion = "";
   state.failedErrorCode = "";
@@ -850,7 +894,33 @@ function renderMemory() {
   renderMemoryHistory();
 }
 
+function clearAnswerFailure() {
+  $("#ai-answer-error")?.remove();
+}
+
+function renderAnswerFailure() {
+  const stage = $("#ai-answer-stage");
+  if (!stage || !state.failedQuestion) return;
+  let failure = $("#ai-answer-error");
+  if (!failure) {
+    failure = document.createElement("p");
+    failure.id = "ai-answer-error";
+    failure.className = "request-status answer-error";
+    failure.setAttribute("role", "alert");
+    failure.setAttribute("aria-live", "assertive");
+    const answerBox = $("#ai-answer");
+    if (answerBox) stage.insertBefore(failure, answerBox);
+    else stage.append(failure);
+  }
+  failure.textContent = messageForError(state.failedErrorCode, state.failedRequestId);
+  failure.hidden = false;
+  stage.hidden = false;
+  $("#ai-answer")?.replaceChildren();
+  $("#request-status").textContent = failure.textContent;
+}
+
 function clearAnswer() {
+  clearAnswerFailure();
   $("#ai-answer")?.replaceChildren();
   const retry = $("#retry-ai-button");
   if (retry) retry.hidden = true;
@@ -903,6 +973,7 @@ function normalizeStructuredAnswer(value, round) {
 function renderAnswer(answer, structured = null, round = currentRound()) {
   const box = $("#ai-answer");
   if (!box || !round) return;
+  clearAnswerFailure();
   const reading = normalizeStructuredAnswer(structured, { ...round, answer: answer || round.answer });
   box.replaceChildren();
   const verdict = document.createElement("section");
@@ -1061,6 +1132,7 @@ function renderAll() {
 function renderAnswerFromCurrent() {
   const round = currentRound();
   if (round?.answer || round?.structured) renderAnswer(round.answer, round.structured, round);
+  else if (round && hasAiAccess() && !isViewingHistory() && state.failedQuestion && normalizedQuestion(state.failedQuestion) === normalizedQuestion(round.question)) renderAnswerFailure();
   else if (round && hasAiAccess() && isViewingHistory() && round.status === "drawn") {
     clearAnswer();
     $("#ai-answer-stage")?.removeAttribute("hidden");
@@ -1097,6 +1169,7 @@ function clearPrivateMemory() {
   state.drawn = [];
   state.selectedCards = [];
   state.pendingDrawCount = 0;
+  state.pendingDrawIntent = null;
   state.usedDeckIndexes = [];
   state.visualRounds = [];
   state.visualDeckKey = "";
@@ -1134,7 +1207,12 @@ async function api(url, options = {}) {
 }
 
 async function createServerSession() {
+  return createServerSessionForRequest(null);
+}
+
+async function createServerSessionForRequest(request) {
   const data = await api("/api/ai/deck-sessions", { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: JSON.stringify({ title: "คำถามจากไพ่" }) });
+  if (request && !isCurrentRequest(request.version, request.identity)) return null;
   const session = data?.session;
   const sessionId = textValue(session?.id, 120);
   if (!sessionId) {
@@ -1162,12 +1240,18 @@ function deckSessionUrl(sessionId, action = "", roundId = "") {
 }
 
 async function loadServerReadingHistory() {
+  return loadServerReadingHistoryForRequest(null);
+}
+
+async function loadServerReadingHistoryForRequest(request) {
+  if (request && !isCurrentRequest(request.version, request.identity)) return;
   if (!hasAiAccess()) {
     state.serverHistory = [];
     renderServerHistory();
     return;
   }
   const data = await api("/api/ai/deck-sessions");
+  if (request && !isCurrentRequest(request.version, request.identity)) return;
   state.serverHistory = Array.isArray(data.sessions)
     ? data.sessions.filter((session) => Number(session?.opened_count ?? session?.draw_cursor ?? 0) > 0)
     : [];
@@ -1215,6 +1299,7 @@ function startNewReading() {
   state.drawn = [];
   state.selectedCards = [];
   state.pendingDrawCount = 0;
+  state.pendingDrawIntent = null;
   state.usedDeckIndexes = [];
   state.visualRounds = [];
   state.visualDeckKey = "";
@@ -1238,6 +1323,7 @@ function startNewReading() {
 async function answerCurrentRound(roundId) {
   if (!hasAiAccess() || !state.sessionId || !roundId) return;
   const version = ++state.requestVersion;
+  const identity = captureRequestIdentity();
   const round = state.rounds.find((item) => item.id === roundId);
   if (!round) return;
   state.busy = true;
@@ -1246,12 +1332,13 @@ async function answerCurrentRound(roundId) {
   state.failedQuestion = "";
   state.failedErrorCode = "";
   state.failedRequestId = "";
+  clearAnswerFailure();
   setWitchStatus("กำลังอ่านคำบนไพ่และสรุปคำทำนาย...", "reading");
   $("#request-status").textContent = "กำลังอ่านไพ่ให้ตรงกับคำถาม...";
   renderProgress();
   try {
     const data = await api(deckSessionUrl(state.sessionId, "answer", roundId), { method: "POST", headers: { "X-CSRF-Token": state.csrf }, body: "{}" });
-    if (version !== state.requestVersion) return;
+    if (!isCurrentRequest(version, identity)) return;
     applyServerSession(data.session);
     state.currentRoundId = String(data.round?.id || roundId);
     const answered = state.rounds.find((item) => item.id === state.currentRoundId) || normalizeServerRound(data.round, state.rounds.length - 1);
@@ -1263,12 +1350,13 @@ async function answerCurrentRound(roundId) {
     saveState();
     setFanPhase("revealed");
     renderAnswer(answered.answer, answered.structured, answered);
-    void loadServerReadingHistory().catch(() => {});
+    void loadServerReadingHistoryForRequest({ version: state.requestVersion, identity: captureRequestIdentity() }).catch(() => {});
     $("#ai-question").value = "";
     renderQuestionComposer();
     $("#retry-ai-button").hidden = true;
     $("#ai-answer-title")?.focus?.({ preventScroll: false });
   } catch (error) {
+    if (!isCurrentRequest(version, identity)) return;
     if (error.status === 401 || error.code === "ACCOUNT_AUTH_REQUIRED") {
       state.user = null;
       state.csrf = "";
@@ -1284,8 +1372,10 @@ async function answerCurrentRound(roundId) {
       $("#retry-ai-button").hidden = !["AI_TIMEOUT", "AI_UPSTREAM_ERROR", "AI_RATE_LIMITED", "EMPTY_AI_RESPONSE", "OFFLINE"].includes(error.code);
       setFanPhase("revealed");
       setWitchStatus("ยังอ่านคำทำนายไม่ได้ · กดลองอีกครั้ง");
+      renderAnswerFailure();
     }
   } finally {
+    if (!isCurrentRequest(version, identity)) return;
     if (version === state.requestVersion) {
       state.busy = false;
       renderProgress();
@@ -1322,8 +1412,10 @@ async function predictSelectedCards() {
   if ($("#draw-button").disabled) return;
   state.count = state.selectedCards.length;
   const selectedIndexes = state.selectedCards.map((item) => Number(item.deckIndex));
-  const drawRequestId = randomId("draw");
+  const drawIntent = getDrawIntent(state.count, question, selectedIndexes);
+  const drawRequestId = drawIntent.requestId;
   const version = ++state.requestVersion;
+  const identity = captureRequestIdentity();
   state.pendingDrawCount = state.selectedCards.length;
   state.busy = true;
   setFanPhase("shuffling");
@@ -1333,9 +1425,16 @@ async function predictSelectedCards() {
   renderProgress();
   try {
     await sleep(650);
+    if (!isCurrentRequest(version, identity)) return;
     let round;
     if (hasAiAccess()) {
-      if (!state.sessionId) await createServerSession();
+      if (!state.sessionId) {
+        const session = await createServerSessionForRequest({ version, identity });
+        if (!isCurrentRequest(version, identity)) return;
+        if (!session) return;
+        identity.sessionId = textValue(state.sessionId, 120);
+        drawIntent.sessionId = identity.sessionId;
+      }
       const sessionId = textValue(state.sessionId, 120);
       if (!sessionId) {
         const error = new Error("ไม่พบรหัสสำรับไพ่ของบัญชีนี้");
@@ -1345,9 +1444,9 @@ async function predictSelectedCards() {
       const data = await api(deckSessionUrl(state.sessionId, "draw"), {
         method: "POST",
         headers: { "X-CSRF-Token": state.csrf },
-        body: JSON.stringify({ count: state.count, question, request_id: drawRequestId, selected_indexes: selectedIndexes }),
+        body: JSON.stringify({ count: drawIntent.count, question: drawIntent.question, request_id: drawRequestId, selected_indexes: drawIntent.selectedIndexes }),
       });
-      if (version !== state.requestVersion) return;
+      if (!isCurrentRequest(version, identity)) return;
       applyServerSession(data.session);
       round = normalizeServerRound(data.round, state.rounds.length - 1);
       state.currentRoundId = round.id;
@@ -1356,7 +1455,7 @@ async function predictSelectedCards() {
       syncHistory();
       saveState();
     } else {
-      const result = drawNextRound(state.localSession, state.count, "", () => randomId("round"), selectedIndexes);
+      const result = drawNextRound(state.localSession, drawIntent.count, "", () => randomId("round"), drawIntent.selectedIndexes);
       state.localSession = result.session;
       round = result.round;
       state.rounds = result.session.rounds.map((item) => ({ ...item }));
@@ -1372,9 +1471,10 @@ async function predictSelectedCards() {
     }, {
       requestId: drawRequestId,
       roundId: round.id,
-      selectedIndexes,
+      selectedIndexes: drawIntent.selectedIndexes,
       cards: round.cards,
     });
+    state.pendingDrawIntent = null;
     state.pendingDrawCount = 0;
     state.usedDeckIndexes = committedVisualState.usedIndexes;
     state.visualRounds = committedVisualState.rounds;
@@ -1394,7 +1494,7 @@ async function predictSelectedCards() {
     goToReadingResult();
     if (hasAiAccess()) await answerCurrentRound(round.id);
   } catch (error) {
-    if (version !== state.requestVersion) return;
+    if (!isCurrentRequest(version, identity)) return;
     state.busy = false;
     state.pendingDrawCount = 0;
     $("#draw-button").classList.remove("is-busy");
@@ -1425,6 +1525,7 @@ async function resetCards() {
   state.drawn = [];
   state.selectedCards = [];
   state.pendingDrawCount = 0;
+  state.pendingDrawIntent = null;
   state.usedDeckIndexes = [];
   state.visualRounds = [];
   state.visualDeckKey = "";
@@ -1475,22 +1576,28 @@ async function loadSession() {
 async function logoutMember(event) {
   if (!isMemberMode()) return;
   event.preventDefault();
-  try { await api("/api/auth/logout", { method: "POST", body: "{}" }); } catch { /* local guest mode remains usable */ }
+  state.requestVersion += 1;
+  state.busy = false;
+  const localSession = state.localSession || createLocalDeckSession();
   state.user = null;
   state.csrf = "";
   clearPrivateMemory();
-  applyLocalSession(state.localSession || createLocalDeckSession());
+  applyLocalSession(localSession);
   setReaderMode(null);
   renderAll();
   setReaderView("compose", { updateUrl: true, replace: true });
+  try { await api("/api/auth/logout", { method: "POST", body: "{}" }); } catch { /* local guest mode remains usable */ }
 }
 
 function handleQuestionInput(event) {
-  if (textValue(event.currentTarget?.value) !== state.failedQuestion) {
+  const value = textValue(event.currentTarget?.value);
+  if (value !== state.failedQuestion) {
     state.failedQuestion = "";
     state.failedErrorCode = "";
     state.failedRequestId = "";
+    clearAnswerFailure();
   }
+  if (state.pendingDrawIntent && value !== state.pendingDrawIntent.question) state.pendingDrawIntent = null;
   syncQuestion();
 }
 

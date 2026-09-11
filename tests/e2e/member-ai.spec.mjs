@@ -11,6 +11,8 @@ test("approved member asks a follow-up with a new card spread", async ({ page })
   ]);
   await expect(page.locator("#account-link")).toContainText("oHizokao", { timeout: 10_000 });
   await expect(page.locator("#question-stage")).toBeVisible();
+  await expect(page.locator("#reader-result-view")).toBeHidden();
+  await expect(page.locator("#reading-result-stage")).toBeHidden();
   await expect(page.locator("#ai-answer-stage")).toBeHidden();
   await page.getByLabel("คำถามของคุณ").fill("วันนี้ควรเริ่มดูแลตัวเองจากตรงไหน?");
   await page.locator("#tarot-deck-card-list .tarot-deck-card:not(.is-used)").first().click();
@@ -26,6 +28,6 @@ test("approved member asks a follow-up with a new card spread", async ({ page })
   await page.locator("#draw-button").click();
   await expect(page.locator(".reading-set")).toHaveCount(2, { timeout: 10_000 });
   await expect(page.locator(".reading-set").first().locator(".tarot-card-card")).toHaveCount(1);
-  await expect(page.locator("#memory-title")).toContainText("ถามต่อ", { timeout: 30_000 });
+  await expect(page.locator("#memory-title")).toHaveText("Memory พร้อม · เปิดรอบใหม่ได้", { timeout: 30_000 });
   await expect(page.locator("#memory-history")).toContainText("แล้วก้าวเล็กที่สุดคืออะไร?", { timeout: 30_000 });
 });
