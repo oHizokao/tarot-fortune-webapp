@@ -1,11 +1,11 @@
 :root { color-scheme: dark; --bg: #080b21; --panel: rgba(20, 27, 69, .78); --line: rgba(159, 175, 243, .19); --text: #f5f5ff; --muted: #9ca9d0; --purple: #a77dff; --blue: #68bdff; --gold: #ffe0a5; --green: #81e4bd; }
 * { box-sizing: border-box; }
-body { margin: 0; min-height: 100vh; color: var(--text); font-family: "Prompt", system-ui, sans-serif; background: radial-gradient(circle at 15% 0, rgba(81, 63, 191, .36), transparent 30%), radial-gradient(circle at 90% 75%, rgba(32, 112, 184, .2), transparent 32%), var(--bg); }
+body { margin: 0; min-height: 100vh; color: var(--text); font-family: "Prompt", system-ui, sans-serif; background: radial-gradient(circle at 15% 0, rgba(80, 50, 126, .2), transparent 30%), radial-gradient(circle at 90% 75%, rgba(76, 49, 105, .12), transparent 32%), #0b0911; }
 button, textarea { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; }
-.ai-bg { position: fixed; z-index: -1; width: 300px; height: 300px; border-radius: 50%; filter: blur(10px); opacity: .28; pointer-events: none; }
-.ai-bg--one { top: 18%; left: -170px; background: #7149ff; }.ai-bg--two { right: -150px; bottom: 6%; background: #318aff; }
+.ai-bg { position: fixed; z-index: -1; width: 300px; height: 300px; border-radius: 50%; filter: blur(10px); opacity: .14; pointer-events: none; }
+.ai-bg--one { top: 18%; left: -170px; background: #69428e; }.ai-bg--two { right: -150px; bottom: 6%; background: #78506d; }
 .ai-shell { width: min(1220px, calc(100% - 40px)); margin: 0 auto; padding: 24px 0 34px; }
 .ai-topbar, .ai-footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; }.ai-topbar { min-height: 57px; }
 .brand { display: inline-flex; align-items: center; gap: 11px; text-decoration: none; }.brand-mark { display: grid; place-items: center; width: 37px; height: 37px; color: var(--gold); border: 1px solid rgba(255, 224, 165, .32); border-radius: 12px; background: rgba(255, 224, 165, .07); }.brand strong, .brand small { display: block; }.brand strong { font: 600 13px "Kanit", sans-serif; letter-spacing: .12em; }.brand small { margin-top: 1px; color: var(--muted); font-size: 9px; letter-spacing: .12em; }
@@ -5428,9 +5428,9 @@ body {
 
 /* v41 — pro ritual reader: one calm path, less dashboard, more reading room. */
 #ai-reader-app[data-ui-version="pro-ritual-v1"] {
-  --pro-surface: rgba(11, 15, 47, .54);
-  --pro-surface-soft: rgba(20, 25, 72, .32);
-  --pro-line: rgba(203, 187, 255, .18);
+  --pro-surface: rgba(17, 13, 28, .7);
+  --pro-surface-soft: rgba(29, 20, 38, .4);
+  --pro-line: rgba(216, 191, 140, .2);
   --composer-surface: #171320;
   --composer-text: #f5f0e8;
   --composer-placeholder: #bab2c8;
@@ -5665,13 +5665,13 @@ body {
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .tarot-deck-zone {
   min-height: 520px;
   margin-top: 8px;
-  border-color: rgba(203, 187, 255, .24);
+  border-color: rgba(216, 191, 140, .22);
   border-radius: 31px;
   background:
-    radial-gradient(circle at 50% 49%, rgba(126, 94, 242, .24), transparent 25%),
-    radial-gradient(circle at 50% 100%, rgba(70, 151, 236, .17), transparent 48%),
-    linear-gradient(155deg, rgba(19, 17, 64, .78), rgba(7, 10, 39, .9));
-  box-shadow: 0 22px 65px rgba(4, 5, 25, .26), inset 0 1px 0 rgba(255,255,255,.045);
+    radial-gradient(circle at 50% 49%, rgba(109, 72, 138, .14), transparent 25%),
+    radial-gradient(circle at 50% 100%, rgba(92, 57, 102, .1), transparent 48%),
+    linear-gradient(155deg, rgba(26, 19, 38, .88), rgba(10, 8, 17, .96));
+  box-shadow: 0 22px 65px rgba(3, 2, 9, .42), inset 0 1px 0 rgba(255,255,255,.035);
 }
 
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .tarot-deck-zone::after {
@@ -5857,12 +5857,67 @@ body {
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .spread-actions .predict-button {
   min-height: 62px;
   border-radius: 17px;
-  box-shadow: 0 17px 32px rgba(70, 65, 177, .22);
+  color: #2e2730;
+  border-color: #f0dcae;
+  background: linear-gradient(135deg, #fffaf0, #e8d6ad);
+  box-shadow: 0 17px 32px rgba(3, 2, 9, .32), 0 0 0 1px rgba(255, 250, 240, .32) inset;
+  transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .spread-actions .predict-button:hover:not(:disabled),
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .spread-actions .predict-button:focus-visible {
+  color: #241e27;
+  border-color: #fff2c9;
+  background: #fff8e8;
+  box-shadow: 0 19px 36px rgba(3, 2, 9, .38), 0 0 0 3px rgba(216, 191, 140, .2);
+  transform: translateY(-1px);
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .spread-actions .predict-button:disabled {
+  color: #413a3a;
+  border-color: #a99f91;
+  background: #b9b0a3;
+  box-shadow: none;
+  filter: none;
+  opacity: .82;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .spread-actions .predict-button > span:first-child,
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .spread-actions .predict-button > span:last-child {
+  color: #65533a;
 }
 
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .spread-actions .reset-button {
   min-height: 49px;
-  border-radius: 13px;
+  color: #eee6d9;
+  border: 1px solid rgba(216, 191, 140, .42);
+  background: rgba(31, 24, 38, .88);
+  box-shadow: 0 8px 18px rgba(3, 2, 9, .22);
+  transition: border-color .2s ease, background-color .2s ease, color .2s ease, transform .2s ease;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .spread-actions .reset-button:hover:not(:disabled),
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .spread-actions .reset-button:focus-visible {
+  color: #fff7e5;
+  border-color: #d8bf8c;
+  background: rgba(61, 45, 57, .94);
+  transform: translateY(-1px);
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .spread-actions .reset-button:disabled {
+  color: #9b928b;
+  border-color: rgba(155, 146, 139, .3);
+  background: rgba(31, 24, 38, .5);
+  cursor: not-allowed;
+  opacity: .72;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .spread-actions .reset-button .reset-icon {
+  color: var(--composer-accent);
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .witch-scene {
+  pointer-events: none;
 }
 
 #ai-reader-app[data-ui-version="pro-ritual-v1"] .request-status--main {
@@ -5879,7 +5934,7 @@ body {
   height: 250px;
   min-height: 250px;
   margin: 0;
-  opacity: .18;
+  opacity: .11;
   pointer-events: none;
   transform: scale(.88);
 }
