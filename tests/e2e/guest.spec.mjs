@@ -147,12 +147,40 @@ async function predict(page, count = 1) {
 }
 
 test("guest sees both modes and opens manual cards from the foyer", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
   await page.goto("/");
   await expect(page.locator("#manual-mode-link")).toContainText("เปิดไพ่ด้วยตัวเอง");
   await expect(page.locator("#ai-mode-link")).toContainText("ถามแม่มด AI");
   await page.locator("#manual-mode-link").click();
-  await page.getByRole("button", { name: /เปิดไพ่/ }).click();
-  await expect(page.locator(".result-card")).toHaveCount(1);
+  await expect(page.locator("#manual-deck-card-list .manual-deck-card")).toHaveCount(78);
+  await expect(page.locator("#draw-button")).toBeDisabled();
+  await page.locator("#manual-deck-card-list .manual-deck-card").nth(0).click();
+  await page.locator("#manual-deck-card-list .manual-deck-card").nth(1).click();
+  await page.locator("#manual-deck-card-list .manual-deck-card").nth(2).click();
+  await expect(page.locator("#manual-deck-card-list .manual-deck-card.is-selected")).toHaveCount(3);
+  await expect(page.locator("#manual-deck-card-list .manual-deck-card").nth(3)).toBeDisabled();
+  await expect(page.locator("#draw-button")).toBeEnabled();
+  await page.locator("#draw-button").click();
+  await expect(page.locator(".result-card")).toHaveCount(3);
+  await expect(page.locator("#manual-deck-card-list .manual-deck-card.is-used")).toHaveCount(3);
+  await expect(page.locator("#remaining-count")).toHaveText("75");
+  await expect(page.locator(".result-copy-button")).toBeEnabled();
+  await expect(page.locator("#copy-status")).toHaveCount(1);
+});
+
+test("manual full-deck reader stays usable on mobile", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.locator("#manual-mode-link").click();
+  await expect(page.locator("#manual-deck-card-list .manual-deck-card")).toHaveCount(78);
+  await expect(page.locator("#manual-deck-zone")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.locator("#manual-deck-card-list .manual-deck-card").nth(0).click();
+  await page.locator("#manual-deck-card-list .manual-deck-card").nth(1).click();
+  await expect(page.locator("#draw-button")).toBeEnabled();
+  await page.locator("#draw-button").click();
+  await expect(page.locator(".result-card")).toHaveCount(2);
 });
 
 test("guest selects up to three cards, predicts, and resets the 78-card deck", async ({ page }) => {

@@ -5,9 +5,11 @@ const DECK = Array.from(
 const STORAGE_KEY = "tarot-daily-deck-v1";
 const SESSION_KEY = "tarot-daily-session-v1";
 const MAX_HISTORY = 60;
+const MAX_MANUAL_SELECTED_CARDS = 3;
 
 const state = {
   count: 1,
+  selected: [],
   drawn: [],
   remaining: [],
   notice: "",
@@ -30,6 +32,12 @@ const emptyState = document.querySelector("#empty-state");
 const resultCount = document.querySelector("#result-count");
 const resultMessage = document.querySelector("#result-message");
 const deckRemaining = document.querySelector("#deck-remaining");
+const manualDeckRemaining = document.querySelector("#manual-deck-remaining");
+const manualDeckZone = document.querySelector("#manual-deck-zone");
+const manualDeckCardList = document.querySelector("#manual-deck-card-list");
+const manualSelectedTray = document.querySelector("#manual-selected-tray");
+const manualDeckStatusTitle = document.querySelector("#manual-deck-status-title");
+const manualDeckStatusMessage = document.querySelector("#manual-deck-status-message");
 const drawnCount = document.querySelector("#drawn-count");
 const remainingCount = document.querySelector("#remaining-count");
 const progressPercent = document.querySelector("#progress-percent");
@@ -164,12 +172,117 @@ function setCount(count) {
   });
 }
 
+function ensureManualDeckCards() {
+  if (!manualDeckCardList) return [];
+  if (manualDeckCardList.children.length === DECK.length) return [...manualDeckCardList.children];
+
+  manualDeckCardList.replaceChildren(...DECK.map((fileName, index) => {
+    const card = document.createElement("button");
+    card.className = "manual-deck-card";
+    card.type = "button";
+    card.dataset.deckIndex = String(index);
+    card.dataset.cardFile = fileName;
+    card.setAttribute("aria-label", `เลือกไพ่จากสำรับ ใบที่ ${index + 1}`);
+    card.innerHTML = '<span class="manual-deck-card__back" aria-hidden="true"><i>✦</i></span>';
+    card.addEventListener("click", () => selectManualCard(card));
+    return card;
+  }));
+
+  return [...manualDeckCardList.children];
+}
+
+function renderManualSelectedTray() {
+  if (!manualSelectedTray) return;
+  if (!state.selected.length) {
+    manualSelectedTray.replaceChildren();
+    manualSelectedTray.dataset.selectedCount = "0";
+    const empty = document.createElement("p");
+    empty.className = "manual-selected-tray__empty";
+    empty.textContent = "เลือกไพ่จากสำรับได้ 1–3 ใบ";
+    manualSelectedTray.append(empty);
+    return;
+  }
+
+  manualSelectedTray.dataset.selectedCount = String(state.selected.length);
+  manualSelectedTray.replaceChildren(...state.selected.map((fileName, index) => {
+    const slot = document.createElement("article");
+    slot.className = "manual-selected-slot";
+    const cardNumber = getCardNumber(fileName);
+    slot.innerHTML = `
+      <span class="manual-selected-slot__number">ใบที่ ${index + 1}</span>
+      <strong>NO. ${cardNumber}</strong>
+      <button type="button" aria-label="เอาไพ่ใบที่ ${index + 1} ออกจากชุดที่เลือก">เอาออก</button>
+    `;
+    slot.querySelector("button").addEventListener("click", () => {
+      const card = manualDeckCardList?.querySelector(`[data-card-file="${fileName}"]`);
+      if (card) selectManualCard(card);
+    });
+    return slot;
+  }));
+}
+
+function renderManualDeck() {
+  if (!manualDeckZone || !manualDeckCardList) return;
+  const cards = ensureManualDeckCards();
+  const selected = new Set(state.selected);
+  const busy = drawTimer !== null;
+  const remaining = new Set(state.remaining);
+  const selectionLocked = state.selected.length >= MAX_MANUAL_SELECTED_CARDS;
+
+  manualDeckZone.dataset.deckState = busy ? "shuffling" : state.selected.length ? "selected" : "ready";
+  cards.forEach((card) => {
+    const fileName = card.dataset.cardFile;
+    const isSelected = selected.has(fileName);
+    const isUsed = !remaining.has(fileName);
+    const isLocked = selectionLocked && !isSelected;
+    card.classList.toggle("is-selected", isSelected);
+    card.classList.toggle("is-used", isUsed);
+    card.classList.toggle("is-disabled", isUsed || isLocked);
+    card.disabled = busy || isUsed || isLocked;
+    card.setAttribute("aria-pressed", String(isSelected));
+    card.setAttribute("aria-label", isUsed
+      ? `ไพ่จากสำรับ ใบที่ ${Number(card.dataset.deckIndex) + 1} เปิดไปแล้ว`
+      : `เลือกไพ่จากสำรับ ใบที่ ${Number(card.dataset.deckIndex) + 1}`);
+  });
+
+  if (busy) {
+    manualDeckStatusTitle && (manualDeckStatusTitle.textContent = "กำลังสับไพ่…");
+    manualDeckStatusMessage && (manualDeckStatusMessage.textContent = "รอสักครู่ แล้วผลการเปิดไพ่จะแสดงด้านล่าง");
+  } else if (state.selected.length) {
+    manualDeckStatusTitle && (manualDeckStatusTitle.textContent = `เลือกแล้ว ${state.selected.length} ใบ`);
+    manualDeckStatusMessage && (manualDeckStatusMessage.textContent = state.selected.length === MAX_MANUAL_SELECTED_CARDS
+      ? "เลือกครบแล้ว · กดเปิดไพ่ได้เลย"
+      : "เลือกเพิ่มได้ หรือกดเปิดไพ่เลย");
+  } else {
+    manualDeckStatusTitle && (manualDeckStatusTitle.textContent = "เลือกไพ่จากสำรับ");
+    manualDeckStatusMessage && (manualDeckStatusMessage.textContent = "คลิกไพ่ทีละใบ · เลือกได้สูงสุด 3 ใบ");
+  }
+}
+
+function selectManualCard(card) {
+  if (!card || drawTimer !== null || card.classList.contains("is-used")) return;
+  const fileName = card.dataset.cardFile;
+  if (!fileName || !state.remaining.includes(fileName)) return;
+
+  if (state.selected.includes(fileName)) {
+    state.selected = state.selected.filter((item) => item !== fileName);
+  } else if (state.selected.length < MAX_MANUAL_SELECTED_CARDS) {
+    state.selected = [...state.selected, fileName];
+  } else {
+    return;
+  }
+
+  state.count = state.selected.length;
+  updateProgress();
+}
+
 function updateProgress() {
   const remaining = state.remaining.length;
   const opened = DECK.length - remaining;
   const percent = Math.round((opened / DECK.length) * 100);
 
   deckRemaining.textContent = String(remaining);
+  manualDeckRemaining && (manualDeckRemaining.textContent = String(remaining));
   drawnCount.textContent = String(opened);
   remainingCount.textContent = String(remaining);
   progressPercent.textContent = `${percent}%`;
@@ -177,8 +290,12 @@ function updateProgress() {
   progressBar.parentElement?.setAttribute("aria-valuenow", String(percent));
 
   const isEmpty = remaining === 0;
-  drawButton.disabled = isEmpty;
+  const hasSelection = state.selected.length > 0;
+  drawButton.disabled = isEmpty || !hasSelection || drawTimer !== null;
   drawButtonLabel.textContent = isEmpty ? "สำรับหมดแล้ว" : "เปิดไพ่";
+  drawButton.setAttribute("aria-label", isEmpty ? "สำรับหมดแล้ว" : hasSelection ? `เปิดไพ่ ${state.selected.length} ใบ` : "เลือกไพ่ก่อนเปิด");
+  renderManualDeck();
+  renderManualSelectedTray();
 }
 
 function getCardNumber(fileName) {
@@ -207,11 +324,13 @@ function updateCopyButton() {
 
 function showHistoryEntry(entry) {
   state.activeHistoryId = entry.id;
+  state.selected = [];
   state.drawn = [...entry.cards];
   state.notice = "กำลังดูชุดไพ่ก่อนหน้า กดเปิดไพ่เพื่อสุ่มชุดใหม่";
   resetAiReaderState();
   renderResult();
   renderHistory();
+  updateProgress();
   document.querySelector("#result-title")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -777,14 +896,24 @@ function drawCards() {
     return;
   }
 
+  const selectedCards = state.selected.filter((fileName) => state.remaining.includes(fileName)).slice(0, MAX_MANUAL_SELECTED_CARDS);
+  if (!selectedCards.length) {
+    updateProgress();
+    return;
+  }
+
   drawButton.classList.add("is-busy");
   drawButton.disabled = true;
   drawButton.setAttribute("aria-busy", "true");
 
   drawTimer = window.setTimeout(() => {
-    const requestedCount = state.count;
-    const actualCount = Math.min(requestedCount, state.remaining.length);
-    state.drawn = state.remaining.splice(0, actualCount);
+    const requestedCount = selectedCards.length;
+    const selectedSet = new Set(selectedCards);
+    const actualCount = selectedCards.length;
+    state.drawn = selectedCards;
+    state.remaining = state.remaining.filter((fileName) => !selectedSet.has(fileName));
+    state.selected = [];
+    state.count = actualCount;
     state.activeHistoryId = null;
     resetAiReaderState();
 
@@ -805,14 +934,15 @@ function drawCards() {
       state.notice = "";
     }
 
+    drawTimer = null;
+    drawButton.classList.remove("is-busy");
+    drawButton.removeAttribute("aria-busy");
     saveState();
     updateProgress();
     renderResult();
     renderHistory();
-    drawButton.classList.remove("is-busy");
-    drawButton.removeAttribute("aria-busy");
-    drawTimer = null;
   }, 260);
+  renderManualDeck();
 }
 
 function resetCards() {
@@ -824,6 +954,7 @@ function resetCards() {
   }
 
   state.remaining = shuffle(DECK);
+  state.selected = [];
   state.drawn = [];
   state.activeHistoryId = null;
   state.notice = "เริ่มสำรับใหม่แล้ว ไพ่ทั้ง 78 ใบพร้อมให้เปิดอีกครั้ง";
@@ -879,6 +1010,7 @@ if (betaFocusButton) {
 
 const savedState = loadSavedState();
 state.remaining = savedState?.remaining ?? shuffle(DECK);
+state.selected = [];
 state.drawn = savedState?.drawn ?? [];
 state.notice = savedState?.notice ?? "";
 state.history = savedState?.history ?? [];

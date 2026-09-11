@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const homeHtml = readFileSync(path.join(root, "index.html"), "utf8");
+const homeJs = readFileSync(path.join(root, "app.js"), "utf8");
+const homeCss = readFileSync(path.join(root, "style.css"), "utf8");
 const aiHtml = readFileSync(path.join(root, "ai", "index.html"), "utf8");
 const aiCss = readFileSync(path.join(root, "ai", "ai.css"), "utf8");
 
@@ -14,6 +16,18 @@ test("root exposes distinct guest and AI mode actions", () => {
   assert.match(homeHtml, /id="manual-mode-link"/);
   assert.match(homeHtml, /id="ai-mode-link"/);
   assert.match(homeHtml, /href="\.\/login\/\?next=\/ai\//);
+});
+
+test("manual reader uses the same full-deck selection ritual as the AI reader", () => {
+  assert.match(homeHtml, /id="manual-deck-guidance"/);
+  assert.match(homeHtml, /id="manual-deck-zone"/);
+  assert.match(homeHtml, /id="manual-deck-card-list"/);
+  assert.match(homeHtml, /id="manual-selected-tray"/);
+  assert.doesNotMatch(homeHtml, /class="choice-group"/);
+  assert.match(homeJs, /MAX_MANUAL_SELECTED_CARDS\s*=\s*3/);
+  assert.match(homeJs, /manual-deck-card/);
+  assert.match(homeCss, /\.manual-deck-zone/);
+  assert.match(homeCss, /\.manual-deck-card/);
 });
 
 test("AI page keeps card reading public and gates only the question feature", () => {
@@ -47,8 +61,8 @@ test("AI question field keeps the accessible customer-facing label", () => {
 });
 
 test("customer pages version their JavaScript and CSS assets", () => {
-  assert.match(homeHtml, /style\.css\?v=20260901-witch-two-modes/);
-  assert.match(homeHtml, /app\.js\?v=20260901-witch-two-modes/);
+  assert.match(homeHtml, /style\.css\?v=20260911-manual-deck-v1/);
+  assert.match(homeHtml, /app\.js\?v=20260911-manual-deck-v1/);
   assert.match(aiHtml, /ai\.css\?v=20260910-ai-two-scene-v44/);
   assert.match(aiHtml, /ai\.js\?v=20260910-ai-two-scene-v44/);
   assert.match(aiHtml, /อ่านจากคำบนไพ่และตอบคำถามอย่างชัดเจน/);

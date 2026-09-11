@@ -16,7 +16,7 @@
       href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./style.css?v=20260901-witch-two-modes" />
+    <link rel="stylesheet" href="./style.css?v=20260911-manual-deck-v1" />
   </head>
   <body>
     <div class="page-glow page-glow--top" aria-hidden="true"></div>
@@ -88,81 +88,60 @@
         <a class="back-to-modes" href="#mode-foyer">เปลี่ยนโหมด <span aria-hidden="true">↑</span></a>
       </section>
 
-      <section class="workspace" id="manual-reader" aria-labelledby="manual-reader-title">
-        <aside class="control-panel panel">
-          <div class="panel-heading">
-            <div class="heading-icon" aria-hidden="true">♢</div>
+      <section class="workspace manual-workspace" id="manual-reader" aria-labelledby="manual-reader-title">
+        <section class="manual-deck-panel panel" aria-labelledby="manual-deck-title">
+          <div class="manual-deck-heading">
             <div>
-              <p class="panel-kicker">ตั้งคำถามในใจ</p>
-              <h2>เปิดไพ่กี่ใบ?</h2>
+              <p class="panel-kicker">01 / CHOOSE CARDS</p>
+              <h2 id="manual-deck-title">เลือกไพ่จากสำรับ</h2>
+              <p>คลิกไพ่จากสำรับได้สูงสุด 3 ใบ แล้วกด “เปิดไพ่”</p>
             </div>
+            <span class="manual-deck-remaining"><i aria-hidden="true"></i><strong id="manual-deck-remaining">78</strong> ใบเหลือ</span>
           </div>
 
-          <div class="choice-group" role="group" aria-label="จำนวนไพ่ที่ต้องการเปิด">
-            <button class="choice-button is-selected" type="button" data-count="1" aria-pressed="true">
-              <span class="choice-number">01</span>
-              <span class="choice-label">ไพ่ใบเดียว</span>
-              <span class="choice-check" aria-hidden="true">✓</span>
-            </button>
-            <button class="choice-button" type="button" data-count="2" aria-pressed="false">
-              <span class="choice-number">02</span>
-              <span class="choice-label">ไพ่สองใบ</span>
-              <span class="choice-check" aria-hidden="true">✓</span>
-            </button>
-            <button class="choice-button" type="button" data-count="3" aria-pressed="false">
-              <span class="choice-number">03</span>
-              <span class="choice-label">ไพ่สามใบ</span>
-              <span class="choice-check" aria-hidden="true">✓</span>
-            </button>
+          <div class="manual-deck-guidance" id="manual-deck-guidance" role="status" aria-live="polite">
+            <span class="manual-deck-guidance__icon" aria-hidden="true">✦</span>
+            <div>
+              <strong id="manual-deck-status-title">เลือกไพ่จากสำรับ</strong>
+              <small id="manual-deck-status-message">คลิกไพ่ทีละใบ · เลือกได้สูงสุด 3 ใบ</small>
+            </div>
+            <span class="manual-deck-guidance__hint">ไม่ต้องล็อกอิน</span>
           </div>
 
-          <div class="progress-card" aria-label="สถานะสำรับไพ่">
-            <div class="progress-topline">
-              <span class="progress-title"><span class="progress-star" aria-hidden="true">✦</span> สถานะสำรับ</span>
-              <strong id="progress-percent">0%</strong>
-            </div>
-            <div
-              class="progress-track"
-              role="progressbar"
-              aria-label="เปิดไพ่ไปแล้ว"
-              aria-valuemin="0"
-              aria-valuemax="100"
-              aria-valuenow="0"
-            ><span id="progress-bar"></span></div>
-            <div class="progress-numbers">
-              <div>
-                <strong id="drawn-count">0</strong>
-                <span>เปิดไปแล้ว</span>
+          <div class="manual-deck-zone" id="manual-deck-zone" data-deck-state="ready" role="group" aria-label="สำรับไพ่สำหรับเลือก">
+            <div class="manual-deck-orbit" id="manual-deck-card-list" aria-label="ไพ่ในสำรับ"></div>
+            <div class="manual-deck-center" aria-hidden="true"><span>✦</span></div>
+          </div>
+
+          <div class="manual-selected-tray" id="manual-selected-tray" role="status" aria-live="polite"></div>
+
+          <div class="manual-progress-row">
+            <div class="progress-card" aria-label="สถานะสำรับไพ่">
+              <div class="progress-topline">
+                <span class="progress-title"><span class="progress-star" aria-hidden="true">✦</span> สถานะสำรับ</span>
+                <strong id="progress-percent">0%</strong>
               </div>
-              <span class="progress-divider" aria-hidden="true"></span>
-              <div>
-                <strong id="remaining-count">78</strong>
-                <span>ใบที่เหลือ</span>
+              <div class="progress-track" role="progressbar" aria-label="เปิดไพ่ไปแล้ว" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-bar"></span></div>
+              <div class="progress-numbers">
+                <div><strong id="drawn-count">0</strong><span>เปิดไปแล้ว</span></div>
+                <span class="progress-divider" aria-hidden="true"></span>
+                <div><strong id="remaining-count">78</strong><span>ใบที่เหลือ</span></div>
               </div>
             </div>
+            <p class="manual-deck-tip"><span aria-hidden="true">✦</span> ไพ่ที่เปิดแล้วจะไม่ซ้ำ<br />จนกว่าจะกดล้างไพ่</p>
           </div>
 
-          <div class="rule" aria-hidden="true"></div>
-
-          <div class="tip-box">
-            <span class="tip-icon" aria-hidden="true">✦</span>
-            <p>ไพ่จะไม่ซ้ำกัน<br />ภายในรอบเดียว</p>
+          <div class="manual-deck-actions">
+            <button class="draw-button" id="draw-button" type="button" disabled>
+              <span class="draw-button-icon" aria-hidden="true">✦</span>
+              <span id="draw-button-label">เปิดไพ่</span>
+              <span class="draw-button-arrow" aria-hidden="true">→</span>
+            </button>
+            <button class="reset-button" id="reset-button" type="button">ล้างไพ่ · เริ่มสำรับใหม่</button>
           </div>
+        </section>
 
-          <button class="draw-button" id="draw-button" type="button">
-            <span class="draw-button-icon" aria-hidden="true">✦</span>
-            <span id="draw-button-label">เปิดไพ่</span>
-            <span class="draw-button-arrow" aria-hidden="true">→</span>
-          </button>
-          <button class="copy-button" id="copy-button" data-copy-result type="button" disabled>
-            <span class="copy-button-icon" aria-hidden="true">▣</span>
-            <span>Copy รูปภาพชุดนี้</span>
-          </button>
-          <p class="copy-status" id="copy-status" role="status" aria-live="polite"></p>
-          <button class="reset-button" id="reset-button" type="button">ล้างคำทำนาย</button>
-        </aside>
-
-        <section class="result-panel panel" aria-labelledby="result-title" aria-live="polite">
+        <section class="manual-result-panel result-panel panel" aria-labelledby="result-title" aria-live="polite">
           <div class="result-heading">
             <div>
               <p class="panel-kicker">YOUR FORTUNE</p>
@@ -176,6 +155,7 @@
               </button>
             </div>
           </div>
+          <p class="copy-status" id="copy-status" role="status" aria-live="polite"></p>
 
           <div class="cards-grid is-empty" id="cards-grid">
             <div class="empty-state" id="empty-state">
@@ -184,7 +164,7 @@
                 <div class="tarot-back" aria-hidden="true"><span>✦</span></div>
               </div>
               <h3>พร้อมรับข้อความจากไพ่หรือยัง?</h3>
-              <p>เลือกจำนวนไพ่ทางซ้าย<br />แล้วกดปุ่ม “เปิดไพ่”</p>
+              <p>คลิกเลือกไพ่จากสำรับ<br />แล้วกดปุ่ม “เปิดไพ่”</p>
             </div>
           </div>
 
@@ -243,6 +223,6 @@
       </footer>
     </main>
 
-    <script src="./app.js?v=20260901-witch-two-modes" defer></script>
+    <script src="./app.js?v=20260911-manual-deck-v1" defer></script>
   </body>
 </html>
