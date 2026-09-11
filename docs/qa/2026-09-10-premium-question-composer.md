@@ -87,3 +87,10 @@ Capture commands and results:
 | `npm run check` | PASS, exit 0 |
 
 Guest/member flow assertions and the earlier mock boundary remain unchanged. Member auth/deck/answer flows are mocked, no real OpenAI/API smoke test was performed, and physical-device Thai IME/software-keyboard occlusion plus non-Chromium browser behavior remain outside this local acceptance run.
+
+## Task 5 local release preparation — 2026-09-11
+
+- Prepared branch `codex/witch-two-modes` from reviewed release-candidate commit `7dfcd9e` in the existing linked worktree.
+- Advanced both `/ai/` asset query strings together from `20260910-ai-two-scene-v42` to the previously unused `20260910-ai-two-scene-v43`; matching release assertions were updated without changing behavioral coverage.
+- Local release gates passed: `npm run check` (exit 0), `npm test` (112/112), and the specified Playwright guest/member/scene smoke suite (60/60 across desktop and mobile Chromium).
+- This step did not push, deploy, access external credentials, inspect a Vercel preview, or perform a production/real-API smoke test. The controller still owns those external release checks.
