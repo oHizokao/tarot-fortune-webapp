@@ -104,7 +104,8 @@ async function installMemberApi(page, userOverrides = {}) {
       api.answerCalls += 1;
       const failureCode = api.answerFailureCodes.shift();
       if (failureCode) {
-        await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ ok: false, code: failureCode, request_id: "answer-failure-1", message: "AI ยังไม่พร้อมชั่วคราว" }) });
+        const failureStatus = failureCode === "ACCOUNT_AUTH_REQUIRED" ? 401 : 503;
+        await route.fulfill({ status: failureStatus, contentType: "application/json", body: JSON.stringify({ ok: false, code: failureCode, request_id: "answer-failure-1", message: failureCode === "ACCOUNT_AUTH_REQUIRED" ? "เซสชันหมดอายุ" : "AI ยังไม่พร้อมชั่วคราว" }) });
         return;
       }
       const structured = structuredAnswer(round);
@@ -263,6 +264,23 @@ test("member answer failure keeps the active result scene visible and retry answ
   await expect(page.locator("#ai-answer-stage")).not.toContainText("AI ยังไม่พร้อมชั่วคราว");
   expect(api.drawCalls).toBe(1);
   expect(api.answerCalls).toBe(2);
+});
+
+test("member auth expiry during answer returns to a usable guest reader", async ({ page }) => {
+  await page.addInitScript(() => localStorage.clear());
+  const api = await installMemberApi(page);
+  api.answerFailureCodes = ["ACCOUNT_AUTH_REQUIRED"];
+  await page.goto("/ai/");
+  await page.getByLabel("คำถามของคุณ").fill("ถ้าเซสชันหมดอายุควรกลับมาเปิดไพ่ต่อได้ไหม?");
+  await selectCards(page, 1);
+  await page.locator("#draw-button").click();
+
+  await expect(page.locator("#ai-reader-app")).toHaveAttribute("data-reader-mode", "guest");
+  await expect(page.locator("#question-stage")).toBeHidden();
+  await page.locator("#tarot-deck-card-list .tarot-deck-card:not(.is-used)").first().click();
+  await expect(page.locator("#draw-button")).toBeEnabled({ timeout: 10_000 });
+  await expect(page.locator("#ai-answer-stage")).toBeHidden();
+  await expect(page.locator("#reading-history-list")).toBeEmpty();
 });
 
 test("member logout invalidates a held answer and stays in guest mode after the stale response is released", async ({ page }) => {

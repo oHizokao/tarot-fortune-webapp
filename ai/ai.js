@@ -1362,7 +1362,9 @@ async function answerCurrentRound(roundId) {
       state.csrf = "";
       clearPrivateMemory();
       setReaderMode(null);
+      setReaderView("compose", { updateUrl: true, replace: true });
       applyLocalSession(state.localSession);
+      renderAll();
       $("#request-status").textContent = "เซสชันหมดอายุ กรุณาเข้าใช้งานใหม่";
     } else {
       state.failedQuestion = round.question;
@@ -1375,7 +1377,6 @@ async function answerCurrentRound(roundId) {
       renderAnswerFailure();
     }
   } finally {
-    if (!isCurrentRequest(version, identity)) return;
     if (version === state.requestVersion) {
       state.busy = false;
       renderProgress();
