@@ -14,7 +14,7 @@ test("pro ritual shell exposes one clear compose contract", () => {
   assert.match(html, /id="selected-card-tray"/);
   assert.match(html, /id="selected-count"/);
   assert.match(html, /id="pending-count"/);
-  assert.match(html, /ai-two-scene-v43/);
+  assert.match(html, /ai-two-scene-v44/);
 });
 
 test("pro ritual code renders the selection tray from current selection only", () => {

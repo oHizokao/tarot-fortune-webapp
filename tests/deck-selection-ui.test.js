@@ -25,6 +25,18 @@ test("full-deck selection has a stable motion surface and mobile layout", () => 
   assert.match(css, /@media \(max-width: 650px\)[\s\S]*?\.tarot-deck-zone/);
 });
 
+test("deck guidance stays outside the card surface", () => {
+  const guidanceIndex = html.indexOf('class="deck-guidance"');
+  const deckIndex = html.indexOf('id="tarot-deck-zone"');
+
+  assert.ok(guidanceIndex >= 0, "deck guidance should exist");
+  assert.ok(deckIndex > guidanceIndex, "deck guidance should come before the interactive deck");
+  assert.match(html, /id="deck-center-title"/);
+  assert.match(html, /id="deck-center-message"/);
+  assert.match(html, /class="tarot-deck-center"[^>]*>\s*<span class="tarot-deck-center__sigil"[^>]*>✦<\/span>\s*<\/div>/);
+  assert.match(css, /\.deck-guidance[\s\S]*?border/);
+});
+
 test("prediction is driven by selected cards instead of a count picker", () => {
   assert.match(js, /MAX_SELECTED_CARDS\s*=\s*3/);
   assert.match(js, /selectedCards/);

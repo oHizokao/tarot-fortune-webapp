@@ -1,5 +1,24 @@
 import { test, expect } from "@playwright/test";
 
+test("deck guidance sits above the deck instead of covering cards", async ({ page }) => {
+  await page.goto("/ai/");
+
+  await expect(page.locator(".deck-guidance")).toBeVisible();
+  await expect(page.locator("#deck-center-title")).toBeVisible();
+  await expect(page.locator(".tarot-deck-center strong, .tarot-deck-center small")).toHaveCount(0);
+
+  const geometry = await page.evaluate(() => {
+    const guidance = document.querySelector(".deck-guidance")?.getBoundingClientRect();
+    const deck = document.querySelector("#tarot-deck-zone")?.getBoundingClientRect();
+    return {
+      guidanceBottom: guidance?.bottom ?? 0,
+      deckTop: deck?.top ?? 0,
+    };
+  });
+
+  expect(geometry.guidanceBottom).toBeLessThanOrEqual(geometry.deckTop + 1);
+});
+
 test("guest selects up to three cards from the full deck and sees a concise result", async ({ page }) => {
   await page.goto("/ai/");
 

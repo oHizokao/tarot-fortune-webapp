@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./ai.css?v=20260910-ai-two-scene-v43" />
+    <link rel="stylesheet" href="./ai.css?v=20260910-ai-two-scene-v44" />
   </head>
   <body>
     <div class="ai-bg ai-bg--one" aria-hidden="true"></div>
@@ -77,12 +77,18 @@
             <div><p class="panel-kicker" id="spread-kicker">01 / CHOOSE CARDS</p><h2 id="spread-title">เลือกไพ่จากสำรับ</h2><p id="spread-description">คลิกไพ่ที่อยากหยิบได้สูงสุด 3 ใบ แล้วกดทำนาย</p></div>
             <span class="deck-status"><i></i><strong id="remaining-count">78</strong> ใบเหลือ</span>
           </div>
+          <div class="deck-guidance" id="deck-guidance" role="status" aria-live="polite">
+            <span class="deck-guidance__icon" aria-hidden="true">✦</span>
+            <div class="deck-guidance__copy">
+              <strong id="deck-center-title">เลือกไพ่จากสำรับ</strong>
+              <small id="deck-center-message">คลิกไพ่ทีละใบ · สูงสุด 3 ใบ</small>
+            </div>
+            <span class="deck-guidance__hint">เลือกได้สูงสุด 3 ใบ</span>
+          </div>
           <div class="tarot-deck-zone" id="tarot-deck-zone" data-deck-state="ready" role="group" aria-label="สำรับไพ่สำหรับเลือก">
             <div class="tarot-deck-orbit" id="tarot-deck-card-list" aria-label="ไพ่ในสำรับ"></div>
             <div class="tarot-deck-center" aria-hidden="true">
               <span class="tarot-deck-center__sigil">✦</span>
-              <strong id="deck-center-title">เลือกไพ่จากสำรับ</strong>
-              <small id="deck-center-message">คลิกไพ่ทีละใบ · สูงสุด 3 ใบ</small>
             </div>
           </div>
           <div class="selected-card-tray" id="selected-card-tray" aria-label="ไพ่ที่เลือก" aria-live="polite">
@@ -188,6 +194,6 @@
 
       <footer class="ai-footer"><span>✦ TAROT DAILY</span><span>คำทำนายเป็นแนวทาง ไม่ใช่คำตัดสินชีวิต</span><a href="../privacy/">ความเป็นส่วนตัว</a><a href="../terms/">ข้อกำหนด</a><a href="../admin/">สำหรับผู้ดูแล</a></footer>
     </main>
-    <script type="module" src="./ai.js?v=20260910-ai-two-scene-v43" defer></script>
+    <script type="module" src="./ai.js?v=20260910-ai-two-scene-v44" defer></script>
   </body>
 </html>

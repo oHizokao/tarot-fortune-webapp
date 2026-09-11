@@ -6337,3 +6337,99 @@ body {
     animation-duration: 5s !important;
   }
 }
+
+/* v44 — move deck guidance out of the card surface so the full deck stays clear. */
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .reader-view--compose .ai-spread-stage > .deck-guidance {
+  position: relative;
+  z-index: 2;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .deck-guidance {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: min(100%, 760px);
+  margin: 18px auto 0;
+  padding: 13px 16px;
+  border: 1px solid rgba(216, 191, 140, .24);
+  border-radius: 16px;
+  background: linear-gradient(110deg, rgba(49, 34, 79, .58), rgba(19, 21, 57, .62));
+  box-shadow: 0 12px 32px rgba(3, 2, 9, .18), inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .deck-guidance__icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--gold);
+  border: 1px solid rgba(255, 224, 165, .35);
+  border-radius: 50%;
+  background: rgba(255, 224, 165, .08);
+  box-shadow: 0 0 18px rgba(255, 215, 139, .14);
+  font-size: 15px;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .deck-guidance__copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .deck-guidance__copy strong {
+  color: #f2edff;
+  font: 500 14px "Kanit", sans-serif;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .deck-guidance__copy small,
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .deck-guidance__hint {
+  color: #98a5c7;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .deck-guidance__hint {
+  margin-left: auto;
+  padding-left: 16px;
+  color: #d8c4ff;
+  white-space: nowrap;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .tarot-deck-zone {
+  margin-top: 12px;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .tarot-deck-center {
+  width: 112px;
+  min-height: 112px;
+  border-color: rgba(226, 204, 255, .2);
+  background: radial-gradient(circle, rgba(27, 19, 91, .42), rgba(12, 13, 53, .18) 62%, transparent 63%);
+  box-shadow: 0 0 35px rgba(121, 91, 231, .12);
+  pointer-events: none;
+}
+
+#ai-reader-app[data-ui-version="pro-ritual-v1"] .tarot-deck-center__sigil {
+  opacity: .76;
+}
+
+@media (max-width: 650px) {
+  #ai-reader-app[data-ui-version="pro-ritual-v1"] .deck-guidance {
+    align-items: flex-start;
+    margin-top: 14px;
+    padding: 12px 13px;
+  }
+
+  #ai-reader-app[data-ui-version="pro-ritual-v1"] .deck-guidance__hint {
+    display: none;
+  }
+
+  #ai-reader-app[data-ui-version="pro-ritual-v1"] .tarot-deck-zone {
+    margin-top: 12px;
+  }
+
+  #ai-reader-app[data-ui-version="pro-ritual-v1"] .tarot-deck-center {
+    width: 88px;
+    min-height: 88px;
+  }
+}
